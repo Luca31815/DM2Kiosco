@@ -79,6 +79,7 @@ const AnalisisHorariosView = () => {
 
                 // Map daily totals
                 const dailyTotalsMap = dailyReports.reduce((acc, curr) => {
+                    if (!curr.fecha) return acc
                     const dateKey = curr.fecha.split('T')[0]
                     acc[dateKey] = curr.cant_ventas
                     return acc
@@ -108,6 +109,7 @@ const AnalisisHorariosView = () => {
 
                 // Combine data
                 const grouped = rawHitos.reduce((acc, curr) => {
+                    if (!curr.dia) return acc
                     const date = curr.dia
                     if (!acc[date]) {
                         acc[date] = {
@@ -139,9 +141,12 @@ const AnalisisHorariosView = () => {
                     if (dailyLastSaleMap[date]) {
                         grouped[date].lastSaleTime = dailyLastSaleMap[date]
                         // Extract hour from string "YYYY-MM-DDTHH:mm:ss"
-                        const timePart = dailyLastSaleMap[date].includes('T')
-                            ? dailyLastSaleMap[date].split('T')[1]
-                            : dailyLastSaleMap[date].split(' ')[1]
+                        let timePart = ''
+                        if (dailyLastSaleMap[date].includes('T')) {
+                            timePart = dailyLastSaleMap[date].split('T')[1]
+                        } else if (dailyLastSaleMap[date].includes(' ')) {
+                            timePart = dailyLastSaleMap[date].split(' ')[1]
+                        }
 
                         if (timePart) {
                             const h = parseInt(timePart.split(':')[0], 10)
