@@ -10,7 +10,8 @@ const DataTable = ({
     sortOrder,
     onFilter,
     renderExpandedRow,
-    rowKey = 'id'
+    rowKey = 'id',
+    compact = false
 }) => {
     const [filterValue, setFilterValue] = useState('')
     const [expandedRow, setExpandedRow] = useState(null)
@@ -52,7 +53,7 @@ const DataTable = ({
                             {columns.map((col) => (
                                 <th
                                     key={col.key}
-                                    className="px-6 py-3 cursor-pointer hover:text-white transition-colors select-none"
+                                    className={`${compact ? 'px-3 py-2 text-xs' : 'px-6 py-3'} cursor-pointer hover:text-white transition-colors select-none`}
                                     onClick={() => onSort(col.key)}
                                 >
                                     <div className="flex items-center gap-2">
@@ -87,7 +88,7 @@ const DataTable = ({
                                         className={`hover:bg-gray-800/50 transition-colors group ${renderExpandedRow ? 'cursor-pointer' : ''} ${expandedRow === row[rowKey] ? 'bg-gray-800/50' : ''}`}
                                     >
                                         {columns.map((col) => (
-                                            <td key={`${rowIndex}-${col.key}`} className="px-6 py-4 whitespace-nowrap text-gray-300 group-hover:text-white transition-colors">
+                                            <td key={`${rowIndex}-${col.key}`} className={`whitespace-nowrap text-gray-300 group-hover:text-white transition-colors ${compact ? 'px-3 py-2 text-xs' : 'px-6 py-4'}`}>
                                                 {col.render ? col.render(row[col.key], row) : row[col.key]}
                                             </td>
                                         ))}

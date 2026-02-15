@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react'
 import DataTable from '../components/DataTable'
-import { getAnalisisHorarioDiario, getAnalisisHorarioSemanal, getAnalisisHorarioMensual } from '../services/api'
-import { Clock } from 'lucide-react'
+import { getAnalisisHorarioDiario, getAnalisisHorarioSemanal, getAnalisisHorarioMensual, getHitosVentas, getVentas, getReporteDiario } from '../services/api'
+import { Clock, Trophy } from 'lucide-react'
 
 const AnalisisHorariosView = () => {
     const [viewType, setViewType] = useState('diario')
+    const [analysisMode, setAnalysisMode] = useState('horarios') // 'horarios' | 'hitos'
     const [data, setData] = useState([])
     const [loading, setLoading] = useState(true)
 
@@ -12,42 +13,198 @@ const AnalisisHorariosView = () => {
     const [sortColumn, setSortColumn] = useState('fecha')
     const [sortOrder, setSortOrder] = useState('desc')
     const [filterValue, setFilterValue] = useState('')
-
+    const [minHour, setMinHour] = useState(0)
+    const [maxHour, setMaxHour] = useState(24)
+    const [maxTotalSales, setMaxTotalSales] = useState(0)
 
     useEffect(() => {
-        // Reset sort when type changes
-        if (viewType === 'diario') setSortColumn('fecha')
-        if (viewType === 'semanal') setSortColumn('semana_del')
-        if (viewType === 'mensual') setSortColumn('anio')
+        // Reset sort/columns when view/mode changes
+        if (analysisMode === 'horarios') {
+            if (viewType === 'diario') setSortColumn('fecha')
+            if (viewType === 'semanal') setSortColumn('semana_del')
+            if (viewType === 'mensual') setSortColumn('anio')
+        } else {
+            setSortColumn('dia')
+            setSortOrder('desc')
+        }
 
         setData([])
         setLoading(true)
-    }, [viewType])
+    }, [viewType, analysisMode])
 
     useEffect(() => {
         fetchData()
         const interval = setInterval(fetchData, 60000)
         return () => clearInterval(interval)
-    }, [viewType, sortColumn, sortOrder, filterValue])
+    }, [viewType, analysisMode, sortColumn, sortOrder, filterValue])
 
     const fetchData = async () => {
         try {
             let fetchFunc = getAnalisisHorarioDiario
+            let defaultSort = 'fecha'
 
-            if (viewType === 'semanal') fetchFunc = getAnalisisHorarioSemanal
-            if (viewType === 'mensual') fetchFunc = getAnalisisHorarioMensual
+            if (analysisMode === 'horarios') {
+                if (viewType === 'semanal') { fetchFunc = getAnalisisHorarioSemanal; defaultSort = 'semana_del' }
+                if (viewType === 'mensual') { fetchFunc = getAnalisisHorarioMensual; defaultSort = 'anio' }
 
-            const { data } = await fetchFunc({
-                sortColumn,
-                sortOrder,
-                // Simple client-side filtering support if the API supports it genericly, 
-                // or we rely on 'fecha' text filtering
-                filterColumn: ['diario', 'semanal'].includes(viewType) ? (viewType === 'diario' ? 'fecha' : 'semana_del') : undefined,
-                filterValue
-            })
-            setData(data || [])
+                const { data: fetchedData } = await fetchFunc({
+                    sortColumn: sortColumn || defaultSort,
+                    sortOrder,
+                    filterColumn: ['diario', 'semanal'].includes(viewType) ? (viewType === 'diario' ? 'fecha' : 'semana_del') : undefined,
+                    filterValue
+                })
+                const processedData = (fetchedData || []).map(row => {
+                    const total = (Number(row.ventas_madrugada) || 0) +
+                        (Number(row.ventas_manana) || 0) +
+                        (Number(row.ventas_tarde) || 0) +
+                        (Number(row.ventas_noche) || 0)
+                    return {
+                        ...row,
+                        total_ventas: total
+                    }
+                })
+                setData(processedData)
+
+            } else {
+                // Hitos Mode
+                const [hitosRes, dailyRes, salesRes] = await Promise.all([
+                    getHitosVentas({ sortColumn: 'dia', sortOrder: 'desc', pageSize: 1000 }),
+                    getReporteDiario({ sortColumn: 'fecha', sortOrder: 'desc', pageSize: 1000 }),
+                    getVentas({ select: 'fecha', pageSize: 5000 })
+                ])
+
+                const rawHitos = hitosRes.data || []
+                const dailyReports = dailyRes.data || []
+                const allSales = salesRes.data || []
+
+                // Map daily totals
+                const dailyTotalsMap = dailyReports.reduce((acc, curr) => {
+                    const dateKey = curr.fecha.split('T')[0]
+                    acc[dateKey] = curr.cant_ventas
+                    return acc
+                }, {})
+
+                // Find max sales for progress bar scaling
+                const maxSales = Math.max(...Object.values(dailyTotalsMap).map(v => Number(v) || 0), 1)
+                setMaxTotalSales(maxSales)
+
+                // Calculate Last Sale Time per day (String based to avoid TZ shifts)
+                const dailyLastSaleMap = allSales.reduce((acc, curr) => {
+                    if (!curr.fecha) return acc
+                    // Assume ISO format YYYY-MM-DDTHH:mm:ss
+                    const dateKey = curr.fecha.substring(0, 10)
+
+                    if (!acc[dateKey]) acc[dateKey] = curr.fecha
+                    else {
+                        if (curr.fecha > acc[dateKey]) acc[dateKey] = curr.fecha
+                    }
+                    return acc
+                }, {})
+
+                // Calculate global min/max hours
+                let globalMinH = 24
+                let globalMaxH = 0
+                let hasData = false
+
+                // Combine data
+                const grouped = rawHitos.reduce((acc, curr) => {
+                    const date = curr.dia
+                    if (!acc[date]) {
+                        acc[date] = {
+                            dia: date,
+                            total_ventas: dailyTotalsMap[date] || 0,
+                            milestones: [],
+                            lastSaleTime: null
+                        }
+                    }
+                    acc[date].milestones.push({
+                        n: curr.hito_logrado,
+                        hour: curr.hora_exacta?.substring(0, 5)
+                    })
+                    return acc
+                }, {})
+
+                // Incorporate daily reports and last sale times
+                Object.keys(dailyLastSaleMap).forEach(date => {
+                    hasData = true
+                    if (!grouped[date]) {
+                        grouped[date] = {
+                            dia: date,
+                            total_ventas: dailyTotalsMap[date] || 0,
+                            milestones: [],
+                            lastSaleTime: null
+                        }
+                    }
+
+                    if (dailyLastSaleMap[date]) {
+                        grouped[date].lastSaleTime = dailyLastSaleMap[date]
+                        // Extract hour from string "YYYY-MM-DDTHH:mm:ss"
+                        const timePart = dailyLastSaleMap[date].includes('T')
+                            ? dailyLastSaleMap[date].split('T')[1]
+                            : dailyLastSaleMap[date].split(' ')[1]
+
+                        if (timePart) {
+                            const h = parseInt(timePart.split(':')[0], 10)
+                            if (!isNaN(h)) {
+                                if (h < globalMinH) globalMinH = h
+                                if (h > globalMaxH) globalMaxH = h
+                            }
+                        }
+                    }
+                })
+
+                // If we found any data, update bounds
+                if (hasData) {
+                    // Check milestones timestamps too
+                    rawHitos.forEach(h => {
+                        const hour = parseInt(h.hora_exacta?.split(':')[0] || 0)
+                        if (hour < globalMinH) globalMinH = hour
+                        if (hour > globalMaxH) globalMaxH = hour
+                    })
+                    setMinHour(Math.max(0, globalMinH - 1))
+                    setMaxHour(Math.min(24, globalMaxH + 1))
+                } else {
+                    setMinHour(0)
+                    setMaxHour(24)
+                }
+
+                let pivotedData = Object.values(grouped)
+
+                // Client-side Sort
+                if (sortColumn) {
+                    pivotedData.sort((a, b) => {
+                        let valA = a[sortColumn]
+                        let valB = b[sortColumn]
+
+                        if (sortColumn === 'dia') {
+                            valA = new Date(valA) // Should also use string compare for consistency? But Date object compare is fine for "YYYY-MM-DD"
+                            valB = new Date(valB)
+                        } else if (sortColumn === 'total_ventas') {
+                            valA = parseFloat(valA || 0)
+                            valB = parseFloat(valB || 0)
+                        }
+                        // lastSaleTime sort
+                        if (sortColumn === 'timeline' && a.lastSaleTime && b.lastSaleTime) {
+                            valA = a.lastSaleTime
+                            valB = b.lastSaleTime
+                        }
+
+                        if (!valA && !valB) return 0
+                        if (!valA) return 1
+                        if (!valB) return -1
+
+                        if (valA < valB) return sortOrder === 'asc' ? -1 : 1
+                        if (valA > valB) return sortOrder === 'asc' ? 1 : -1
+                        return 0
+                    })
+                } else {
+                    pivotedData.sort((a, b) => (new Date(a.dia) > new Date(b.dia) ? -1 : 1))
+                }
+
+                setData(pivotedData)
+            }
         } catch (error) {
-            console.error('Error fetching historial horarios:', error)
+            console.error('Error fetching data:', error)
         } finally {
             setLoading(false)
         }
@@ -58,13 +215,106 @@ const AnalisisHorariosView = () => {
             setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
         } else {
             setSortColumn(column)
-            setSortOrder('desc') // Default to desc for time series usually
+            setSortOrder('desc')
         }
     }
 
     const getColumns = () => {
+        if (analysisMode === 'hitos') {
+            return [
+                {
+                    key: 'dia',
+                    label: 'Fecha',
+                    render: (val) => {
+                        if (!val) return ''
+                        const [y, m, d] = val.split('-')
+                        return `${d}/${m}/${y}`
+                    }
+                },
+                {
+                    key: 'timeline',
+                    label: `Línea de Tiempo (${minHour}:00 - ${maxHour}:00)`,
+                    render: (_, row) => {
+                        const startH = minHour
+                        const totalH = maxHour - minHour || 24
+
+                        const getPos = (timeStr) => {
+                            if (!timeStr) return -1
+                            let h, m
+                            if (typeof timeStr === 'string') {
+                                // Handle "HH:MM" or "YYYY-MM-DDTHH:MM:SS"
+                                const part = timeStr.includes('T') ? timeStr.split('T')[1] : (timeStr.includes(' ') ? timeStr.split(' ')[1] : timeStr)
+                                const [hStr, mStr] = part.split(':')
+                                h = parseInt(hStr, 10)
+                                m = parseInt(mStr, 10)
+                            } else {
+                                const d = new Date(timeStr)
+                                h = d.getHours()
+                                m = d.getMinutes()
+                            }
+                            const val = h + m / 60
+                            return ((val - startH) / totalH) * 100
+                        }
+
+                        // Last Sale Position
+                        const lastPos = row.lastSaleTime ? getPos(row.lastSaleTime) : -1
+
+                        return (
+                            <div className="relative w-full h-16 bg-gray-800/20 rounded-lg border border-gray-700/50 overflow-hidden text-xs">
+                                {/* Hour markers/Grid */}
+                                {Array.from({ length: totalH + 1 }).map((_, i) => (
+                                    <div
+                                        key={i}
+                                        className="absolute top-0 bottom-0 border-r border-gray-700/20 text-[9px] text-gray-600 pt-1"
+                                        style={{ left: `${(i / totalH) * 100}%` }}
+                                    >
+                                        <span className="ml-1">{startH + i}h</span>
+                                    </div>
+                                ))}
+
+                                {/* Markers for Milestones */}
+                                {row.milestones?.map(m => {
+                                    const mPos = getPos(m.hour)
+                                    if (mPos < 0 || mPos > 100) return null
+
+                                    return (
+                                        <div
+                                            key={m.n}
+                                            className="absolute top-5 bottom-0 flex flex-col items-center group z-10"
+                                            style={{ left: `${mPos}%` }}
+                                        >
+                                            <div className="w-px h-full bg-yellow-500/50 group-hover:bg-yellow-400"></div>
+                                            <div className="absolute top-[-10px] bg-gray-900 border border-yellow-500/30 text-[9px] text-yellow-500 px-1 rounded transform -translate-x-1/2 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity z-20">
+                                                #{m.n} ({m.hour})
+                                            </div>
+                                            <div className="w-1.5 h-1.5 rounded-full bg-yellow-500 mt-[-2px]"></div>
+                                        </div>
+                                    )
+                                })}
+
+                                {/* Total / Last Sale Marker */}
+                                {lastPos >= 0 && lastPos <= 100 && (
+                                    <div
+                                        className="absolute top-2 bottom-0 flex flex-col items-center group z-20"
+                                        style={{ left: `${lastPos}%` }}
+                                    >
+                                        <div className="w-px h-full bg-blue-500 group-hover:bg-blue-400"></div>
+                                        {/* Always visible label for Total */}
+                                        <div className="absolute top-0 bg-blue-900/80 border border-blue-500/50 text-[10px] text-blue-200 px-1 py-0.5 rounded transform -translate-x-1/2 whitespace-nowrap shadow-lg">
+                                            Total: {row.total_ventas}
+                                        </div>
+                                        <div className="w-2 h-2 rounded-full bg-blue-500 mt-0 shadow-[0_0_8px_rgba(59,130,246,0.5)]"></div>
+                                    </div>
+                                )}
+                            </div>
+                        )
+                    }
+                },
+                { key: 'total_ventas', label: 'Total', render: (val) => <span className="font-bold text-blue-400">{val}</span> },
+            ]
+        }
+
         const commonColumns = [
-            { key: 'ventas_madrugada', label: 'Madrugada (00-06)', render: (val) => val || 0 },
             { key: 'ventas_manana', label: 'Mañana (06-13)', render: (val) => val || 0 },
             { key: 'ventas_tarde', label: 'Tarde (13-19)', render: (val) => val || 0 },
             { key: 'ventas_noche', label: 'Noche (19-00)', render: (val) => val || 0 },
@@ -97,21 +347,42 @@ const AnalisisHorariosView = () => {
         <div>
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
                 <h2 className="text-3xl font-bold text-white flex items-center gap-2">
-                    <Clock className="h-8 w-8 text-purple-500" />
-                    Análisis Horarios
+                    {analysisMode === 'horarios' ? <Clock className="h-8 w-8 text-purple-500" /> : <Trophy className="h-8 w-8 text-yellow-500" />}
+                    {analysisMode === 'horarios' ? 'Análisis Horarios' : 'Hitos de Ventas'}
                 </h2>
 
-                <div className="flex bg-gray-800 rounded-md p-1 border border-gray-700">
-                    {['diario', 'semanal', 'mensual'].map((type) => (
+                <div className="flex items-center gap-4">
+                    {/* Mode Toggle */}
+                    <div className="flex bg-gray-800 rounded-md p-1 border border-gray-700">
                         <button
-                            key={type}
-                            onClick={() => setViewType(type)}
-                            className={`px-4 py-2 rounded text-sm font-medium capitalize transition-colors ${viewType === type ? 'bg-purple-600 text-white shadow-sm' : 'text-gray-400 hover:text-white'
-                                }`}
+                            onClick={() => setAnalysisMode('horarios')}
+                            className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${analysisMode === 'horarios' ? 'bg-purple-600 text-white shadow-sm' : 'text-gray-400 hover:text-white'}`}
                         >
-                            {type}
+                            Horarios
                         </button>
-                    ))}
+                        <button
+                            onClick={() => setAnalysisMode('hitos')}
+                            className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${analysisMode === 'hitos' ? 'bg-yellow-600 text-white shadow-sm' : 'text-gray-400 hover:text-white'}`}
+                        >
+                            Hitos
+                        </button>
+                    </div>
+
+                    {/* Period Selector (Only for Horarios) */}
+                    {analysisMode === 'horarios' && (
+                        <div className="flex bg-gray-800 rounded-md p-1 border border-gray-700">
+                            {['diario', 'semanal', 'mensual'].map((type) => (
+                                <button
+                                    key={type}
+                                    onClick={() => setViewType(type)}
+                                    className={`px-3 py-1.5 rounded text-sm font-medium capitalize transition-colors ${viewType === type ? 'bg-purple-600 text-white shadow-sm' : 'text-gray-400 hover:text-white'
+                                        }`}
+                                >
+                                    {type}
+                                </button>
+                            ))}
+                        </div>
+                    )}
                 </div>
             </div>
 

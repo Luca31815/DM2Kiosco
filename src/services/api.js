@@ -1,9 +1,9 @@
 import { supabase } from '../lib/supabase'
 
 export const fetchTableData = async (tableName, options = {}) => {
-    const { sortColumn, sortOrder, filterColumn, filterValue, page, pageSize, dateRange, dateColumn } = options
+    const { sortColumn, sortOrder, filterColumn, filterValue, page, pageSize, dateRange, dateColumn, select = '*' } = options
 
-    let query = supabase.from(tableName).select('*', { count: 'exact' })
+    let query = supabase.from(tableName).select(select, { count: 'exact' })
 
     if (filterColumn && filterValue) {
         query = query.ilike(filterColumn, `%${filterValue}%`)
@@ -75,3 +75,5 @@ export const getRentabilidadProductos = (options) => fetchTableData('vista_renta
 export const getAnalisisHorarioDiario = (options) => fetchTableData('vista_analisis_horario_diario', options)
 export const getAnalisisHorarioSemanal = (options) => fetchTableData('vista_analisis_horario_semanal', options)
 export const getAnalisisHorarioMensual = (options) => fetchTableData('vista_analisis_horario_mensual', options)
+
+export const getHitosVentas = (options) => fetchTableData('vista_hitos_ventas', options)

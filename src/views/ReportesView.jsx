@@ -81,10 +81,22 @@ const ReportesView = () => {
         ]
 
         if (reportType === 'diario') {
-            return [{ key: 'fecha', label: 'Fecha', render: (val) => new Date(val).toLocaleDateString() }, ...common]
+            return [{
+                key: 'fecha', label: 'Fecha', render: (val) => {
+                    if (!val) return ''
+                    const [y, m, d] = val.split('-')
+                    return `${d}/${m}/${y}`
+                }
+            }, ...common]
         }
         if (reportType === 'semanal') {
-            return [{ key: 'semana_del', label: 'Semana Del', render: (val) => new Date(val).toLocaleDateString() }, ...common]
+            return [{
+                key: 'semana_del', label: 'Semana Del', render: (val) => {
+                    if (!val) return ''
+                    const [y, m, d] = val.split('-')
+                    return `${d}/${m}/${y}`
+                }
+            }, ...common]
         }
         if (reportType === 'mensual') {
             return [
