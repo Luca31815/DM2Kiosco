@@ -11,6 +11,8 @@ const ProductosView = () => {
 
     const columns = [
         { key: 'nombre', label: 'Producto' },
+        { key: 'ultimo_precio_venta', label: 'Precio Venta', render: (val) => `$${val}` },
+        { key: 'ultimo_costo_compra', label: 'Precio Compra', render: (val) => `$${val}` },
         {
             key: 'stock_actual', label: 'Stock', render: (val) => (
                 <span className={`font-medium ${val < 10 ? 'text-red-500' : 'text-green-500'}`}>
@@ -18,8 +20,7 @@ const ProductosView = () => {
                 </span>
             )
         },
-        { key: 'ultimo_precio_venta', label: 'Precio', render: (val) => `$${val}` },
-        { key: 'fecha_actualizacion', label: 'Actualizado', render: (val) => new Date(val).toLocaleDateString() },
+        { key: 'fecha_actualizacion', label: 'Actualización', render: (val) => new Date(val).toLocaleDateString() },
     ]
 
     useEffect(() => {
