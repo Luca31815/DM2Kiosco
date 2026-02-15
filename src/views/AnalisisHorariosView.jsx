@@ -246,17 +246,26 @@ const AnalisisHorariosView = () => {
                         const getPos = (timeStr) => {
                             if (!timeStr) return -1
                             let h, m
-                            if (typeof timeStr === 'string') {
-                                // Handle "HH:MM" or "YYYY-MM-DDTHH:MM:SS"
-                                const part = timeStr.includes('T') ? timeStr.split('T')[1] : (timeStr.includes(' ') ? timeStr.split(' ')[1] : timeStr)
-                                const [hStr, mStr] = part.split(':')
-                                h = parseInt(hStr, 10)
-                                m = parseInt(mStr, 10)
-                            } else {
-                                const d = new Date(timeStr)
-                                h = d.getHours()
-                                m = d.getMinutes()
+                            try {
+                                if (typeof timeStr === 'string') {
+                                    // Handle "HH:MM" or "YYYY-MM-DDTHH:MM:SS"
+                                    const part = timeStr.includes('T') ? timeStr.split('T')[1] : (timeStr.includes(' ') ? timeStr.split(' ')[1] : timeStr)
+                                    if (!part || !part.includes(':')) return -1
+                                    const [hStr, mStr] = part.split(':')
+                                    h = parseInt(hStr, 10)
+                                    m = parseInt(mStr, 10)
+                                } else if (timeStr instanceof Date) {
+                                    h = timeStr.getHours()
+                                    m = timeStr.getMinutes()
+                                } else {
+                                    return -1
+                                }
+                            } catch (e) {
+                                return -1
                             }
+
+                            if (isNaN(h) || isNaN(m)) return -1
+
                             const val = h + m / 60
                             return ((val - startH) / totalH) * 100
                         }

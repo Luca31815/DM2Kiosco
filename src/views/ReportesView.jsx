@@ -161,23 +161,23 @@ const ReportesView = () => {
                 </div>
             </div>
 
-            {/* Fixed Floating Summary Bar */}
-            <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 w-4/5 max-w-5xl">
-                <div className="bg-gray-900/90 backdrop-blur-md border border-gray-700/50 shadow-2xl rounded-2xl px-6 py-4 flex items-center justify-around transition-all hover:scale-[1.01] duration-300 hover:border-blue-500/30">
+            {/* Fixed Floating Summary Bar - Ensure high z-index and visible text colors */}
+            <div className="fixed bottom-6 left-0 right-0 z-50 flex justify-center pointer-events-none">
+                <div className="bg-gray-900/95 backdrop-blur-md border border-gray-700/50 shadow-2xl rounded-2xl px-6 py-4 flex items-center justify-around w-11/12 max-w-4xl pointer-events-auto">
 
                     <div className="flex flex-col items-center">
                         <span className="text-[10px] uppercase tracking-wider text-gray-400 font-semibold">Ingresos</span>
                         <span className="text-lg font-bold text-green-400 font-mono">${totals.ingresos.toLocaleString()}</span>
                     </div>
 
-                    <div className="h-8 w-px bg-gray-700/50"></div>
+                    <div className="h-8 w-px bg-gray-700/50 mx-4"></div>
 
                     <div className="flex flex-col items-center">
                         <span className="text-[10px] uppercase tracking-wider text-gray-400 font-semibold">Egresos</span>
                         <span className="text-lg font-bold text-red-400 font-mono">${totals.egresos.toLocaleString()}</span>
                     </div>
 
-                    <div className="h-8 w-px bg-gray-700/50"></div>
+                    <div className="h-8 w-px bg-gray-700/50 mx-4"></div>
 
                     <div className="flex flex-col items-center">
                         <span className="text-[10px] uppercase tracking-wider text-gray-400 font-semibold">Balance</span>
@@ -189,7 +189,7 @@ const ReportesView = () => {
                 </div>
             </div>
 
-            <div className="pb-24"> {/* Padding bottom to prevent content being hidden behind the fixed bar */}
+            <div className="pb-32"> {/* Increased Padding bottom to prevent content intersection */}
                 <DataTable
                     data={data}
                     columns={getColumns()}
