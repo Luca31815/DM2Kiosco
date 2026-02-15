@@ -10,6 +10,14 @@ const VentasView = () => {
     const [sortOrder, setSortOrder] = useState('desc')
     const [filterValue, setFilterValue] = useState('')
 
+    const [filterColumn, setFilterColumn] = useState('cliente')
+
+    const searchColumns = [
+        { key: 'cliente', label: 'Cliente' },
+        { key: 'venta_id', label: 'ID Venta' },
+        { key: 'notas', label: 'Notas' }
+    ]
+
     const columns = [
         { key: 'venta_id', label: 'ID' },
         { key: 'fecha', label: 'Fecha', render: (val) => new Date(val).toLocaleString() },
@@ -23,7 +31,7 @@ const VentasView = () => {
         // Auto-refresh every minute
         const interval = setInterval(fetchData, 60000)
         return () => clearInterval(interval)
-    }, [sortColumn, sortOrder, filterValue])
+    }, [sortColumn, sortOrder, filterValue, filterColumn])
 
     const fetchData = async () => {
         // Only set loading on first load to avoid flickering on auto-refresh
@@ -32,7 +40,7 @@ const VentasView = () => {
             const { data } = await getVentas({
                 sortColumn,
                 sortOrder,
-                filterColumn: 'cliente', // Default filtering by client
+                filterColumn,
                 filterValue
             })
             setData(data || [])
@@ -110,6 +118,9 @@ const VentasView = () => {
                 sortColumn={sortColumn}
                 sortOrder={sortOrder}
                 onFilter={setFilterValue}
+                searchColumns={searchColumns}
+                searchColumn={filterColumn}
+                onSearchColumnChange={setFilterColumn}
                 renderExpandedRow={(row) => <ExpandedRow row={row} />}
                 rowKey="venta_id"
             />

@@ -6,7 +6,12 @@ export const fetchTableData = async (tableName, options = {}) => {
     let query = supabase.from(tableName).select(select, { count: 'exact' })
 
     if (filterColumn && filterValue) {
-        query = query.ilike(filterColumn, `%${filterValue}%`)
+        // If searching a numeric column with ilike (like IDs), cast to text
+        if (filterColumn.endsWith('_id') || filterColumn === 'id') {
+            query = query.ilike(`${filterColumn}::text`, `%${filterValue}%`)
+        } else {
+            query = query.ilike(filterColumn, `%${filterValue}%`)
+        }
     }
 
     if (dateRange && dateColumn && dateRange.start) {

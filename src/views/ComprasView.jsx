@@ -10,6 +10,14 @@ const ComprasView = () => {
     const [sortOrder, setSortOrder] = useState('desc')
     const [filterValue, setFilterValue] = useState('')
 
+    const [filterColumn, setFilterColumn] = useState('proveedor')
+
+    const searchColumns = [
+        { key: 'proveedor', label: 'Proveedor' },
+        { key: 'compra_id', label: 'ID Compra' },
+        { key: 'notas', label: 'Notas' }
+    ]
+
     const columns = [
         { key: 'compra_id', label: 'ID' },
         { key: 'Fecha', label: 'Fecha', render: (val) => new Date(val).toLocaleString() },
@@ -23,7 +31,7 @@ const ComprasView = () => {
         // Auto-refresh every minute
         const interval = setInterval(fetchData, 60000)
         return () => clearInterval(interval)
-    }, [sortColumn, sortOrder, filterValue])
+    }, [sortColumn, sortOrder, filterValue, filterColumn])
 
     const fetchData = async () => {
         // Only set loading on first load to avoid flickering on auto-refresh
@@ -32,7 +40,7 @@ const ComprasView = () => {
             const { data } = await getCompras({
                 sortColumn,
                 sortOrder,
-                filterColumn: 'proveedor',
+                filterColumn,
                 filterValue
             })
             setData(data || [])
@@ -110,6 +118,9 @@ const ComprasView = () => {
                 sortColumn={sortColumn}
                 sortOrder={sortOrder}
                 onFilter={setFilterValue}
+                searchColumns={searchColumns}
+                searchColumn={filterColumn}
+                onSearchColumnChange={setFilterColumn}
                 renderExpandedRow={(row) => <ExpandedRow row={row} />}
                 rowKey="compra_id"
             />

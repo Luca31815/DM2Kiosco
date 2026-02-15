@@ -342,13 +342,32 @@ const AnalisisHorariosView = () => {
 
         if (viewType === 'diario') {
             return [
-                { key: 'fecha', label: 'Fecha', render: (val) => new Date(val).toLocaleDateString() },
+                {
+                    key: 'fecha', label: 'Fecha', render: (val) => {
+                        if (!val) return ''
+                        // Avoid timezone issues by parsing string directly if it's YYYY-MM-DD
+                        if (typeof val === 'string' && val.includes('-')) {
+                            const [y, m, d] = val.split('T')[0].split('-')
+                            return `${d}/${m}/${y}`
+                        }
+                        return new Date(val).toLocaleDateString()
+                    }
+                },
                 ...commonColumns
             ]
         }
         if (viewType === 'semanal') {
             return [
-                { key: 'semana_del', label: 'Semana Del', render: (val) => new Date(val).toLocaleDateString() },
+                {
+                    key: 'semana_del', label: 'Semana Del', render: (val) => {
+                        if (!val) return ''
+                        if (typeof val === 'string' && val.includes('-')) {
+                            const [y, m, d] = val.split('T')[0].split('-')
+                            return `${d}/${m}/${y}`
+                        }
+                        return new Date(val).toLocaleDateString()
+                    }
+                },
                 ...commonColumns
             ]
         }

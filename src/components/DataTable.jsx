@@ -11,7 +11,10 @@ const DataTable = ({
     onFilter,
     renderExpandedRow,
     rowKey = 'id',
-    compact = false
+    compact = false,
+    searchColumns = [],
+    searchColumn,
+    onSearchColumnChange
 }) => {
     const [filterValue, setFilterValue] = useState('')
     const [expandedRow, setExpandedRow] = useState(null)
@@ -31,16 +34,31 @@ const DataTable = ({
     return (
         <div className="w-full bg-gray-900 text-gray-200 rounded-lg shadow-lg border border-gray-800 overflow-hidden">
             {/* Header / Filter */}
-            <div className="p-4 border-b border-gray-800 flex justify-between items-center bg-gray-900/50 backdrop-blur-sm">
-                <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 h-4 w-4" />
-                    <input
-                        type="text"
-                        placeholder="Filter..."
-                        className="pl-10 pr-4 py-2 bg-gray-800 border-none rounded-md text-sm focus:ring-1 focus:ring-blue-500 text-gray-300 placeholder-gray-500 w-64 transition-all duration-200"
-                        value={filterValue}
-                        onChange={handleFilterChange}
-                    />
+            <div className="p-4 border-b border-gray-800 flex flex-col sm:flex-row justify-between items-center gap-4 bg-gray-900/50 backdrop-blur-sm">
+                <div className="relative flex items-center gap-2 w-full sm:w-auto">
+                    {searchColumns && searchColumns.length > 0 && (
+                        <select
+                            value={searchColumn}
+                            onChange={(e) => onSearchColumnChange(e.target.value)}
+                            className="bg-gray-800 border-none rounded-md text-sm focus:ring-1 focus:ring-blue-500 text-gray-300 py-2 pl-3 pr-8 cursor-pointer"
+                        >
+                            {searchColumns.map((col) => (
+                                <option key={col.key} value={col.key}>
+                                    {col.label}
+                                </option>
+                            ))}
+                        </select>
+                    )}
+                    <div className="relative w-full sm:w-auto">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 h-4 w-4" />
+                        <input
+                            type="text"
+                            placeholder="Buscar..."
+                            className="pl-10 pr-4 py-2 bg-gray-800 border-none rounded-md text-sm focus:ring-1 focus:ring-blue-500 text-gray-300 placeholder-gray-500 w-full sm:w-64 transition-all duration-200"
+                            value={filterValue}
+                            onChange={handleFilterChange}
+                        />
+                    </div>
                 </div>
                 {isLoading && <Loader2 className="animate-spin h-5 w-5 text-blue-500" />}
             </div>
