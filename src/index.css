@@ -1,0 +1,8 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    /* Using gray-900 as a safe dark default */
+    @apply bg-gray-900 text-gray-200 antialiased;
+  }
+}
