@@ -34,23 +34,25 @@ const ReportesView = () => {
         try {
             let fetchFunc = getReporteDiario
             let dateCol = 'fecha'
+            let currentSortColumn = sortColumn
 
             if (reportType === 'semanal') {
                 fetchFunc = getReporteSemanal
                 dateCol = 'semana_del'
+                if (currentSortColumn === 'fecha') currentSortColumn = 'semana_del'
             }
             if (reportType === 'mensual') {
                 fetchFunc = getReporteMensual
-                dateCol = 'anio' // Approximation for filtering, might need adjustment for strict date ranges
+                dateCol = 'anio'
+                if (currentSortColumn === 'fecha' || currentSortColumn === 'semana_del') currentSortColumn = 'anio'
             }
 
             const { data } = await fetchFunc({
-                sortColumn,
+                sortColumn: currentSortColumn,
                 sortOrder,
-                filterColumn: dateCol === 'anio' ? undefined : dateCol, // Filtering by string might be weird for 'anio' number
+                filterColumn: dateCol === 'anio' ? undefined : dateCol,
                 filterValue,
                 // Only pass dateRange if we have values and we are not in 'mensual' mode 
-                // (unless we want to filter by year range, but inputs are YYYY-MM-DD)
                 dateRange: (dateRange.start || dateRange.end) && reportType !== 'mensual' ? dateRange : undefined,
                 dateColumn: dateCol
             })

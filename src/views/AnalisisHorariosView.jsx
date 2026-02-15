@@ -47,8 +47,13 @@ const AnalisisHorariosView = () => {
                 if (viewType === 'semanal') { fetchFunc = getAnalisisHorarioSemanal; defaultSort = 'semana_del' }
                 if (viewType === 'mensual') { fetchFunc = getAnalisisHorarioMensual; defaultSort = 'anio' }
 
+                let effectiveSort = sortColumn || defaultSort
+                // Safety check: ensure we don't send 'fecha' to monthly view
+                if (viewType === 'mensual' && (effectiveSort === 'fecha' || effectiveSort === 'semana_del')) effectiveSort = 'anio'
+                if (viewType === 'semanal' && effectiveSort === 'fecha') effectiveSort = 'semana_del'
+
                 const { data: fetchedData } = await fetchFunc({
-                    sortColumn: sortColumn || defaultSort,
+                    sortColumn: effectiveSort,
                     sortOrder,
                     filterColumn: ['diario', 'semanal'].includes(viewType) ? (viewType === 'diario' ? 'fecha' : 'semana_del') : undefined,
                     filterValue
