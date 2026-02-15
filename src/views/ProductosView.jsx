@@ -24,10 +24,14 @@ const ProductosView = () => {
 
     useEffect(() => {
         fetchData()
+        // Auto-refresh every minute
+        const interval = setInterval(fetchData, 60000)
+        return () => clearInterval(interval)
     }, [sortColumn, sortOrder, filterValue])
 
     const fetchData = async () => {
-        setLoading(true)
+        // Only set loading on first load to avoid flickering on auto-refresh
+        if (data.length === 0) setLoading(true)
         try {
             const { data } = await getProductos({
                 sortColumn,

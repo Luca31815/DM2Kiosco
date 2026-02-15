@@ -67,3 +67,5 @@ export const getProductos = (options) => fetchTableData('productos', options)
 export const getReporteDiario = (options) => fetchTableData('vista_reporte_diario', options)
 export const getReporteSemanal = (options) => fetchTableData('vista_reporte_semanal', options)
 export const getReporteMensual = (options) => fetchTableData('vista_reporte_mensual', options)
+
+export const getHistorialBot = (options) => fetchTableData('historial_bot', { ...options, sortColumn: 'fecha', sortOrder: 'desc' })

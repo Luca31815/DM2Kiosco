@@ -23,10 +23,14 @@ const ReportesView = () => {
 
     useEffect(() => {
         fetchData()
+        // Auto-refresh every minute
+        const interval = setInterval(fetchData, 60000)
+        return () => clearInterval(interval)
     }, [reportType, dateRange, sortColumn, sortOrder, filterValue])
 
     const fetchData = async () => {
-        setLoading(true)
+        // Only set loading on first load to avoid flickering on auto-refresh
+        if (data.length === 0) setLoading(true)
         try {
             let fetchFunc = getReporteDiario
             let dateCol = 'fecha'

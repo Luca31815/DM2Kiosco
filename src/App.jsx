@@ -6,6 +6,7 @@ import ComprasView from './views/ComprasView'
 import ReservasView from './views/ReservasView'
 import ProductosView from './views/ProductosView'
 import ReportesView from './views/ReportesView'
+import HistorialView from './views/HistorialView'
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
           <Route path="/reservas" element={<ReservasView />} />
           <Route path="/productos" element={<ProductosView />} />
           <Route path="/reportes" element={<ReportesView />} />
+          <Route path="/historial" element={<HistorialView />} />
         </Routes>
       </Layout>
     </Router>
