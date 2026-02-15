@@ -6,13 +6,13 @@ import { Loader2 } from 'lucide-react'
 const ComprasView = () => {
     const [data, setData] = useState([])
     const [loading, setLoading] = useState(true)
-    const [sortColumn, setSortColumn] = useState('fecha')
+    const [sortColumn, setSortColumn] = useState('Fecha')
     const [sortOrder, setSortOrder] = useState('desc')
     const [filterValue, setFilterValue] = useState('')
 
     const columns = [
         { key: 'compra_id', label: 'ID' },
-        { key: 'fecha', label: 'Fecha', render: (val) => new Date(val).toLocaleString() },
+        { key: 'Fecha', label: 'Fecha', render: (val) => new Date(val).toLocaleString() },
         { key: 'proveedor', label: 'Proveedor' },
         { key: 'total_compra', label: 'Total', render: (val) => `$${val}` },
         { key: 'notas', label: 'Notas' },
