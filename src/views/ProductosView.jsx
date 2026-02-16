@@ -1,13 +1,18 @@
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import DataTable from '../components/DataTable'
-import { getProductos } from '../services/api'
+import { useProductos } from '../hooks/useData'
 
 const ProductosView = () => {
-    const [data, setData] = useState([])
-    const [loading, setLoading] = useState(true)
     const [sortColumn, setSortColumn] = useState('nombre')
     const [sortOrder, setSortOrder] = useState('asc')
     const [filterValue, setFilterValue] = useState('')
+
+    const { data, loading } = useProductos({
+        sortColumn,
+        sortOrder,
+        filterColumn: 'nombre',
+        filterValue
+    })
 
     const columns = [
         { key: 'nombre', label: 'Producto' },
@@ -22,31 +27,6 @@ const ProductosView = () => {
         },
         { key: 'fecha_actualizacion', label: 'Actualización', render: (val) => new Date(val).toLocaleDateString() },
     ]
-
-    useEffect(() => {
-        fetchData()
-        // Auto-refresh every minute
-        const interval = setInterval(fetchData, 60000)
-        return () => clearInterval(interval)
-    }, [sortColumn, sortOrder, filterValue])
-
-    const fetchData = async () => {
-        // Only set loading on first load to avoid flickering on auto-refresh
-        if (data.length === 0) setLoading(true)
-        try {
-            const { data } = await getProductos({
-                sortColumn,
-                sortOrder,
-                filterColumn: 'nombre',
-                filterValue
-            })
-            setData(data || [])
-        } catch (error) {
-            console.error('Error fetching productos:', error)
-        } finally {
-            setLoading(false)
-        }
-    }
 
     const handleSort = (column) => {
         if (sortColumn === column) {

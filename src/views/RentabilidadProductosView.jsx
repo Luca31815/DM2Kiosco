@@ -1,14 +1,40 @@
-import React, { useEffect, useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import DataTable from '../components/DataTable'
-import { getRentabilidadProductos } from '../services/api'
+import { useRentabilidadProductos } from '../hooks/useData'
 import { TrendingUp, AlertTriangle, CheckCircle, Ban } from 'lucide-react'
 
 const RentabilidadProductosView = () => {
-    const [data, setData] = useState([])
-    const [loading, setLoading] = useState(true)
     const [sortColumn, setSortColumn] = useState('ingresos_totales')
     const [sortOrder, setSortOrder] = useState('desc')
     const [filterValue, setFilterValue] = useState('')
+
+    // We fetch data with basic sort options, but we might do client-side sort for specific cases
+    const { data: fetchedData, loading } = useRentabilidadProductos({
+        sortColumn,
+        sortOrder,
+        filterColumn: 'producto',
+        filterValue,
+        pageSize: 1000
+    })
+
+    // Apply custom client-side sort logic
+    const data = useMemo(() => {
+        if (!fetchedData) return []
+        let processedData = [...fetchedData]
+
+        if (sortColumn === 'ganancia_neta' && sortOrder === 'desc') {
+            processedData.sort((a, b) => {
+                const aOk = a.prioridad === 2
+                const bOk = b.prioridad === 2
+
+                if (aOk && !bOk) return -1
+                if (!aOk && bOk) return 1
+
+                return (b.ganancia_neta || 0) - (a.ganancia_neta || 0)
+            })
+        }
+        return processedData
+    }, [fetchedData, sortColumn, sortOrder])
 
     const columns = [
         { key: 'producto', label: 'Producto' },
@@ -32,71 +58,15 @@ const RentabilidadProductosView = () => {
         },
     ]
 
-    useEffect(() => {
-        fetchData()
-        // Auto-refresh every minute
-        const interval = setInterval(fetchData, 60000)
-        return () => clearInterval(interval)
-    }, [sortColumn, sortOrder, filterValue])
-
-    const fetchData = async () => {
-        // Only set loading on first load to avoid flickering on auto-refresh
-        if (data.length === 0) setLoading(true)
-        try {
-            const { data: fetchedData } = await getRentabilidadProductos({
-                // Fetch by current sortColumn/sortOrder.
-                // For initial load, this will be 'ganancia_neta' desc.
-                sortColumn,
-                sortOrder,
-                filterColumn: 'producto',
-                filterValue,
-                pageSize: 1000 // Ensure we get enough items for client-side re-sorting if needed
-            })
-
-            if (fetchedData) {
-                let processedData = [...fetchedData];
-
-                // Apply custom client-side sort ONLY if the current sort is the default 'ganancia_neta' desc
-                // This ensures user-initiated sorts on other columns are respected.
-                if (sortColumn === 'ganancia_neta' && sortOrder === 'desc') {
-                    // Client-side sort to prioritize OK (prioridad = 2)
-                    // SQL Schema: 1=Perdida, 2=OK, 3=Falta Costo
-                    // We want OK (2) first, then by gain desc.
-                    processedData.sort((a, b) => {
-                        const aOk = a.prioridad === 2
-                        const bOk = b.prioridad === 2
-
-                        // If 'a' is OK and 'b' is not, 'a' comes first
-                        if (aOk && !bOk) return -1
-                        // If 'b' is OK and 'a' is not, 'b' comes first
-                        if (!aOk && bOk) return 1
-
-                        // If both are OK or both are not OK, sort by ganancia_neta descending
-                        return (b.ganancia_neta || 0) - (a.ganancia_neta || 0)
-                    })
-                }
-                setData(processedData)
-            } else {
-                setData([])
-            }
-
-        } catch (error) {
-            console.error('Error fetching rentabilidad:', error)
-        } finally {
-            setLoading(false)
-        }
-    }
-
     const handleSort = (column) => {
         if (sortColumn === column) {
             setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
         } else {
             setSortColumn(column)
-            // Default to descending for numerical columns that represent value/gain
             if (['ingresos_totales', 'unidades_vendidas', 'ganancia_neta', 'costo_total_compras', 'costo_mercaderia_vendida'].includes(column)) {
                 setSortOrder('desc')
             } else {
-                setSortOrder('asc') // Default to ascending for other columns (like text)
+                setSortOrder('asc')
             }
         }
     }

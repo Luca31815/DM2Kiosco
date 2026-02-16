@@ -1,67 +1,43 @@
-import React, { useEffect, useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import DataTable from '../components/DataTable'
-import { getReporteDiario, getReporteSemanal, getReporteMensual } from '../services/api'
+import { useReporte } from '../hooks/useData'
 import { FileBarChart } from 'lucide-react'
 
 const ReportesView = () => {
     const [reportType, setReportType] = useState('diario')
     const [dateRange, setDateRange] = useState({ start: '', end: '' })
-    const [data, setData] = useState([])
-    const [loading, setLoading] = useState(false)
-
-    // DataTable states
     const [sortColumn, setSortColumn] = useState('fecha')
     const [sortOrder, setSortOrder] = useState('desc')
     const [filterValue, setFilterValue] = useState('')
 
-    useEffect(() => {
-        // Reset sort when type changes
-        if (reportType === 'diario') setSortColumn('fecha')
-        if (reportType === 'semanal') setSortColumn('semana_del')
-        if (reportType === 'mensual') setSortColumn('anio')
-    }, [reportType])
+    // Prepare options for the hook
+    let dateCol = 'fecha'
+    let currentSortColumn = sortColumn
 
-    useEffect(() => {
-        fetchData()
-        // Auto-refresh every minute
-        const interval = setInterval(fetchData, 60000)
-        return () => clearInterval(interval)
-    }, [reportType, dateRange, sortColumn, sortOrder, filterValue])
+    if (reportType === 'semanal') {
+        dateCol = 'semana_del'
+        if (currentSortColumn === 'fecha') currentSortColumn = 'semana_del'
+    } else if (reportType === 'mensual') {
+        dateCol = 'anio'
+        if (currentSortColumn === 'fecha' || currentSortColumn === 'semana_del') currentSortColumn = 'anio'
+    }
 
-    const fetchData = async () => {
-        // Only set loading on first load to avoid flickering on auto-refresh
-        if (data.length === 0) setLoading(true)
-        try {
-            let fetchFunc = getReporteDiario
-            let dateCol = 'fecha'
-            let currentSortColumn = sortColumn
+    const { data: fetchedData, loading } = useReporte(reportType, {
+        sortColumn: currentSortColumn,
+        sortOrder,
+        filterColumn: dateCol === 'anio' ? undefined : dateCol,
+        filterValue,
+        dateRange: (dateRange.start || dateRange.end) && reportType !== 'mensual' ? dateRange : undefined,
+        dateColumn: dateCol
+    })
 
-            if (reportType === 'semanal') {
-                fetchFunc = getReporteSemanal
-                dateCol = 'semana_del'
-                if (currentSortColumn === 'fecha') currentSortColumn = 'semana_del'
-            }
-            if (reportType === 'mensual') {
-                fetchFunc = getReporteMensual
-                dateCol = 'anio'
-                if (currentSortColumn === 'fecha' || currentSortColumn === 'semana_del') currentSortColumn = 'anio'
-            }
+    const data = fetchedData || []
 
-            const { data } = await fetchFunc({
-                sortColumn: currentSortColumn,
-                sortOrder,
-                filterColumn: dateCol === 'anio' ? undefined : dateCol,
-                filterValue,
-                // Only pass dateRange if we have values and we are not in 'mensual' mode 
-                dateRange: (dateRange.start || dateRange.end) && reportType !== 'mensual' ? dateRange : undefined,
-                dateColumn: dateCol
-            })
-            setData(data || [])
-        } catch (error) {
-            console.error('Error fetching reports:', error)
-        } finally {
-            setLoading(false)
-        }
+    const handleReportTypeChange = (type) => {
+        setReportType(type)
+        if (type === 'diario') setSortColumn('fecha')
+        if (type === 'semanal') setSortColumn('semana_del')
+        if (type === 'mensual') setSortColumn('anio')
     }
 
     const handleSort = (column) => {
@@ -132,7 +108,7 @@ const ReportesView = () => {
                         {['diario', 'semanal', 'mensual'].map((type) => (
                             <button
                                 key={type}
-                                onClick={() => setReportType(type)}
+                                onClick={() => handleReportTypeChange(type)}
                                 className={`px-3 py-1.5 rounded text-sm font-medium capitalize transition-colors ${reportType === type ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-400 hover:text-white'
                                     }`}
                             >

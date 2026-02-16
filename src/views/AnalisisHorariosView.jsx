@@ -1,224 +1,178 @@
-import React, { useEffect, useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import DataTable from '../components/DataTable'
-import { getAnalisisHorarioDiario, getAnalisisHorarioSemanal, getAnalisisHorarioMensual, getHitosVentas, getVentas, getReporteDiario } from '../services/api'
+import { useAnalisisHorarios, useHitosViewData } from '../hooks/useData'
 import { Clock, Trophy } from 'lucide-react'
 
 const AnalisisHorariosView = () => {
     const [viewType, setViewType] = useState('diario')
     const [analysisMode, setAnalysisMode] = useState('horarios') // 'horarios' | 'hitos'
-    const [data, setData] = useState([])
-    const [loading, setLoading] = useState(true)
 
-    // DataTable states - minimal sorting for these views as they are aggregated
+    // DataTable states
     const [sortColumn, setSortColumn] = useState('fecha')
     const [sortOrder, setSortOrder] = useState('desc')
     const [filterValue, setFilterValue] = useState('')
-    const [minHour, setMinHour] = useState(0)
-    const [maxHour, setMaxHour] = useState(24)
-    const [maxTotalSales, setMaxTotalSales] = useState(0)
 
-    useEffect(() => {
-        // Reset sort/columns when view/mode changes
-        if (analysisMode === 'horarios') {
-            if (viewType === 'diario') setSortColumn('fecha')
-            if (viewType === 'semanal') setSortColumn('semana_del')
-            if (viewType === 'mensual') setSortColumn('anio')
-        } else {
-            setSortColumn('dia')
-            setSortOrder('desc')
-        }
+    // Hooks
+    const { data: horariosData, loading: loadingHorarios } = useAnalisisHorarios(viewType, {
+        sortColumn, // Note: The API might expect different sort columns based on viewType
+        sortOrder,
+        filterColumn: ['diario', 'semanal'].includes(viewType) ? (viewType === 'diario' ? 'fecha' : 'semana_del') : undefined,
+        filterValue
+    })
 
-        setData([])
-        setLoading(true)
-    }, [viewType, analysisMode])
+    const { data: hitosRawData, loading: loadingHitos } = useHitosViewData()
 
-    useEffect(() => {
-        fetchData()
-        const interval = setInterval(fetchData, 60000)
-        return () => clearInterval(interval)
-    }, [viewType, analysisMode, sortColumn, sortOrder, filterValue])
+    // Derived state for Horarios
+    const processedHorariosData = useMemo(() => {
+        if (analysisMode !== 'horarios' || !horariosData) return []
 
-    const fetchData = async () => {
-        try {
-            let fetchFunc = getAnalisisHorarioDiario
-            let defaultSort = 'fecha'
-
-            if (analysisMode === 'horarios') {
-                if (viewType === 'semanal') { fetchFunc = getAnalisisHorarioSemanal; defaultSort = 'semana_del' }
-                if (viewType === 'mensual') { fetchFunc = getAnalisisHorarioMensual; defaultSort = 'anio' }
-
-                let effectiveSort = sortColumn || defaultSort
-                // Safety check: ensure we don't send 'fecha' to monthly view
-                if (viewType === 'mensual' && (effectiveSort === 'fecha' || effectiveSort === 'semana_del')) effectiveSort = 'anio'
-                if (viewType === 'semanal' && effectiveSort === 'fecha') effectiveSort = 'semana_del'
-
-                const { data: fetchedData } = await fetchFunc({
-                    sortColumn: effectiveSort,
-                    sortOrder,
-                    filterColumn: ['diario', 'semanal'].includes(viewType) ? (viewType === 'diario' ? 'fecha' : 'semana_del') : undefined,
-                    filterValue
-                })
-                const processedData = (fetchedData || []).map(row => {
-                    const total = (Number(row.ventas_madrugada) || 0) +
-                        (Number(row.ventas_manana) || 0) +
-                        (Number(row.ventas_tarde) || 0) +
-                        (Number(row.ventas_noche) || 0)
-                    return {
-                        ...row,
-                        total_ventas: total
-                    }
-                })
-                setData(processedData)
-
-            } else {
-                // Hitos Mode
-                const [hitosRes, dailyRes, salesRes] = await Promise.all([
-                    getHitosVentas({ sortColumn: 'dia', sortOrder: 'desc', pageSize: 1000 }),
-                    getReporteDiario({ sortColumn: 'fecha', sortOrder: 'desc', pageSize: 1000 }),
-                    getVentas({ select: 'fecha', pageSize: 5000 })
-                ])
-
-                const rawHitos = hitosRes.data || []
-                const dailyReports = dailyRes.data || []
-                const allSales = salesRes.data || []
-
-                // Map daily totals
-                const dailyTotalsMap = dailyReports.reduce((acc, curr) => {
-                    if (!curr.fecha) return acc
-                    const dateKey = curr.fecha.split('T')[0]
-                    acc[dateKey] = curr.cant_ventas
-                    return acc
-                }, {})
-
-                // Find max sales for progress bar scaling
-                const maxSales = Math.max(...Object.values(dailyTotalsMap).map(v => Number(v) || 0), 1)
-                setMaxTotalSales(maxSales)
-
-                // Calculate Last Sale Time per day (String based to avoid TZ shifts)
-                const dailyLastSaleMap = allSales.reduce((acc, curr) => {
-                    if (!curr.fecha) return acc
-                    // Assume ISO format YYYY-MM-DDTHH:mm:ss
-                    const dateKey = curr.fecha.substring(0, 10)
-
-                    if (!acc[dateKey]) acc[dateKey] = curr.fecha
-                    else {
-                        if (curr.fecha > acc[dateKey]) acc[dateKey] = curr.fecha
-                    }
-                    return acc
-                }, {})
-
-                // Calculate global min/max hours
-                let globalMinH = 24
-                let globalMaxH = 0
-                let hasData = false
-
-                // Combine data
-                const grouped = rawHitos.reduce((acc, curr) => {
-                    if (!curr.dia) return acc
-                    const date = curr.dia
-                    if (!acc[date]) {
-                        acc[date] = {
-                            dia: date,
-                            total_ventas: dailyTotalsMap[date] || 0,
-                            milestones: [],
-                            lastSaleTime: null
-                        }
-                    }
-                    acc[date].milestones.push({
-                        n: curr.hito_logrado,
-                        hour: curr.hora_exacta?.substring(0, 5)
-                    })
-                    return acc
-                }, {})
-
-                // Incorporate daily reports and last sale times
-                Object.keys(dailyLastSaleMap).forEach(date => {
-                    hasData = true
-                    if (!grouped[date]) {
-                        grouped[date] = {
-                            dia: date,
-                            total_ventas: dailyTotalsMap[date] || 0,
-                            milestones: [],
-                            lastSaleTime: null
-                        }
-                    }
-
-                    if (dailyLastSaleMap[date]) {
-                        grouped[date].lastSaleTime = dailyLastSaleMap[date]
-                        // Extract hour from string "YYYY-MM-DDTHH:mm:ss"
-                        let timePart = ''
-                        if (dailyLastSaleMap[date].includes('T')) {
-                            timePart = dailyLastSaleMap[date].split('T')[1]
-                        } else if (dailyLastSaleMap[date].includes(' ')) {
-                            timePart = dailyLastSaleMap[date].split(' ')[1]
-                        }
-
-                        if (timePart) {
-                            const h = parseInt(timePart.split(':')[0], 10)
-                            if (!isNaN(h)) {
-                                if (h < globalMinH) globalMinH = h
-                                if (h > globalMaxH) globalMaxH = h
-                            }
-                        }
-                    }
-                })
-
-                // If we found any data, update bounds
-                if (hasData) {
-                    // Check milestones timestamps too
-                    rawHitos.forEach(h => {
-                        const hour = parseInt(h.hora_exacta?.split(':')[0] || 0)
-                        if (hour < globalMinH) globalMinH = hour
-                        if (hour > globalMaxH) globalMaxH = hour
-                    })
-                    setMinHour(Math.max(0, globalMinH - 1))
-                    setMaxHour(Math.min(24, globalMaxH + 1))
-                } else {
-                    setMinHour(0)
-                    setMaxHour(24)
-                }
-
-                let pivotedData = Object.values(grouped)
-
-                // Client-side Sort
-                if (sortColumn) {
-                    pivotedData.sort((a, b) => {
-                        let valA = a[sortColumn]
-                        let valB = b[sortColumn]
-
-                        if (sortColumn === 'dia') {
-                            valA = new Date(valA) // Should also use string compare for consistency? But Date object compare is fine for "YYYY-MM-DD"
-                            valB = new Date(valB)
-                        } else if (sortColumn === 'total_ventas') {
-                            valA = parseFloat(valA || 0)
-                            valB = parseFloat(valB || 0)
-                        }
-                        // lastSaleTime sort
-                        if (sortColumn === 'timeline' && a.lastSaleTime && b.lastSaleTime) {
-                            valA = a.lastSaleTime
-                            valB = b.lastSaleTime
-                        }
-
-                        if (!valA && !valB) return 0
-                        if (!valA) return 1
-                        if (!valB) return -1
-
-                        if (valA < valB) return sortOrder === 'asc' ? -1 : 1
-                        if (valA > valB) return sortOrder === 'asc' ? 1 : -1
-                        return 0
-                    })
-                } else {
-                    pivotedData.sort((a, b) => (new Date(a.dia) > new Date(b.dia) ? -1 : 1))
-                }
-
-                setData(pivotedData)
+        return horariosData.map(row => {
+            const total = (Number(row.ventas_madrugada) || 0) +
+                (Number(row.ventas_manana) || 0) +
+                (Number(row.ventas_tarde) || 0) +
+                (Number(row.ventas_noche) || 0)
+            return {
+                ...row,
+                total_ventas: total
             }
-        } catch (error) {
-            console.error('Error fetching data:', error)
-        } finally {
-            setLoading(false)
+        })
+    }, [horariosData, analysisMode])
+
+    // Derived state for Hitos
+    const { processedHitosData, minHour, maxHour } = useMemo(() => {
+        if (analysisMode !== 'hitos' || !hitosRawData) return { processedHitosData: [], minHour: 0, maxHour: 24 }
+
+        const { hitos, dailyReports, allSales } = hitosRawData
+
+        // Map daily totals
+        const dailyTotalsMap = dailyReports.reduce((acc, curr) => {
+            if (!curr.fecha) return acc
+            const dateKey = curr.fecha.split('T')[0]
+            acc[dateKey] = curr.cant_ventas
+            return acc
+        }, {})
+
+        // Calculate Last Sale Time per day
+        const dailyLastSaleMap = allSales.reduce((acc, curr) => {
+            if (!curr.fecha) return acc
+            const dateKey = curr.fecha.substring(0, 10)
+
+            if (!acc[dateKey]) acc[dateKey] = curr.fecha
+            else {
+                if (curr.fecha > acc[dateKey]) acc[dateKey] = curr.fecha
+            }
+            return acc
+        }, {})
+
+        // Calculate global min/max hours
+        let globalMinH = 24
+        let globalMaxH = 0
+        let hasData = false
+
+        // Combine data
+        const grouped = hitos.reduce((acc, curr) => {
+            if (!curr.dia) return acc
+            const date = curr.dia
+            if (!acc[date]) {
+                acc[date] = {
+                    dia: date,
+                    total_ventas: dailyTotalsMap[date] || 0,
+                    milestones: [],
+                    lastSaleTime: null
+                }
+            }
+            acc[date].milestones.push({
+                n: curr.hito_logrado,
+                hour: curr.hora_exacta?.substring(0, 5)
+            })
+            return acc
+        }, {})
+
+        // Incorporate daily reports and last sale times
+        Object.keys(dailyLastSaleMap).forEach(date => {
+            hasData = true
+            if (!grouped[date]) {
+                grouped[date] = {
+                    dia: date,
+                    total_ventas: dailyTotalsMap[date] || 0,
+                    milestones: [],
+                    lastSaleTime: null
+                }
+            }
+
+            if (dailyLastSaleMap[date]) {
+                grouped[date].lastSaleTime = dailyLastSaleMap[date]
+                // Extract hour
+                let timePart = ''
+                if (dailyLastSaleMap[date].includes('T')) {
+                    timePart = dailyLastSaleMap[date].split('T')[1]
+                } else if (dailyLastSaleMap[date].includes(' ')) {
+                    timePart = dailyLastSaleMap[date].split(' ')[1]
+                }
+
+                if (timePart) {
+                    const h = parseInt(timePart.split(':')[0], 10)
+                    if (!isNaN(h)) {
+                        if (h < globalMinH) globalMinH = h
+                        if (h > globalMaxH) globalMaxH = h
+                    }
+                }
+            }
+        })
+
+        if (hasData) {
+            hitos.forEach(h => {
+                const hour = parseInt(h.hora_exacta?.split(':')[0] || 0)
+                if (hour < globalMinH) globalMinH = hour
+                if (hour > globalMaxH) globalMaxH = hour
+            })
+        } else {
+            globalMinH = 0
+            globalMaxH = 24
         }
-    }
+
+        let pivotedData = Object.values(grouped)
+
+        // Client-side Sort
+        if (sortColumn) {
+            pivotedData.sort((a, b) => {
+                let valA = a[sortColumn]
+                let valB = b[sortColumn]
+
+                if (sortColumn === 'dia') {
+                    valA = new Date(valA)
+                    valB = new Date(valB)
+                } else if (sortColumn === 'total_ventas') {
+                    valA = parseFloat(valA || 0)
+                    valB = parseFloat(valB || 0)
+                }
+                if (sortColumn === 'timeline' && a.lastSaleTime && b.lastSaleTime) {
+                    valA = a.lastSaleTime
+                    valB = b.lastSaleTime
+                }
+
+                if (!valA && !valB) return 0
+                if (!valA) return 1
+                if (!valB) return -1
+
+                if (valA < valB) return sortOrder === 'asc' ? -1 : 1
+                if (valA > valB) return sortOrder === 'asc' ? 1 : -1
+                return 0
+            })
+        } else {
+            pivotedData.sort((a, b) => (new Date(a.dia) > new Date(b.dia) ? -1 : 1))
+        }
+
+        return {
+            processedHitosData: pivotedData,
+            minHour: Math.max(0, globalMinH - 1),
+            maxHour: Math.min(24, globalMaxH + 1)
+        }
+
+    }, [hitosRawData, analysisMode, sortColumn, sortOrder])
+
+    const currentData = analysisMode === 'horarios' ? processedHorariosData : processedHitosData
+    const loading = analysisMode === 'horarios' ? loadingHorarios : loadingHitos
 
     const handleSort = (column) => {
         if (sortColumn === column) {
@@ -247,13 +201,11 @@ const AnalisisHorariosView = () => {
                     render: (_, row) => {
                         const startH = minHour
                         const totalH = maxHour - minHour || 24
-
                         const getPos = (timeStr) => {
                             if (!timeStr) return -1
                             let h, m
                             try {
                                 if (typeof timeStr === 'string') {
-                                    // Handle "HH:MM" or "YYYY-MM-DDTHH:MM:SS"
                                     const part = timeStr.includes('T') ? timeStr.split('T')[1] : (timeStr.includes(' ') ? timeStr.split(' ')[1] : timeStr)
                                     if (!part || !part.includes(':')) return -1
                                     const [hStr, mStr] = part.split(':')
@@ -268,19 +220,15 @@ const AnalisisHorariosView = () => {
                             } catch (e) {
                                 return -1
                             }
-
                             if (isNaN(h) || isNaN(m)) return -1
-
                             const val = h + m / 60
                             return ((val - startH) / totalH) * 100
                         }
 
-                        // Last Sale Position
                         const lastPos = row.lastSaleTime ? getPos(row.lastSaleTime) : -1
 
                         return (
                             <div className="relative w-full h-16 bg-gray-800/20 rounded-lg border border-gray-700/50 overflow-hidden text-xs">
-                                {/* Hour markers/Grid */}
                                 {Array.from({ length: totalH + 1 }).map((_, i) => (
                                     <div
                                         key={i}
@@ -291,11 +239,9 @@ const AnalisisHorariosView = () => {
                                     </div>
                                 ))}
 
-                                {/* Markers for Milestones */}
                                 {row.milestones?.map(m => {
                                     const mPos = getPos(m.hour)
                                     if (mPos < 0 || mPos > 100) return null
-
                                     return (
                                         <div
                                             key={m.n}
@@ -311,14 +257,12 @@ const AnalisisHorariosView = () => {
                                     )
                                 })}
 
-                                {/* Total / Last Sale Marker */}
                                 {lastPos >= 0 && lastPos <= 100 && (
                                     <div
                                         className="absolute top-2 bottom-0 flex flex-col items-center group z-20"
                                         style={{ left: `${lastPos}%` }}
                                     >
                                         <div className="w-px h-full bg-blue-500 group-hover:bg-blue-400"></div>
-                                        {/* Always visible label for Total */}
                                         <div className="absolute top-0 bg-blue-900/80 border border-blue-500/50 text-[10px] text-blue-200 px-1 py-0.5 rounded transform -translate-x-1/2 whitespace-nowrap shadow-lg">
                                             Total: {row.total_ventas}
                                         </div>
@@ -345,7 +289,6 @@ const AnalisisHorariosView = () => {
                 {
                     key: 'fecha', label: 'Fecha', render: (val) => {
                         if (!val) return ''
-                        // Avoid timezone issues by parsing string directly if it's YYYY-MM-DD
                         if (typeof val === 'string' && val.includes('-')) {
                             const [y, m, d] = val.split('T')[0].split('-')
                             return `${d}/${m}/${y}`
@@ -425,7 +368,7 @@ const AnalisisHorariosView = () => {
             </div>
 
             <DataTable
-                data={data}
+                data={currentData}
                 columns={getColumns()}
                 isLoading={loading}
                 onSort={handleSort}
