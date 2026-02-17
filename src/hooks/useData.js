@@ -193,3 +193,28 @@ export function useAnalisisHorarios(type = 'diario', options = {}) {
         error
     }
 }
+
+export function useHitosViewData() {
+    const { data, error, isLoading } = useSWR(
+        'hitos_view_data',
+        async () => {
+            const [hitos, dailyReports, allSales] = await Promise.all([
+                api.getHitosVentas(),
+                api.getReporteDiario({ sortColumn: 'fecha', sortOrder: 'asc' }),
+                api.getVentas({ sortColumn: 'fecha', sortOrder: 'asc' })
+            ])
+            return {
+                hitos: hitos.data || [],
+                dailyReports: dailyReports.data || [],
+                allSales: allSales.data || []
+            }
+        },
+        SWR_OPTIONS
+    )
+
+    return {
+        data: data,
+        loading: isLoading,
+        error
+    }
+}
