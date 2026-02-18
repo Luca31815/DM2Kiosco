@@ -82,3 +82,6 @@ export const getAnalisisHorarioSemanal = (options) => fetchTableData('vista_anal
 export const getAnalisisHorarioMensual = (options) => fetchTableData('vista_analisis_horario_mensual', options)
 
 export const getHitosVentas = (options) => fetchTableData('vista_hitos_ventas', options)
+
+export const getMovimientosDinero = (id) => fetchDetails('movimientos_dinero', 'referencia_id', id)
+export const getMovimientosStock = (id) => fetchDetails('stock_movimientos', 'referencia_id', id)

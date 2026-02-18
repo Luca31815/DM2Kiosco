@@ -244,3 +244,31 @@ export function useHitosViewData() {
         error
     }
 }
+
+export function useMovimientosDinero(referenciaId) {
+    const { data, error, isLoading } = useSWR(
+        referenciaId ? ['movimientos_dinero', referenciaId] : null,
+        () => api.getMovimientosDinero(referenciaId),
+        SWR_OPTIONS
+    )
+
+    return {
+        data: data || [],
+        loading: isLoading,
+        error
+    }
+}
+
+export function useMovimientosStock(referenciaId) {
+    const { data, error, isLoading } = useSWR(
+        referenciaId ? ['stock_movimientos', referenciaId] : null,
+        () => api.getMovimientosStock(referenciaId),
+        SWR_OPTIONS
+    )
+
+    return {
+        data: data || [],
+        loading: isLoading,
+        error
+    }
+}
