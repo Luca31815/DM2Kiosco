@@ -24,3 +24,16 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# n8n
+*n8n*
+to_escape_*
+repair_n8n.js
+escaped_*.json
+
+# Misc
+*.sql
+*.csv
+*.txt
+*.cjs
+*.log

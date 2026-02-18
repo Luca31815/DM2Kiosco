@@ -39,22 +39,30 @@ const ReservasView = () => {
     const [sortColumn, setSortColumn] = useState('fecha_creacion')
     const [sortOrder, setSortOrder] = useState('desc')
     const [filterValue, setFilterValue] = useState('')
+    const [filterColumn, setFilterColumn] = useState('cliente')
     const [showOpenOnly, setShowOpenOnly] = useState(true)
 
     const { data, loading } = useReservas({
         sortColumn,
         sortOrder,
-        filterColumn: 'cliente',
+        filterColumn,
         filterValue
     }, showOpenOnly)
 
+    const searchColumns = [
+        { key: 'cliente', label: 'Cliente' },
+        { key: 'reserva_id', label: 'ID Reserva' },
+        { key: 'estado_pago', label: 'Estado Pago' },
+        { key: 'estado_entrega', label: 'Entrega' }
+    ]
+
     const columns = [
         { key: 'reserva_id', label: 'ID' },
-        { key: 'fecha_creacion', label: 'Fecha', render: (val) => new Date(val).toLocaleString() },
+        { key: 'fecha_creacion', label: 'Fecha', render: (val) => val ? new Date(val).toLocaleString() : '' },
         {
             key: 'cliente',
             label: 'Cliente',
-            render: (val, row) => val || row.Cliente
+            render: (val, row) => val || row.Cliente || 'N/A'
         },
         { key: 'total_reserva', label: 'Total', render: (val) => `$${val}` },
         { key: 'total_pagado', label: 'Pagado', render: (val) => `$${val || 0}` },
@@ -106,6 +114,9 @@ const ReservasView = () => {
                 sortColumn={sortColumn}
                 sortOrder={sortOrder}
                 onFilter={setFilterValue}
+                searchColumns={searchColumns}
+                searchColumn={filterColumn}
+                onSearchColumnChange={setFilterColumn}
                 renderExpandedRow={(row) => <ExpandedRow row={row} />}
                 rowKey="reserva_id"
             />

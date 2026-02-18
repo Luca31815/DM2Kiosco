@@ -36,7 +36,7 @@ const ExpandedRow = ({ row }) => {
 }
 
 const ComprasView = () => {
-    const [sortColumn, setSortColumn] = useState('Fecha')
+    const [sortColumn, setSortColumn] = useState('fecha')
     const [sortOrder, setSortOrder] = useState('desc')
     const [filterValue, setFilterValue] = useState('')
     const [filterColumn, setFilterColumn] = useState('proveedor')
@@ -56,7 +56,7 @@ const ComprasView = () => {
 
     const columns = [
         { key: 'compra_id', label: 'ID' },
-        { key: 'Fecha', label: 'Fecha', render: (val) => new Date(val).toLocaleString() },
+        { key: 'fecha', label: 'Fecha', render: (val) => val ? new Date(val).toLocaleString() : '' },
         { key: 'proveedor', label: 'Proveedor' },
         { key: 'total_compra', label: 'Total', render: (val) => `$${val}` },
         { key: 'notas', label: 'Notas' },
