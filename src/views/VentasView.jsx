@@ -1,3 +1,4 @@
+// Trigger redeploy: integration of money and stock movements
 import React, { useState } from 'react'
 import DataTable from '../components/DataTable'
 import { useVentas, useVentasDetalles, useMovimientosDinero, useMovimientosStock } from '../hooks/useData'
