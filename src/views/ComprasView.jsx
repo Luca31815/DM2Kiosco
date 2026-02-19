@@ -4,6 +4,7 @@ import { useCompras, useComprasDetalles, useMovimientosDinero, useMovimientosSto
 import { Loader2, Edit2, Check, X } from 'lucide-react'
 import * as api from '../services/api'
 import { useSWRConfig } from 'swr'
+import ProductAutocomplete from '../components/ProductAutocomplete'
 
 const ExpandedRow = ({ row }) => {
     const { data: details, loading: loadingDetails } = useComprasDetalles(row.compra_id)
@@ -73,11 +74,9 @@ const ExpandedRow = ({ row }) => {
                                 <tr key={detail.id} className="hover:bg-white/5 transition-colors">
                                     <td className="px-4 py-2">
                                         {editingId === detail.id ? (
-                                            <input
-                                                type="text"
-                                                className="bg-gray-800 border border-gray-600 rounded px-2 py-1 w-full text-white"
+                                            <ProductAutocomplete
                                                 value={editForm.producto}
-                                                onChange={e => setEditForm({ ...editForm, producto: e.target.value })}
+                                                onChange={val => setEditForm({ ...editForm, producto: val })}
                                             />
                                         ) : detail.producto}
                                     </td>
