@@ -58,7 +58,7 @@ const ExpandedRow = ({ row }) => {
                     <h4 className="text-sm font-semibold text-gray-400">Detalles de Compra (Productos)</h4>
                     {isSaving && <div className="flex items-center text-blue-400 text-xs gap-2"><Loader2 className="animate-spin size-3" /> Guardando...</div>}
                 </div>
-                <div className="overflow-x-auto">
+                <div className="">
                     <table className="w-full text-sm text-left text-gray-300">
                         <thead className="text-xs text-gray-500 uppercase bg-gray-800/50">
                             <tr>

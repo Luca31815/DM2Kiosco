@@ -32,7 +32,7 @@ const DataTable = ({
     }
 
     return (
-        <div className="w-full bg-gray-900 text-gray-200 rounded-lg shadow-lg border border-gray-800 overflow-hidden">
+        <div className="w-full bg-gray-900 text-gray-200 rounded-lg shadow-lg border border-gray-800">
             {/* Header / Filter */}
             <div className="p-4 border-b border-gray-800 flex flex-col sm:flex-row justify-between items-center gap-4 bg-gray-900/50 backdrop-blur-sm">
                 <div className="relative flex items-center gap-2 w-full sm:w-auto">
@@ -116,7 +116,7 @@ const DataTable = ({
                                             <td colSpan={columns.length} className="px-6 py-0">
                                                 <div className={`grid transition-all duration-300 ${expandedRow === row[rowKey] ? 'grid-rows-[1fr] py-4' : 'grid-rows-[0fr] py-0'
                                                     }`}>
-                                                    <div className="overflow-hidden">
+                                                    <div className={expandedRow === row[rowKey] ? 'overflow-visible' : 'overflow-hidden'}>
                                                         {expandedRow === row[rowKey] && renderExpandedRow(row)}
                                                     </div>
                                                 </div>

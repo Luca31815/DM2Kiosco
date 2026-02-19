@@ -71,7 +71,7 @@ const ProductAutocomplete = ({ value, onChange, placeholder = 'Buscar producto..
             )}
 
             {showSuggestions && inputValue.length > 0 && suggestions.length > 0 && (
-                <ul className="absolute z-50 w-full mt-1 bg-gray-800 border border-gray-700 rounded shadow-xl max-h-60 overflow-y-auto divide-y divide-gray-700 scrollbar-thin scrollbar-thumb-gray-600">
+                <ul className="absolute z-[100] w-full mt-1 bg-gray-800 border border-gray-700 rounded shadow-xl max-h-60 overflow-y-auto divide-y divide-gray-700 scrollbar-thin scrollbar-thumb-gray-600">
                     {suggestions.map((product) => (
                         <li
                             key={product.producto_id}
