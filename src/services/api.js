@@ -94,3 +94,18 @@ export const corregirOperacion = async (data) => {
     }
     return result
 }
+
+export const actualizarProducto = async (data) => {
+    const { data: result, error } = await supabase.rpc('actualizar_producto_global', {
+        p_id: data.producto_id,
+        p_nuevo_nombre: data.nombre,
+        p_nuevo_precio_venta: data.ultimo_precio_venta,
+        p_nuevo_costo_compra: data.ultimo_costo_compra,
+        p_nuevo_stock: data.stock_actual
+    })
+    if (error) {
+        console.error('Error calling actualizar_producto_global:', error)
+        throw error
+    }
+    return result
+}
