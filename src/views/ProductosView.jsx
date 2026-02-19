@@ -33,13 +33,20 @@ const ProductosView = () => {
         try {
             const result = await api.actualizarProducto(editForm)
             if (result.success) {
+                // Refrescar lista de productos
                 mutate(key => Array.isArray(key) && key[0] === 'productos')
-                // También mutar ventas, compras y reservas si el nombre cambió
-                if (result.renombrado) {
+
+                // Si hubo unificación o cambio de nombre, refrescar todo
+                if (result.tipo_accion === 'MERGE' || result.renombrado) {
                     mutate('ventas')
                     mutate('compras')
                     mutate('reservas')
                 }
+
+                if (result.tipo_accion === 'MERGE') {
+                    alert('¡Unificación exitosa! Los productos se han fusionado.')
+                }
+
                 setEditingId(null)
             } else {
                 alert('Error: ' + result.error)
@@ -65,32 +72,12 @@ const ProductosView = () => {
         {
             key: 'ultimo_precio_venta',
             label: 'Precio Venta',
-            render: (val, row) => editingId === row.producto_id ? (
-                <div className="flex items-center">
-                    <span className="mr-1">$</span>
-                    <input
-                        type="number"
-                        className="bg-gray-800 border border-gray-600 rounded px-2 py-1 w-24 text-right text-white"
-                        value={editForm.ultimo_precio_venta}
-                        onChange={e => setEditForm({ ...editForm, ultimo_precio_venta: e.target.value })}
-                    />
-                </div>
-            ) : `$${val}`
+            render: (val) => `$${val}`
         },
         {
             key: 'ultimo_costo_compra',
             label: 'Precio Compra',
-            render: (val, row) => editingId === row.producto_id ? (
-                <div className="flex items-center">
-                    <span className="mr-1">$</span>
-                    <input
-                        type="number"
-                        className="bg-gray-800 border border-gray-600 rounded px-2 py-1 w-24 text-right text-white"
-                        value={editForm.ultimo_costo_compra}
-                        onChange={e => setEditForm({ ...editForm, ultimo_costo_compra: e.target.value })}
-                    />
-                </div>
-            ) : `$${val}`
+            render: (val) => `$${val}`
         },
         {
             key: 'stock_actual',
@@ -124,7 +111,7 @@ const ProductosView = () => {
                                 onClick={handleSave}
                                 disabled={isSaving}
                                 className="p-1 hover:bg-green-500/20 text-green-500 rounded transition-colors"
-                                title="Guardar"
+                                title="Guardar cambios y unificar si corresponde"
                             >
                                 {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
                             </button>
@@ -141,7 +128,7 @@ const ProductosView = () => {
                         <button
                             onClick={() => handleEditStart(row)}
                             className="p-1 hover:bg-blue-500/20 text-blue-400 rounded transition-colors"
-                            title="Editar"
+                            title="Editar / Unificar"
                         >
                             <Edit2 size={16} />
                         </button>
@@ -168,7 +155,7 @@ const ProductosView = () => {
                 {isSaving && (
                     <div className="flex items-center text-blue-400 text-sm gap-2 bg-blue-500/10 px-3 py-1 rounded-full border border-blue-500/20">
                         <Loader2 className="animate-spin size-4" />
-                        Guardando cambios globales...
+                        Procesando unificación y ajustes de stock...
                     </div>
                 )}
             </div>
