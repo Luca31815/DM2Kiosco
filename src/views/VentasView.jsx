@@ -1,40 +1,146 @@
-// Trigger redeploy: integration of money and stock movements
 import React, { useState } from 'react'
 import DataTable from '../components/DataTable'
 import { useVentas, useVentasDetalles, useMovimientosDinero, useMovimientosStock } from '../hooks/useData'
-import { Loader2 } from 'lucide-react'
+import { Loader2, Edit2, Check, X, Save } from 'lucide-react'
+import * as api from '../services/api'
+import { useSWRConfig } from 'swr'
 
 const ExpandedRow = ({ row }) => {
     const { data: details, loading: loadingDetails } = useVentasDetalles(row.venta_id)
     const { data: dinero, loading: loadingDinero } = useMovimientosDinero(row.venta_id)
     const { data: stock, loading: loadingStock } = useMovimientosStock(row.venta_id)
+    const { mutate } = useSWRConfig()
+
+    const [editingId, setEditingId] = useState(null)
+    const [editForm, setEditForm] = useState({})
+    const [isSaving, setIsSaving] = useState(false)
 
     if (loadingDetails || loadingDinero || loadingStock) return <div className="p-4 flex justify-center"><Loader2 className="animate-spin text-blue-500" /></div>
 
+    const handleEditStart = (detail) => {
+        setEditingId(detail.id)
+        setEditForm({
+            producto: detail.producto,
+            cantidad: detail.cantidad,
+            precio_unitario: detail.precio_unitario
+        })
+    }
+
+    const handleSave = async (originalDetail) => {
+        setIsSaving(true)
+        try {
+            await api.corregirOperacion({
+                id_final: row.venta_id,
+                items: [{
+                    producto: originalDetail.producto, // ID original para búsqueda
+                    nuevo_nombre: editForm.producto,
+                    nueva_cantidad: editForm.cantidad,
+                    nuevo_precio: editForm.precio_unitario
+                }]
+            })
+            // Refrescar todos los hooks relacionados
+            mutate(['ventas_detalles', row.venta_id])
+            mutate(['movimientos_dinero', row.venta_id])
+            mutate(['stock_movimientos', row.venta_id])
+            mutate(['ventas']) // Refrescar lista de ventas para actualizar totales
+            setEditingId(null)
+        } catch (error) {
+            alert('Error al guardar cambios: ' + (error.message || 'Error desconocido'))
+        } finally {
+            setIsSaving(false)
+        }
+    }
+
     return (
-        <div className="bg-gray-900/50 p-4 rounded-lg border border-gray-700 mx-4 mb-4 space-y-6">
+        <div className="bg-gray-900/50 p-4 rounded-lg border border-gray-700 mx-4 mb-4 space-y-6 shadow-inner">
             <div>
-                <h4 className="text-sm font-semibold text-gray-400 mb-2">Detalles de Venta (Productos)</h4>
-                <table className="w-full text-sm text-left text-gray-300">
-                    <thead className="text-xs text-gray-500 uppercase bg-gray-800/50">
-                        <tr>
-                            <th className="px-4 py-2">Producto</th>
-                            <th className="px-4 py-2 text-right">Cantidad</th>
-                            <th className="px-4 py-2 text-right">Precio Unitario</th>
-                            <th className="px-4 py-2 text-right">Subtotal</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-700/50">
-                        {details.map((detail) => (
-                            <tr key={detail.id}>
-                                <td className="px-4 py-2">{detail.producto}</td>
-                                <td className="px-4 py-2 text-right">{detail.cantidad}</td>
-                                <td className="px-4 py-2 text-right">${detail.precio_unitario}</td>
-                                <td className="px-4 py-2 text-right">${detail.subtotal}</td>
+                <div className="flex justify-between items-center mb-4">
+                    <h4 className="text-sm font-semibold text-gray-400">Detalles de Venta (Productos)</h4>
+                    {isSaving && <div className="flex items-center text-blue-400 text-xs gap-2"><Loader2 className="animate-spin size-3" /> Guardando...</div>}
+                </div>
+                <div className="overflow-x-auto">
+                    <table className="w-full text-sm text-left text-gray-300">
+                        <thead className="text-xs text-gray-500 uppercase bg-gray-800/50">
+                            <tr>
+                                <th className="px-4 py-2">Producto</th>
+                                <th className="px-4 py-2 text-right">Cantidad</th>
+                                <th className="px-4 py-2 text-right">Precio Unitario</th>
+                                <th className="px-4 py-2 text-right">Subtotal</th>
+                                <th className="px-4 py-2 text-center w-24">Acciones</th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody className="divide-y divide-gray-700/50">
+                            {details.map((detail) => (
+                                <tr key={detail.id} className="hover:bg-white/5 transition-colors">
+                                    <td className="px-4 py-2">
+                                        {editingId === detail.id ? (
+                                            <input
+                                                type="text"
+                                                className="bg-gray-800 border border-gray-600 rounded px-2 py-1 w-full text-white"
+                                                value={editForm.producto}
+                                                onChange={e => setEditForm({ ...editForm, producto: e.target.value })}
+                                            />
+                                        ) : detail.producto}
+                                    </td>
+                                    <td className="px-4 py-2 text-right">
+                                        {editingId === detail.id ? (
+                                            <input
+                                                type="number"
+                                                className="bg-gray-800 border border-gray-600 rounded px-2 py-1 w-20 text-right text-white"
+                                                value={editForm.cantidad}
+                                                onChange={e => setEditForm({ ...editForm, cantidad: e.target.value })}
+                                            />
+                                        ) : detail.cantidad}
+                                    </td>
+                                    <td className="px-4 py-2 text-right">
+                                        {editingId === detail.id ? (
+                                            <div className="flex items-center justify-end">
+                                                <span className="mr-1">$</span>
+                                                <input
+                                                    type="number"
+                                                    className="bg-gray-800 border border-gray-600 rounded px-2 py-1 w-24 text-right text-white"
+                                                    value={editForm.precio_unitario}
+                                                    onChange={e => setEditForm({ ...editForm, precio_unitario: e.target.value })}
+                                                />
+                                            </div>
+                                        ) : `$${detail.precio_unitario}`}
+                                    </td>
+                                    <td className="px-4 py-2 text-right font-medium text-white">${detail.subtotal}</td>
+                                    <td className="px-4 py-2 text-center">
+                                        {editingId === detail.id ? (
+                                            <div className="flex justify-center gap-2">
+                                                <button
+                                                    onClick={() => handleSave(detail)}
+                                                    disabled={isSaving}
+                                                    className="p-1 hover:bg-green-500/20 text-green-500 rounded transition-colors"
+                                                    title="Guardar"
+                                                >
+                                                    <Check size={16} />
+                                                </button>
+                                                <button
+                                                    onClick={() => setEditingId(null)}
+                                                    disabled={isSaving}
+                                                    className="p-1 hover:bg-red-500/20 text-red-500 rounded transition-colors"
+                                                    title="Cancelar"
+                                                >
+                                                    <X size={16} />
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <button
+                                                onClick={() => handleEditStart(detail)}
+                                                className="p-1 hover:bg-blue-500/20 text-blue-400 rounded transition-colors"
+                                                title="Editar"
+                                            >
+                                                <Edit2 size={16} />
+                                            </button>
+                                        )}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

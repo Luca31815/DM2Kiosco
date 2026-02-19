@@ -85,3 +85,12 @@ export const getHitosVentas = (options) => fetchTableData('vista_hitos_ventas', 
 
 export const getMovimientosDinero = (id) => fetchDetails('movimientos_dinero', 'referencia_id', id)
 export const getMovimientosStock = (id) => fetchDetails('stock_movimientos', 'referencia_id', id)
+
+export const corregirOperacion = async (data) => {
+    const { data: result, error } = await supabase.rpc('corregir_operacion_v16', { p_input: data })
+    if (error) {
+        console.error('Error calling corregir_operacion_v16:', error)
+        throw error
+    }
+    return result
+}
