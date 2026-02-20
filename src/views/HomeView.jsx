@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
     TrendingUp,
     ShoppingCart,
@@ -43,6 +44,7 @@ const StatCard = ({ title, value, icon: Icon, trend, trendValue, color }) => (
 )
 
 const HomeView = () => {
+    const navigate = useNavigate()
     const { data: dailyReport, loading: loadingReport } = useReporte('diario', { sortColumn: 'fecha', sortOrder: 'desc', pageSize: 30 })
     const { data: reservas, loading: loadingReservas } = useReservas({}, true)
     const { data: productos, loading: loadingProductos } = useProductos({ pageSize: 5, sortColumn: 'stock_actual', sortOrder: 'asc' })
@@ -173,7 +175,7 @@ const HomeView = () => {
             </div>
 
             {/* Alertas Rápidas / Stock Crítico */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
                 <div className="lg:col-span-2 bg-gray-900 border border-gray-800 p-6 rounded-xl">
                     <div className="flex items-center justify-between mb-6">
                         <h3 className="text-lg font-semibold text-white">Reposición Sugerida</h3>
@@ -196,13 +198,16 @@ const HomeView = () => {
                     </div>
                 </div>
 
-                <div className="bg-gradient-to-br from-blue-600 to-blue-700 p-6 rounded-xl text-white">
+                <div className="bg-gradient-to-br from-blue-600 to-blue-700 p-6 rounded-xl text-white h-fit shadow-xl shadow-blue-900/20">
                     <AlertCircle className="h-8 w-8 mb-4 " />
                     <h3 className="text-xl font-bold mb-2">Tip de Gestión</h3>
                     <p className="text-blue-100 text-sm leading-relaxed">
                         Detectamos que tu horario pico es a las 19:00 hs. Asegurate de tener stock de productos estrella antes de esa hora para maximizar las ventas del día.
                     </p>
-                    <button className="mt-6 w-full py-2 bg-white/20 hover:bg-white/30 transition-colors rounded-lg text-sm font-semibold">
+                    <button
+                        onClick={() => navigate('/analisis-horarios')}
+                        className="mt-6 w-full py-2 bg-white/20 hover:bg-white/30 active:scale-95 transition-all rounded-lg text-sm font-semibold"
+                    >
                         Ver Análisis de Horarios
                     </button>
                 </div>
