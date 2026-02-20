@@ -194,19 +194,45 @@ export function useAnalisisHorarios(type = 'diario', options = {}) {
     }
 }
 
-export function useHitosViewData() {
+export function useHitosViewData(page = 1) {
     const { data, error, isLoading } = useSWR(
-        'hitos_view_data',
+        ['hitos_view_data', page],
         async () => {
-            const [hitos, dailyReports, allSales] = await Promise.all([
-                api.getHitosVentas(),
-                api.getReporteDiario({ sortColumn: 'fecha', sortOrder: 'asc' }),
-                api.getVentas({ sortColumn: 'fecha', sortOrder: 'asc' })
+            const pageSize = 14
+
+            // 1. Obtener los 14 reportes diarios de la página (orden DESC por api.getReporteDiario base)
+            const dailyReports = await api.getReporteDiario({
+                page,
+                pageSize,
+                sortColumn: 'fecha',
+                sortOrder: 'desc'
+            })
+
+            if (!dailyReports.data?.length) return { hitos: [], dailyReports: [], allSales: [], count: 0 }
+
+            // 2. Determinar el rango de fechas
+            const dates = dailyReports.data.map(d => d.fecha)
+            const minDate = dates[dates.length - 1]
+            const maxDate = dates[0]
+
+            // 3. Obtener hitos y ventas filtrados por ese rango
+            const [hitos, allSales] = await Promise.all([
+                api.getHitosVentas({
+                    dateColumn: 'dia',
+                    dateRange: { start: minDate, end: maxDate }
+                }),
+                api.getVentas({
+                    dateColumn: 'fecha',
+                    dateRange: { start: minDate, end: maxDate },
+                    pageSize: 1000 // Traer suficientes ventas para este rango
+                })
             ])
+
             return {
                 hitos: hitos.data || [],
                 dailyReports: dailyReports.data || [],
-                allSales: allSales.data || []
+                allSales: allSales.data || [],
+                count: dailyReports.count || 0
             }
         },
         SWR_OPTIONS

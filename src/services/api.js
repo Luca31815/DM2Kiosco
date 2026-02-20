@@ -57,7 +57,7 @@ export const fetchDetails = async (tableName, foreignKeyColumn, foreignKeyValue)
     return data
 }
 
-export const getVentas = (options) => fetchTableData('vista_ventas_search', options)
+export const getVentas = (options) => fetchTableData('vista_ventas_search', { sortColumn: 'fecha', sortOrder: 'desc', ...options })
 export const getVentasDetalles = (id) => fetchDetails('ventas_detalles', 'venta_id', id)
 
 export const getCompras = (options) => fetchTableData('vista_compras_search', options)
@@ -83,7 +83,7 @@ export const getAnalisisHorarioDiario = (options) => fetchTableData('vista_anali
 export const getAnalisisHorarioSemanal = (options) => fetchTableData('vista_analisis_horario_semanal', options)
 export const getAnalisisHorarioMensual = (options) => fetchTableData('vista_analisis_horario_mensual', options)
 
-export const getHitosVentas = (options) => fetchTableData('vista_hitos_ventas', options)
+export const getHitosVentas = (options) => fetchTableData('vista_hitos_ventas', { sortColumn: 'dia', sortOrder: 'desc', ...options })
 
 export const getReporteVentasPeriodico = (options) => fetchTableData('vista_reporte_ventas_periodico', options)
 

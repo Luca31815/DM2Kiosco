@@ -6,6 +6,7 @@ import { Clock, Trophy } from 'lucide-react'
 const AnalisisHorariosView = () => {
     const [viewType, setViewType] = useState('diario')
     const [analysisMode, setAnalysisMode] = useState('horarios') // 'horarios' | 'hitos'
+    const [page, setPage] = useState(1)
 
     // DataTable states
     const [sortColumn, setSortColumn] = useState('fecha')
@@ -20,7 +21,7 @@ const AnalisisHorariosView = () => {
         filterValue
     })
 
-    const { data: hitosRawData, loading: loadingHitos } = useHitosViewData()
+    const { data: hitosRawData, loading: loadingHitos } = useHitosViewData(page)
 
     // Derived state for Horarios
     const processedHorariosData = useMemo(() => {
@@ -40,7 +41,7 @@ const AnalisisHorariosView = () => {
 
     // Derived state for Hitos
     const { processedHitosData, minHour, maxHour } = useMemo(() => {
-        if (analysisMode !== 'hitos' || !hitosRawData) return { processedHitosData: [], minHour: 0, maxHour: 24 }
+        if (analysisMode !== 'hitos' || !hitosRawData) return { processedHitosData: [], minHour: 8, maxHour: 24 }
 
         const { hitos, dailyReports, allSales } = hitosRawData
 
@@ -65,8 +66,8 @@ const AnalisisHorariosView = () => {
         }, {})
 
         // Calculate global min/max hours
-        let globalMinH = 24
-        let globalMaxH = 0
+        let globalMinH = 8 // Forced start at 08:00
+        let globalMaxH = 21 // Minimum end at 21:00
         let hasData = false
 
         // Combine data
@@ -123,12 +124,15 @@ const AnalisisHorariosView = () => {
         if (hasData) {
             hitos.forEach(h => {
                 const hour = parseInt(h.hora_exacta?.split(':')[0] || 0)
-                if (hour < globalMinH) globalMinH = hour
                 if (hour > globalMaxH) globalMaxH = hour
             })
-        } else {
-            globalMinH = 0
-            globalMaxH = 24
+            // Extra check for last sales
+            Object.values(grouped).forEach(g => {
+                if (g.lastSaleTime) {
+                    const h = parseInt(g.lastSaleTime.includes('T') ? g.lastSaleTime.split('T')[1].split(':')[0] : g.lastSaleTime.split(' ')[1].split(':')[0])
+                    if (h > globalMaxH) globalMaxH = h
+                }
+            })
         }
 
         let pivotedData = Object.values(grouped)
@@ -165,7 +169,7 @@ const AnalisisHorariosView = () => {
 
         return {
             processedHitosData: pivotedData,
-            minHour: Math.max(0, globalMinH - 1),
+            minHour: 8,
             maxHour: Math.min(24, globalMaxH + 1)
         }
 
@@ -381,6 +385,28 @@ const AnalisisHorariosView = () => {
                                     {type}
                                 </button>
                             ))}
+                        </div>
+                    )}
+
+                    {/* Pagination for Hitos */}
+                    {analysisMode === 'hitos' && (
+                        <div className="flex bg-gray-800 rounded-md p-1 border border-gray-700 gap-1">
+                            <button
+                                onClick={() => setPage(p => p + 1)}
+                                className="px-3 py-1.5 rounded text-xs font-semibold text-gray-400 hover:text-white hover:bg-gray-700 transition-colors"
+                            >
+                                &lt; Periodo Anterior
+                            </button>
+                            <div className="px-2 py-1.5 text-xs font-bold text-yellow-500 bg-gray-900/50 rounded border border-gray-700">
+                                14 Días
+                            </div>
+                            <button
+                                onClick={() => setPage(p => Math.max(1, p - 1))}
+                                disabled={page === 1}
+                                className={`px-3 py-1.5 rounded text-xs font-semibold transition-colors ${page === 1 ? 'opacity-30 cursor-not-allowed' : 'text-gray-400 hover:text-white hover:bg-gray-700'}`}
+                            >
+                                Siguiente &gt;
+                            </button>
                         </div>
                     )}
                 </div>
