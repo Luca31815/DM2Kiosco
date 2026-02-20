@@ -67,23 +67,23 @@ const HomeView = () => {
 
         if (!dailyReport.length) return { today: '$0', thisMonth: '$0', countToday: 0, trend: null, trendValue: '0 op.' }
 
-        const todayData = dailyReport.find(d => d.fecha === todayStr) || { total_ventas: 0, cantidad_ventas: 0 }
-        const yesterdayData = dailyReport.find(d => d.fecha === yesterdayStr) || { total_ventas: 0, cantidad_ventas: 0 }
+        const todayData = dailyReport.find(d => d.fecha === todayStr) || { total_ventas: 0, cant_ventas: 0 }
+        const yesterdayData = dailyReport.find(d => d.fecha === yesterdayStr) || { total_ventas: 0, cant_ventas: 0 }
 
         const totalMes = dailyReport.reduce((acc, curr) => acc + (parseFloat(curr.total_ventas) || 0), 0)
 
         // Calculate trend based on count of sales
         let trend = null;
-        if (todayData.cantidad_ventas > yesterdayData.cantidad_ventas) trend = 'up';
-        else if (todayData.cantidad_ventas < yesterdayData.cantidad_ventas) trend = 'down';
+        if (todayData.cant_ventas > yesterdayData.cant_ventas) trend = 'up';
+        else if (todayData.cant_ventas < yesterdayData.cant_ventas) trend = 'down';
 
         return {
             today: new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(todayData.total_ventas || 0),
             thisMonth: new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(totalMes),
-            countToday: todayData.cantidad_ventas || 0,
+            countToday: todayData.cant_ventas || 0,
             trend,
-            trendValue: `${todayData.cantidad_ventas} op.`,
-            yesterdayCount: yesterdayData.cantidad_ventas
+            trendValue: `${todayData.cant_ventas} op.`,
+            yesterdayCount: yesterdayData.cant_ventas
         }
     }, [dailyReport])
 
