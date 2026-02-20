@@ -1,7 +1,7 @@
-import React, { useState } from 'react'
+import React, { useState, useRef } from 'react'
 import DataTable from '../components/DataTable'
 import { useReporteVentasPeriodico } from '../hooks/useData'
-import { BarChart3, Search } from 'lucide-react'
+import { BarChart3, Search, ChevronLeft, ChevronRight } from 'lucide-react'
 import ProductAutocomplete from '../components/ProductAutocomplete'
 
 const ReporteProductosView = () => {
@@ -97,6 +97,18 @@ const ReporteProductosView = () => {
         )
     }
 
+    const scrollContainerRef = useRef(null)
+
+    const scroll = (direction) => {
+        if (scrollContainerRef.current) {
+            const scrollAmount = 300
+            scrollContainerRef.current.scrollBy({
+                left: direction === 'left' ? -scrollAmount : scrollAmount,
+                behavior: 'smooth'
+            })
+        }
+    }
+
     return (
         <div className="space-y-6">
             <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
@@ -160,21 +172,40 @@ const ReporteProductosView = () => {
                     compact={true}
                 />
             ) : (
-                <div className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden shadow-xl">
+                <div className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden shadow-xl relative group">
                     <div className="p-4 border-b border-gray-800 flex flex-col sm:flex-row justify-between items-center gap-4">
                         <span className="text-sm text-gray-400">Vista de Pivote (Cantidad Vendida)</span>
                         {renderSearchInput(filterValue, setFilterValue)}
                     </div>
 
-                    <div className="overflow-x-auto custom-scrollbar">
-                        <table className="w-full text-sm text-left text-gray-300">
-                            <thead className="text-xs text-gray-500 uppercase bg-gray-800/50">
+                    {/* Navigation Buttons */}
+                    <button
+                        onClick={() => scroll('left')}
+                        className="absolute left-[200px] top-1/2 -translate-y-1/2 z-30 p-2 bg-gray-900/80 border border-gray-700 rounded-full text-white shadow-xl hover:bg-gray-800 transition-all opacity-0 group-hover:opacity-100 hidden md:block"
+                        title="Desplazar a la izquierda"
+                    >
+                        <ChevronLeft className="h-6 w-6" />
+                    </button>
+                    <button
+                        onClick={() => scroll('right')}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 z-30 p-2 bg-gray-900/80 border border-gray-700 rounded-full text-white shadow-xl hover:bg-gray-800 transition-all opacity-0 group-hover:opacity-100 hidden md:block"
+                        title="Desplazar a la derecha"
+                    >
+                        <ChevronRight className="h-6 w-6" />
+                    </button>
+
+                    <div
+                        ref={scrollContainerRef}
+                        className="overflow-x-auto custom-scrollbar max-h-[70vh] overflow-y-auto"
+                    >
+                        <table className="w-full text-sm text-left text-gray-300 border-separate border-spacing-0">
+                            <thead className="sticky top-0 z-40">
                                 <tr>
-                                    <th className="px-6 py-4 sticky left-0 z-20 bg-gray-800 border-r border-gray-700 shadow-xl min-w-[200px]">
+                                    <th className="px-6 py-4 sticky left-0 top-0 z-50 bg-gray-800 border-b border-r border-gray-700 shadow-xl min-w-[200px]">
                                         Producto
                                     </th>
                                     {pivotData.periods.map(p => (
-                                        <th key={p} className="px-6 py-4 min-w-[120px] text-center whitespace-nowrap">
+                                        <th key={p} className="px-6 py-4 min-w-[120px] text-center whitespace-nowrap bg-gray-800 border-b border-gray-700">
                                             {periodType === 'MENSUAL'
                                                 ? new Date(p).toLocaleDateString('es-ES', { month: 'short', year: '2-digit' })
                                                 : new Date(p).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' })
@@ -203,11 +234,11 @@ const ReporteProductosView = () => {
                                 )}
                                 {!loading && pivotData.rows.map((row) => (
                                     <tr key={row.producto} className="hover:bg-white/5 transition-colors group">
-                                        <td className="px-6 py-3 font-medium text-white sticky left-0 z-10 bg-gray-900 border-r border-gray-800 group-hover:bg-gray-800">
+                                        <td className="px-6 py-3 font-medium text-white sticky left-0 z-20 bg-gray-900 border-r border-gray-800 group-hover:bg-gray-800">
                                             {row.producto}
                                         </td>
                                         {pivotData.periods.map(p => (
-                                            <td key={p} className="px-6 py-3 text-center">
+                                            <td key={p} className="px-6 py-3 text-center border-b border-gray-800/50">
                                                 {row.values[p] ? (
                                                     <span className="px-2 py-1 bg-blue-500/10 text-blue-400 rounded-md font-mono">
                                                         {row.values[p]}
