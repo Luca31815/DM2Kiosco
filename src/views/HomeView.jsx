@@ -125,12 +125,12 @@ const HomeView = () => {
                     color="green"
                 />
                 <StatCard
-                    title="Pendiente Reservas"
-                    value={saldoReservas}
+                    title="Reservas Abiertas"
+                    value={`${reservas.length} activas`}
                     icon={Calendar}
                     color="purple"
-                    trend={reservas.length > 0 ? 'up' : null}
-                    trendValue={`${reservas.length} activas`}
+                    trend={null}
+                    trendValue={saldoReservas}
                 />
                 <StatCard
                     title="Stock Crítico"
@@ -198,23 +198,39 @@ const HomeView = () => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
                 <div className="lg:col-span-2 bg-gray-900 border border-gray-800 p-6 rounded-xl">
                     <div className="flex items-center justify-between mb-6">
-                        <h3 className="text-lg font-semibold text-white">Reposición Sugerida</h3>
-                        <Package className="h-5 w-5 text-gray-400" />
+                        <h3 className="text-lg font-semibold text-white">Reservas Pendientes (Deudores)</h3>
+                        <Calendar className="h-5 w-5 text-purple-400" />
                     </div>
-                    <div className="space-y-4">
-                        {productos.map(p => (
-                            <div key={p.producto_id} className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-800/50 transition-colors">
-                                <div>
-                                    <p className="text-white font-medium">{p.nombre}</p>
-                                    <p className="text-xs text-gray-500">Costo: ${p.ultimo_costo_compra || 0}</p>
-                                </div>
-                                <div className="text-right">
-                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${(p.stock_actual || 0) <= 0 ? 'bg-red-500/10 text-red-400' : 'bg-yellow-500/10 text-yellow-400'}`}>
-                                        Stock: {p.stock_actual || 0}
-                                    </span>
-                                </div>
-                            </div>
-                        ))}
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left">
+                            <thead>
+                                <tr className="text-xs text-gray-500 uppercase tracking-wider border-b border-gray-800">
+                                    <th className="pb-3 font-semibold">Cliente</th>
+                                    <th className="pb-3 font-semibold text-right">Saldo Pendiente</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-800">
+                                {loadingReservas ? (
+                                    <tr><td colSpan="2" className="py-4 text-center text-gray-500">Cargando...</td></tr>
+                                ) : reservas.length === 0 ? (
+                                    <tr><td colSpan="2" className="py-4 text-center text-gray-500">No hay deudas pendientes</td></tr>
+                                ) : (
+                                    reservas.slice(0, 5).map(r => (
+                                        <tr key={r.reserva_id} className="group hover:bg-gray-800/30 transition-colors">
+                                            <td className="py-3 text-sm font-medium text-gray-300 group-hover:text-white">{r.cliente}</td>
+                                            <td className="py-3 text-sm font-bold text-red-400 text-right">
+                                                {new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(parseFloat(r.saldo_pendiente) || 0)}
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
+                        {reservas.length > 5 && (
+                            <p className="text-[10px] text-gray-500 mt-4 italic">
+                                * Mostrando 5 de {reservas.length} reservas abiertas.
+                            </p>
+                        )}
                     </div>
                 </div>
 

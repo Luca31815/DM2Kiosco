@@ -19,9 +19,9 @@ export const fetchTableData = async (tableName, options = {}) => {
     }
 
     if (dateRange && dateColumn && dateRange.end) {
-        // Add one day to include the end date fully if it's just a date string, 
-        // or assume the user handles time. For simplicity with standard date pickers:
-        query = query.lte(dateColumn, dateRange.end)
+        // Asegurar que incluimos todo el día hasta el final
+        const endValue = dateRange.end.length === 10 ? `${dateRange.end} 23:59:59` : dateRange.end
+        query = query.lte(dateColumn, endValue)
     }
 
     if (sortColumn && sortOrder) {
