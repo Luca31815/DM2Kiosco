@@ -6,6 +6,7 @@ import ProductAutocomplete from '../components/ProductAutocomplete'
 
 const ReporteProductosView = () => {
     const [periodType, setPeriodType] = useState('DIARIO')
+    const [viewMode, setViewMode] = useState('PIVOT') // PIVOT or LIST
     const [sortColumn, setSortColumn] = useState('periodo_inicio')
     const [sortOrder, setSortOrder] = useState('desc')
     const [filterValue, setFilterValue] = useState('')
@@ -28,6 +29,29 @@ const ReporteProductosView = () => {
     const filteredData = data.filter(item =>
         item.producto.toLowerCase().includes(filterValue.toLowerCase())
     )
+
+    // Pivot Transformation
+    const pivotData = React.useMemo(() => {
+        if (viewMode !== 'PIVOT' || !filteredData.length) return { rows: [], periods: [] }
+
+        // Get unique periods and sort them
+        const uniquePeriods = Array.from(new Set(filteredData.map(item => item.periodo_inicio)))
+            .sort((a, b) => new Date(a) - new Date(b))
+
+        // Group by product
+        const productMap = {}
+        filteredData.forEach(item => {
+            if (!productMap[item.producto]) {
+                productMap[item.producto] = { producto: item.producto, values: {} }
+            }
+            productMap[item.producto].values[item.periodo_inicio] = item.cantidad_total
+        })
+
+        return {
+            rows: Object.values(productMap),
+            periods: uniquePeriods
+        }
+    }, [filteredData, viewMode])
 
     const columns = [
         { key: 'producto', label: 'Producto' },
@@ -75,40 +99,131 @@ const ReporteProductosView = () => {
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
                 <h2 className="text-3xl font-bold text-white flex items-center gap-2">
                     <BarChart3 className="h-8 w-8 text-blue-500" />
                     Ventas por Producto
                 </h2>
 
-                <div className="flex bg-gray-900 p-1 rounded-lg border border-gray-800">
-                    {['DIARIO', 'SEMANAL', 'MENSUAL'].map((type) => (
+                <div className="flex flex-wrap gap-4 items-center bg-gray-900 p-2 rounded-lg border border-gray-800">
+                    <div className="flex bg-gray-800 p-1 rounded-md">
+                        {['DIARIO', 'SEMANAL', 'MENSUAL'].map((type) => (
+                            <button
+                                key={type}
+                                onClick={() => setPeriodType(type)}
+                                className={`px-3 py-1.5 rounded text-sm font-medium transition-all ${periodType === type
+                                        ? 'bg-blue-600 text-white shadow-lg'
+                                        : 'text-gray-400 hover:text-white'
+                                    }`}
+                            >
+                                {type.charAt(0) + type.slice(1).toLowerCase()}
+                            </button>
+                        ))}
+                    </div>
+
+                    <div className="h-6 w-px bg-gray-700 hidden sm:block"></div>
+
+                    <div className="flex bg-gray-800 p-1 rounded-md">
                         <button
-                            key={type}
-                            onClick={() => setPeriodType(type)}
-                            className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${periodType === type
-                                    ? 'bg-blue-600 text-white shadow-lg'
+                            onClick={() => setViewMode('PIVOT')}
+                            className={`px-3 py-1.5 rounded text-sm font-medium transition-all ${viewMode === 'PIVOT'
+                                    ? 'bg-indigo-600 text-white shadow-lg'
                                     : 'text-gray-400 hover:text-white'
                                 }`}
                         >
-                            {type.charAt(0) + type.slice(1).toLowerCase()}
+                            Pivote
                         </button>
-                    ))}
+                        <button
+                            onClick={() => setViewMode('LIST')}
+                            className={`px-3 py-1.5 rounded text-sm font-medium transition-all ${viewMode === 'LIST'
+                                    ? 'bg-indigo-600 text-white shadow-lg'
+                                    : 'text-gray-400 hover:text-white'
+                                }`}
+                        >
+                            Lista
+                        </button>
+                    </div>
                 </div>
             </div>
 
-            <DataTable
-                data={filteredData}
-                columns={columns}
-                isLoading={loading}
-                onSort={handleSort}
-                sortColumn={sortColumn}
-                sortOrder={sortOrder}
-                onFilter={setFilterValue}
-                renderSearchInput={renderSearchInput}
-                rowKey={(row) => `${row.producto}-${row.periodo_inicio}`}
-                compact={true}
-            />
+            {viewMode === 'LIST' ? (
+                <DataTable
+                    data={filteredData}
+                    columns={columns}
+                    isLoading={loading}
+                    onSort={handleSort}
+                    sortColumn={sortColumn}
+                    sortOrder={sortOrder}
+                    onFilter={setFilterValue}
+                    renderSearchInput={renderSearchInput}
+                    rowKey={(row) => `${row.producto}-${row.periodo_inicio}`}
+                    compact={true}
+                />
+            ) : (
+                <div className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden shadow-xl">
+                    <div className="p-4 border-b border-gray-800 flex flex-col sm:flex-row justify-between items-center gap-4">
+                        <span className="text-sm text-gray-400">Vista de Pivote (Cantidad Vendida)</span>
+                        {renderSearchInput(filterValue, setFilterValue)}
+                    </div>
+
+                    <div className="overflow-x-auto custom-scrollbar">
+                        <table className="w-full text-sm text-left text-gray-300">
+                            <thead className="text-xs text-gray-500 uppercase bg-gray-800/50">
+                                <tr>
+                                    <th className="px-6 py-4 sticky left-0 z-20 bg-gray-800 border-r border-gray-700 shadow-xl min-w-[200px]">
+                                        Producto
+                                    </th>
+                                    {pivotData.periods.map(p => (
+                                        <th key={p} className="px-6 py-4 min-w-[120px] text-center whitespace-nowrap">
+                                            {periodType === 'MENSUAL'
+                                                ? new Date(p).toLocaleDateString('es-ES', { month: 'short', year: '2-digit' })
+                                                : new Date(p).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' })
+                                            }
+                                        </th>
+                                    ))}
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-800">
+                                {loading && (
+                                    <tr>
+                                        <td colSpan={pivotData.periods.length + 1} className="px-6 py-10 text-center">
+                                            <div className="flex justify-center flex-col items-center gap-2">
+                                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                                                <span>Cargando datos...</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                )}
+                                {!loading && pivotData.rows.length === 0 && (
+                                    <tr>
+                                        <td colSpan={pivotData.periods.length + 1} className="px-6 py-10 text-center text-gray-500 italic">
+                                            No se encontraron datos para los filtros seleccionados.
+                                        </td>
+                                    </tr>
+                                )}
+                                {!loading && pivotData.rows.map((row) => (
+                                    <tr key={row.producto} className="hover:bg-white/5 transition-colors group">
+                                        <td className="px-6 py-3 font-medium text-white sticky left-0 z-10 bg-gray-900 border-r border-gray-800 group-hover:bg-gray-800">
+                                            {row.producto}
+                                        </td>
+                                        {pivotData.periods.map(p => (
+                                            <td key={p} className="px-6 py-3 text-center">
+                                                {row.values[p] ? (
+                                                    <span className="px-2 py-1 bg-blue-500/10 text-blue-400 rounded-md font-mono">
+                                                        {row.values[p]}
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-gray-700">-</span>
+                                                )}
+                                            </td>
+                                        ))}
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

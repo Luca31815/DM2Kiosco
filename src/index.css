@@ -5,4 +5,16 @@
     /* Using gray-900 as a safe dark default */
     @apply bg-gray-900 text-gray-200 antialiased;
   }
+
+  /* Custom Scrollbar for better UI in dark mode */
+  .custom-scrollbar::-webkit-scrollbar {
+    height: 8px;
+    width: 8px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    @apply bg-gray-900;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-gray-700 rounded-full hover:bg-gray-600;
+  }
 }
