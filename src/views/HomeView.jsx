@@ -51,19 +51,30 @@ const HomeView = () => {
 
     // Calcular KPIs
     const stats = useMemo(() => {
-        if (!dailyReport.length) return { today: '$0', thisMonth: '$0', countToday: 0 }
+        if (!dailyReport.length) return { today: '$0', thisMonth: '$0', countToday: 0, trend: null, trendValue: '0 op.' }
 
-        // Obtener fecha de hoy en formato local YYYY-MM-DD
         const now = new Date()
-        const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+        const todayStr = now.toISOString().split('T')[0]
+        const yesterday = new Date(now)
+        yesterday.setDate(now.getDate() - 1)
+        const yesterdayStr = yesterday.toISOString().split('T')[0]
 
         const todayData = dailyReport.find(d => d.fecha === todayStr) || { total_ventas: 0, cantidad_ventas: 0 }
+        const yesterdayData = dailyReport.find(d => d.fecha === yesterdayStr) || { total_ventas: 0, cantidad_ventas: 0 }
+
         const totalMes = dailyReport.reduce((acc, curr) => acc + (parseFloat(curr.total_ventas) || 0), 0)
+
+        // Calculate trend based on count of sales
+        const trend = todayData.cantidad_ventas >= yesterdayData.cantidad_ventas ? 'up' : 'down'
+        const trendValue = `${todayData.cantidad_ventas} op.`
 
         return {
             today: new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(todayData.total_ventas || 0),
             thisMonth: new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(totalMes),
-            countToday: todayData.cantidad_ventas || 0
+            countToday: todayData.cantidad_ventas || 0,
+            trend,
+            trendValue,
+            yesterdayCount: yesterdayData.cantidad_ventas
         }
     }, [dailyReport])
 
@@ -95,8 +106,8 @@ const HomeView = () => {
                     value={stats.today}
                     icon={DollarSign}
                     color="blue"
-                    trend={stats.countToday > 0 ? "up" : null}
-                    trendValue={`${stats.countToday} op.`}
+                    trend={stats.trend}
+                    trendValue={stats.trendValue}
                 />
                 <StatCard
                     title="Caja este Mes"

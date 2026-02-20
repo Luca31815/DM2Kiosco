@@ -192,7 +192,16 @@ const AnalisisHorariosView = () => {
                     render: (val) => {
                         if (!val) return ''
                         const [y, m, d] = val.split('-')
-                        return `${d}/${m}/${y}`
+                        const isToday = val === new Date().toISOString().split('T')[0]
+                        const isYesterday = val === new Date(Date.now() - 86400000).toISOString().split('T')[0]
+
+                        return (
+                            <div className="flex items-center gap-2">
+                                <span>{`${d}/${m}/${y}`}</span>
+                                {isToday && <span className="bg-blue-500/20 text-blue-400 text-[9px] font-bold px-1.5 py-0.5 rounded border border-blue-500/30">HOY</span>}
+                                {isYesterday && <span className="bg-gray-700 text-gray-400 text-[9px] font-bold px-1.5 py-0.5 rounded border border-gray-600/30">AYER</span>}
+                            </div>
+                        )
                     }
                 },
                 {
@@ -228,11 +237,11 @@ const AnalisisHorariosView = () => {
                         const lastPos = row.lastSaleTime ? getPos(row.lastSaleTime) : -1
 
                         return (
-                            <div className="relative w-full h-16 bg-gray-800/20 rounded-lg border border-gray-700/50 overflow-hidden text-xs">
+                            <div className="relative w-full h-16 bg-gray-900/40 rounded-lg border border-gray-800 overflow-hidden text-xs">
                                 {Array.from({ length: totalH + 1 }).map((_, i) => (
                                     <div
                                         key={i}
-                                        className="absolute top-0 bottom-0 border-r border-gray-700/20 text-[9px] text-gray-600 pt-1"
+                                        className="absolute top-0 bottom-0 border-r border-gray-800/50 text-[9px] text-gray-700 pt-1"
                                         style={{ left: `${(i / totalH) * 100}%` }}
                                     >
                                         <span className="ml-1">{startH + i}h</span>
@@ -245,28 +254,38 @@ const AnalisisHorariosView = () => {
                                     return (
                                         <div
                                             key={m.n}
-                                            className="absolute top-5 bottom-0 flex flex-col items-center group z-10"
+                                            className="absolute top-4 bottom-0 flex flex-col items-center group z-10"
                                             style={{ left: `${mPos}%` }}
                                         >
-                                            <div className="w-px h-full bg-yellow-500/50 group-hover:bg-yellow-400"></div>
-                                            <div className="absolute top-[-10px] bg-gray-900 border border-yellow-500/30 text-[9px] text-yellow-500 px-1 rounded transform -translate-x-1/2 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity z-20">
-                                                #{m.n} ({m.hour})
+                                            <div className="w-px h-full bg-yellow-500/30 group-hover:bg-yellow-500/60 transition-colors"></div>
+                                            {/* Flag Banderín */}
+                                            <div className="absolute top-[-14px] flex flex-col items-center">
+                                                <div className="bg-yellow-500 text-gray-900 text-[10px] font-black px-1.5 py-0.5 rounded-sm shadow-[0_0_10px_rgba(234,179,8,0.3)] transform -translate-x-1/2 flex items-center gap-1">
+                                                    <Trophy className="h-2 w-2" />
+                                                    {m.n}
+                                                </div>
+                                                <div className="w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-t-[4px] border-t-yellow-500 transform -translate-x-1/2"></div>
                                             </div>
-                                            <div className="w-1.5 h-1.5 rounded-full bg-yellow-500 mt-[-2px]"></div>
+
+                                            {/* Tooltip on hover */}
+                                            <div className="absolute bottom-full mb-4 bg-gray-900 border border-yellow-500/30 text-[10px] text-yellow-500 px-2 py-1 rounded shadow-xl whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity z-30 pointer-events-none transform -translate-x-1/2">
+                                                Hito #{m.n} logreado a las {m.hour}hs
+                                            </div>
                                         </div>
                                     )
                                 })}
 
                                 {lastPos >= 0 && lastPos <= 100 && (
                                     <div
-                                        className="absolute top-2 bottom-0 flex flex-col items-center group z-20"
+                                        className="absolute top-0 bottom-0 flex flex-col items-center group z-20"
                                         style={{ left: `${lastPos}%` }}
                                     >
-                                        <div className="w-px h-full bg-blue-500 group-hover:bg-blue-400"></div>
-                                        <div className="absolute top-0 bg-blue-900/80 border border-blue-500/50 text-[10px] text-blue-200 px-1 py-0.5 rounded transform -translate-x-1/2 whitespace-nowrap shadow-lg">
-                                            Total: {row.total_ventas}
+                                        <div className="w-px h-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]"></div>
+                                        {/* Ribbon for Total */}
+                                        <div className="absolute top-6 bg-blue-600/90 border border-blue-400/50 text-[10px] font-bold text-white px-2 py-0.5 rounded shadow-lg transform -translate-x-1/2 backdrop-blur-sm">
+                                            Ventas: {row.total_ventas}
                                         </div>
-                                        <div className="w-2 h-2 rounded-full bg-blue-500 mt-0 shadow-[0_0_8px_rgba(59,130,246,0.5)]"></div>
+                                        <div className="w-2.5 h-2.5 rounded-full bg-blue-400 border-2 border-blue-600 mt-[-1.25px] shadow-[0_0_10px_rgba(59,130,246,0.8)]"></div>
                                     </div>
                                 )}
                             </div>
