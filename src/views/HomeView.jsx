@@ -108,7 +108,7 @@ const HomeView = () => {
                 />
                 <StatCard
                     title="Stock Crítico"
-                    value={productos.filter(p => (p.stock || 0) <= (p.stock_minimo || 5)).length}
+                    value={productos.filter(p => (p.stock_actual || 0) <= 5).length}
                     icon={Package}
                     color="yellow"
                 />
@@ -183,8 +183,8 @@ const HomeView = () => {
                                     <p className="text-xs text-gray-500">Costo: ${p.ultimo_costo_compra || 0}</p>
                                 </div>
                                 <div className="text-right">
-                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${(p.stock || 0) <= 0 ? 'bg-red-500/10 text-red-400' : 'bg-yellow-500/10 text-yellow-400'}`}>
-                                        Stock: {p.stock || 0}
+                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${(p.stock_actual || 0) <= 0 ? 'bg-red-500/10 text-red-400' : 'bg-yellow-500/10 text-yellow-400'}`}>
+                                        Stock: {p.stock_actual || 0}
                                     </span>
                                 </div>
                             </div>
