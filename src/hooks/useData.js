@@ -52,23 +52,14 @@ export function useProductos(options = {}) {
 }
 
 export function useCompras(options = {}) {
-    const mappedOptions = { ...options }
-    if (mappedOptions.sortColumn === 'fecha') mappedOptions.sortColumn = 'Fecha'
-    if (mappedOptions.filterColumn === 'fecha') mappedOptions.filterColumn = 'Fecha'
-
     const { data, error, isLoading } = useSWR(
-        ['compras', mappedOptions],
-        () => api.getCompras(mappedOptions),
+        ['compras', options],
+        () => api.getCompras(options),
         SWR_OPTIONS
     )
 
-    const normalizedData = (data?.data || []).map(item => ({
-        ...item,
-        fecha: item.fecha || item.Fecha || ''
-    }))
-
     return {
-        data: normalizedData,
+        data: data?.data || [],
         count: data?.count || 0,
         loading: isLoading,
         error
@@ -93,31 +84,14 @@ export function useReservas(options = {}, openOnly = false) {
     const key = openOnly ? 'reservas_abiertas' : 'reservas'
     const fetcher = openOnly ? api.getReservasAbiertas : api.getReservas
 
-    // Map column names for server-side operations based on source
-    // Table 'reservas' seems to use 'Cliente' and 'Notas' while the view uses 'cliente' and 'notas'
-    const mappedOptions = { ...options }
-    if (!openOnly) {
-        if (mappedOptions.sortColumn === 'cliente') mappedOptions.sortColumn = 'Cliente'
-        if (mappedOptions.filterColumn === 'cliente') mappedOptions.filterColumn = 'Cliente'
-        if (mappedOptions.sortColumn === 'notas') mappedOptions.sortColumn = 'Notas'
-        if (mappedOptions.filterColumn === 'notas') mappedOptions.filterColumn = 'Notas'
-    }
-
     const { data, error, isLoading } = useSWR(
-        [key, mappedOptions],
-        () => fetcher(mappedOptions),
+        [key, options],
+        () => fetcher(options),
         SWR_OPTIONS
     )
 
-    // Normalize data: ensure lowercase keys exist regardless of DB casing for display
-    const normalizedData = (data?.data || []).map(item => ({
-        ...item,
-        cliente: item.cliente || item.Cliente || '',
-        notas: item.notas || item.Notas || ''
-    }))
-
     return {
-        data: normalizedData,
+        data: data?.data || [],
         count: data?.count || 0,
         loading: isLoading,
         error
