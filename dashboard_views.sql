@@ -283,9 +283,9 @@ SELECT
     r.reserva_id,
     r.fecha_creacion,
     r."Cliente" as cliente,
-    r.total_reserva,
-    r.total_pagado,
-    r.saldo_pendiente,
+    COALESCE(NULLIF(regexp_replace(r.total_reserva, '[^0-9.]', '', 'g'), '')::numeric, 0) as total_reserva,
+    COALESCE(NULLIF(regexp_replace(r.total_pagado, '[^0-9.]', '', 'g'), '')::numeric, 0) as total_pagado,
+    COALESCE(NULLIF(regexp_replace(r.saldo_pendiente, '[^0-9.]', '', 'g'), '')::numeric, 0) as saldo_pendiente,
     r.estado_pago,
     r.estado_entrega,
     r.estado_reserva,
@@ -303,4 +303,3 @@ SELECT DISTINCT "Cliente" as nombre FROM public.reservas WHERE "Cliente" IS NOT 
 
 -- Permisos
 GRANT SELECT ON ALL TABLES IN SCHEMA public TO anon, authenticated, service_role;
-GRANT SELECT ON ALL VIEWS IN SCHEMA public TO anon, authenticated, service_role;
