@@ -29,9 +29,10 @@ const StatCard = ({ title, value, icon: Icon, trend, trendValue, color }) => (
             <div className={`p-3 rounded-lg bg-${color}-500/10`}>
                 <Icon className={`h-6 w-6 text-${color}-500`} />
             </div>
-            {trend && (
-                <div className={`flex items-center gap-1 text-sm ${trend === 'up' ? 'text-green-500' : 'text-red-500'}`}>
-                    {trend === 'up' ? <ArrowUpRight className="h-4 w-4" /> : <ArrowDownRight className="h-4 w-4" />}
+            {trendValue && (
+                <div className={`flex items-center gap-1 text-sm ${trend === 'up' ? 'text-green-500' : (trend === 'down' ? 'text-red-500' : 'text-gray-400')}`}>
+                    {trend === 'up' && <ArrowUpRight className="h-4 w-4" />}
+                    {trend === 'down' && <ArrowDownRight className="h-4 w-4" />}
                     {trendValue}
                 </div>
             )}
@@ -51,13 +52,20 @@ const HomeView = () => {
 
     // Calcular KPIs
     const stats = useMemo(() => {
-        if (!dailyReport.length) return { today: '$0', thisMonth: '$0', countToday: 0, trend: null, trendValue: '0 op.' }
+        const getLocalDateStr = (date) => {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        };
 
-        const now = new Date()
-        const todayStr = now.toISOString().split('T')[0]
-        const yesterday = new Date(now)
-        yesterday.setDate(now.getDate() - 1)
-        const yesterdayStr = yesterday.toISOString().split('T')[0]
+        const now = new Date();
+        const todayStr = getLocalDateStr(now);
+        const yesterday = new Date(now);
+        yesterday.setDate(now.getDate() - 1);
+        const yesterdayStr = getLocalDateStr(yesterday);
+
+        if (!dailyReport.length) return { today: '$0', thisMonth: '$0', countToday: 0, trend: null, trendValue: '0 op.' }
 
         const todayData = dailyReport.find(d => d.fecha === todayStr) || { total_ventas: 0, cantidad_ventas: 0 }
         const yesterdayData = dailyReport.find(d => d.fecha === yesterdayStr) || { total_ventas: 0, cantidad_ventas: 0 }
@@ -65,15 +73,16 @@ const HomeView = () => {
         const totalMes = dailyReport.reduce((acc, curr) => acc + (parseFloat(curr.total_ventas) || 0), 0)
 
         // Calculate trend based on count of sales
-        const trend = todayData.cantidad_ventas >= yesterdayData.cantidad_ventas ? 'up' : 'down'
-        const trendValue = `${todayData.cantidad_ventas} op.`
+        let trend = null;
+        if (todayData.cantidad_ventas > yesterdayData.cantidad_ventas) trend = 'up';
+        else if (todayData.cantidad_ventas < yesterdayData.cantidad_ventas) trend = 'down';
 
         return {
             today: new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(todayData.total_ventas || 0),
             thisMonth: new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(totalMes),
             countToday: todayData.cantidad_ventas || 0,
             trend,
-            trendValue,
+            trendValue: `${todayData.cantidad_ventas} op.`,
             yesterdayCount: yesterdayData.cantidad_ventas
         }
     }, [dailyReport])

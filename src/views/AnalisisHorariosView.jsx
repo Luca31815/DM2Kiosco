@@ -196,8 +196,22 @@ const AnalisisHorariosView = () => {
                     render: (val) => {
                         if (!val) return ''
                         const [y, m, d] = val.split('-')
-                        const isToday = val === new Date().toISOString().split('T')[0]
-                        const isYesterday = val === new Date(Date.now() - 86400000).toISOString().split('T')[0]
+
+                        const getLocalDateStr = (date) => {
+                            const year = date.getFullYear();
+                            const month = String(date.getMonth() + 1).padStart(2, '0');
+                            const day = String(date.getDate()).padStart(2, '0');
+                            return `${year}-${month}-${day}`;
+                        };
+
+                        const now = new Date()
+                        const todayStr = getLocalDateStr(now)
+                        const yesterday = new Date(now)
+                        yesterday.setDate(now.getDate() - 1)
+                        const yesterdayStr = getLocalDateStr(yesterday)
+
+                        const isToday = val === todayStr
+                        const isYesterday = val === yesterdayStr
 
                         return (
                             <div className="flex items-center gap-2">
