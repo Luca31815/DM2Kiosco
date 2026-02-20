@@ -1,117 +1,72 @@
 -- =========================================================
--- 1. Vista de Reporte Diario (Consolidado Ventas y Compras)
+-- LIMPIEZA DE VISTAS EXISTENTES (Para evitar errores de cambio de esquema)
+-- =========================================================
+DROP VIEW IF EXISTS public.vista_reporte_diario CASCADE;
+DROP VIEW IF EXISTS public.vista_reporte_semanal CASCADE;
+DROP VIEW IF EXISTS public.vista_reporte_mensual CASCADE;
+DROP VIEW IF EXISTS public.vista_reservas_abiertas CASCADE;
+DROP VIEW IF EXISTS public.vista_rentabilidad_productos CASCADE;
+DROP VIEW IF EXISTS public.vista_reporte_ventas_periodico CASCADE;
+DROP VIEW IF EXISTS public.vista_analisis_horario_diario CASCADE;
+DROP VIEW IF EXISTS public.vista_analisis_horario_semanal CASCADE;
+DROP VIEW IF EXISTS public.vista_analisis_horario_mensual CASCADE;
+DROP VIEW IF EXISTS public.vista_ventas_search CASCADE;
+DROP VIEW IF EXISTS public.vista_compras_search CASCADE;
+DROP VIEW IF EXISTS public.vista_reservas_search CASCADE;
+DROP VIEW IF EXISTS public.vista_clientes_unicos CASCADE;
+
+-- =========================================================
+-- 1. Vista de Reporte Diario (Basado en Caja/Movimientos)
 -- =========================================================
 CREATE OR REPLACE VIEW public.vista_reporte_diario AS
-WITH daily_ventas AS (
-    SELECT 
-        date_trunc('day', fecha)::date as fecha,
-        count(*) as cant_ventas,
-        SUM(COALESCE(NULLIF(regexp_replace(total_venta, '[^0-9.]', '', 'g'), '')::numeric, 0)) as ingresos
-    FROM public.ventas
-    GROUP BY 1
-),
-daily_compras AS (
-    SELECT 
-        date_trunc('day', "Fecha")::date as fecha,
-        count(*) as cant_compras,
-        SUM(COALESCE(NULLIF(regexp_replace(total_compra, '[^0-9.]', '', 'g'), '')::numeric, 0)) as egresos
-    FROM public.compras
-    GROUP BY 1
-),
-all_dates AS (
-    SELECT fecha FROM daily_ventas
-    UNION
-    SELECT fecha FROM daily_compras
-)
 SELECT 
-    ad.fecha,
-    COALESCE(v.cant_ventas, 0) as cant_ventas,
-    COALESCE(c.cant_compras, 0) as cant_compras,
-    COALESCE(v.ingresos, 0) as ingresos,
-    COALESCE(c.egresos, 0) as egresos,
-    (COALESCE(v.ingresos, 0) - COALESCE(c.egresos, 0)) as balance,
-    COALESCE(v.ingresos, 0) as total_ventas -- Compatibilidad con HomeView
-FROM all_dates ad
-LEFT JOIN daily_ventas v ON ad.fecha = v.fecha
-LEFT JOIN daily_compras c ON ad.fecha = c.fecha
-ORDER BY ad.fecha DESC;
+    date_trunc('day', fecha)::date as fecha,
+    COUNT(CASE WHEN UPPER(referencia_tipo) = 'VENTA' AND UPPER(tipo) = 'ENTRADA' THEN 1 END) as cant_ventas,
+    COUNT(CASE WHEN UPPER(referencia_tipo) = 'COMPRA' AND UPPER(tipo) = 'SALIDA' THEN 1 END) as cant_compras,
+    SUM(CASE WHEN UPPER(tipo) = 'ENTRADA' THEN COALESCE(NULLIF(regexp_replace(monto, '[^0-9.]', '', 'g'), '')::numeric, 0) ELSE 0 END) as ingresos,
+    SUM(CASE WHEN UPPER(tipo) = 'SALIDA' THEN COALESCE(NULLIF(regexp_replace(monto, '[^0-9.]', '', 'g'), '')::numeric, 0) ELSE 0 END) as egresos,
+    SUM(CASE WHEN UPPER(tipo) = 'ENTRADA' THEN COALESCE(NULLIF(regexp_replace(monto, '[^0-9.]', '', 'g'), '')::numeric, 0) 
+             WHEN UPPER(tipo) = 'SALIDA' THEN -COALESCE(NULLIF(regexp_replace(monto, '[^0-9.]', '', 'g'), '')::numeric, 0)
+             ELSE 0 END) as balance,
+    SUM(CASE WHEN UPPER(referencia_tipo) = 'VENTA' AND UPPER(tipo) = 'ENTRADA' THEN COALESCE(NULLIF(regexp_replace(monto, '[^0-9.]', '', 'g'), '')::numeric, 0) ELSE 0 END) as total_ventas -- Compatibilidad con Dashboard
+FROM public.movimientos_dinero
+GROUP BY 1
+ORDER BY 1 DESC;
 
 -- =========================================================
 -- 2. Vista de Reporte Semanal
 -- =========================================================
 CREATE OR REPLACE VIEW public.vista_reporte_semanal AS
-WITH weekly_ventas AS (
-    SELECT 
-        date_trunc('week', fecha)::date as semana_del,
-        count(*) as cant_ventas,
-        SUM(COALESCE(NULLIF(regexp_replace(total_venta, '[^0-9.]', '', 'g'), '')::numeric, 0)) as ingresos
-    FROM public.ventas
-    GROUP BY 1
-),
-weekly_compras AS (
-    SELECT 
-        date_trunc('week', "Fecha")::date as semana_del,
-        count(*) as cant_compras,
-        SUM(COALESCE(NULLIF(regexp_replace(total_compra, '[^0-9.]', '', 'g'), '')::numeric, 0)) as egresos
-    FROM public.compras
-    GROUP BY 1
-),
-all_weeks AS (
-    SELECT semana_del FROM weekly_ventas
-    UNION
-    SELECT semana_del FROM weekly_compras
-)
 SELECT 
-    aw.semana_del,
-    COALESCE(v.cant_ventas, 0) as cant_ventas,
-    COALESCE(c.cant_compras, 0) as cant_compras,
-    COALESCE(v.ingresos, 0) as ingresos,
-    COALESCE(c.egresos, 0) as egresos,
-    (COALESCE(v.ingresos, 0) - COALESCE(c.egresos, 0)) as balance
-FROM all_weeks aw
-LEFT JOIN weekly_ventas v ON aw.semana_del = v.semana_del
-LEFT JOIN weekly_compras c ON aw.semana_del = c.semana_del
-ORDER BY aw.semana_del DESC;
+    date_trunc('week', fecha)::date as semana_del,
+    COUNT(CASE WHEN UPPER(referencia_tipo) = 'VENTA' AND UPPER(tipo) = 'ENTRADA' THEN 1 END) as cant_ventas,
+    COUNT(CASE WHEN UPPER(referencia_tipo) = 'COMPRA' AND UPPER(tipo) = 'SALIDA' THEN 1 END) as cant_compras,
+    SUM(CASE WHEN UPPER(tipo) = 'ENTRADA' THEN COALESCE(NULLIF(regexp_replace(monto, '[^0-9.]', '', 'g'), '')::numeric, 0) ELSE 0 END) as ingresos,
+    SUM(CASE WHEN UPPER(tipo) = 'SALIDA' THEN COALESCE(NULLIF(regexp_replace(monto, '[^0-9.]', '', 'g'), '')::numeric, 0) ELSE 0 END) as egresos,
+    SUM(CASE WHEN UPPER(tipo) = 'ENTRADA' THEN COALESCE(NULLIF(regexp_replace(monto, '[^0-9.]', '', 'g'), '')::numeric, 0) 
+             WHEN UPPER(tipo) = 'SALIDA' THEN -COALESCE(NULLIF(regexp_replace(monto, '[^0-9.]', '', 'g'), '')::numeric, 0)
+             ELSE 0 END) as balance
+FROM public.movimientos_dinero
+GROUP BY 1
+ORDER BY 1 DESC;
 
 -- =========================================================
 -- 3. Vista de Reporte Mensual
 -- =========================================================
 CREATE OR REPLACE VIEW public.vista_reporte_mensual AS
-WITH monthly_ventas AS (
-    SELECT 
-        extract(year from fecha)::int as anio,
-        extract(month from fecha)::int as mes,
-        count(*) as cant_ventas,
-        SUM(COALESCE(NULLIF(regexp_replace(total_venta, '[^0-9.]', '', 'g'), '')::numeric, 0)) as ingresos
-    FROM public.ventas
-    GROUP BY 1, 2
-),
-monthly_compras AS (
-    SELECT 
-        extract(year from "Fecha")::int as anio,
-        extract(month from "Fecha")::int as mes,
-        count(*) as cant_compras,
-        SUM(COALESCE(NULLIF(regexp_replace(total_compra, '[^0-9.]', '', 'g'), '')::numeric, 0)) as egresos
-    FROM public.compras
-    GROUP BY 1, 2
-),
-all_months AS (
-    SELECT anio, mes FROM monthly_ventas
-    UNION
-    SELECT anio, mes FROM monthly_compras
-)
 SELECT 
-    am.anio,
-    am.mes,
-    COALESCE(v.cant_ventas, 0) as cant_ventas,
-    COALESCE(c.cant_compras, 0) as cant_compras,
-    COALESCE(v.ingresos, 0) as ingresos,
-    COALESCE(c.egresos, 0) as egresos,
-    (COALESCE(v.ingresos, 0) - COALESCE(c.egresos, 0)) as balance
-FROM all_months am
-LEFT JOIN monthly_ventas v ON am.anio = v.anio AND am.mes = v.mes
-LEFT JOIN monthly_compras c ON am.anio = c.anio AND am.mes = c.mes
-ORDER BY am.anio DESC, am.mes DESC;
+    extract(year from fecha)::int as anio,
+    extract(month from fecha)::int as mes,
+    COUNT(CASE WHEN UPPER(referencia_tipo) = 'VENTA' AND UPPER(tipo) = 'ENTRADA' THEN 1 END) as cant_ventas,
+    COUNT(CASE WHEN UPPER(referencia_tipo) = 'COMPRA' AND UPPER(tipo) = 'SALIDA' THEN 1 END) as cant_compras,
+    SUM(CASE WHEN UPPER(tipo) = 'ENTRADA' THEN COALESCE(NULLIF(regexp_replace(monto, '[^0-9.]', '', 'g'), '')::numeric, 0) ELSE 0 END) as ingresos,
+    SUM(CASE WHEN UPPER(tipo) = 'SALIDA' THEN COALESCE(NULLIF(regexp_replace(monto, '[^0-9.]', '', 'g'), '')::numeric, 0) ELSE 0 END) as egresos,
+    SUM(CASE WHEN UPPER(tipo) = 'ENTRADA' THEN COALESCE(NULLIF(regexp_replace(monto, '[^0-9.]', '', 'g'), '')::numeric, 0) 
+             WHEN UPPER(tipo) = 'SALIDA' THEN -COALESCE(NULLIF(regexp_replace(monto, '[^0-9.]', '', 'g'), '')::numeric, 0)
+             ELSE 0 END) as balance
+FROM public.movimientos_dinero
+GROUP BY 1, 2
+ORDER BY 1 DESC, 2 DESC;
 
 -- =========================================================
 -- 4. Vista de Reservas Abiertas
@@ -121,9 +76,9 @@ SELECT
     r.reserva_id,
     r.fecha_creacion,
     r."Cliente" as cliente,
-    r.total_reserva,
-    r.total_pagado,
-    r.saldo_pendiente,
+    COALESCE(NULLIF(regexp_replace(r.total_reserva, '[^0-9.]', '', 'g'), '')::numeric, 0) as total_reserva,
+    COALESCE(NULLIF(regexp_replace(r.total_pagado, '[^0-9.]', '', 'g'), '')::numeric, 0) as total_pagado,
+    COALESCE(NULLIF(regexp_replace(r.saldo_pendiente, '[^0-9.]', '', 'g'), '')::numeric, 0) as saldo_pendiente,
     r.estado_pago,
     r.estado_entrega,
     r.estado_reserva,
