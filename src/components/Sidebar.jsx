@@ -5,7 +5,8 @@ const Sidebar = ({ isOpen, onClose }) => {
     const location = useLocation()
 
     const links = [
-        { to: '/', label: 'Ventas', icon: TrendingUp },
+        { to: '/', label: 'Dashboard', icon: LayoutDashboard },
+        { to: '/ventas', label: 'Ventas', icon: TrendingUp },
         { to: '/compras', label: 'Compras', icon: ShoppingCart },
         { to: '/reservas', label: 'Reservas', icon: Calendar },
         { to: '/productos', label: 'Productos', icon: Package },
