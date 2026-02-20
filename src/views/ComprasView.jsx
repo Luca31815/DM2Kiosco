@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import DataTable from '../components/DataTable'
 import { useCompras, useComprasDetalles, useMovimientosDinero, useMovimientosStock } from '../hooks/useData'
-import { Loader2, Edit2, Check, X } from 'lucide-react'
+import { Loader2, Edit2, Check, X, Search } from 'lucide-react'
 import * as api from '../services/api'
 import { useSWRConfig } from 'swr'
 import ProductAutocomplete from '../components/ProductAutocomplete'
@@ -207,6 +207,7 @@ const ComprasView = () => {
 
     const searchColumns = [
         { key: 'proveedor', label: 'Proveedor' },
+        { key: 'lista_productos', label: 'Producto' },
         { key: 'compra_id', label: 'ID Compra' },
         { key: 'notas', label: 'Notas' }
     ]
@@ -228,6 +229,33 @@ const ComprasView = () => {
         }
     }
 
+    const renderSearchInput = (value, onChange) => {
+        if (filterColumn === 'lista_productos') {
+            return (
+                <div className="relative w-full sm:w-64">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 h-4 w-4 z-10" />
+                    <ProductAutocomplete
+                        value={value}
+                        onChange={onChange}
+                        className="pl-10"
+                    />
+                </div>
+            )
+        }
+        return (
+            <div className="relative w-full sm:w-64">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 h-4 w-4" />
+                <input
+                    type="text"
+                    placeholder="Buscar..."
+                    className="pl-10 pr-4 py-2 bg-gray-800 border-none rounded-md text-sm focus:ring-1 focus:ring-blue-500 text-gray-300 placeholder-gray-500 w-full transition-all duration-200"
+                    value={value}
+                    onChange={(e) => onChange(e.target.value)}
+                />
+            </div>
+        )
+    }
+
     return (
         <div>
             <h2 className="text-3xl font-bold text-white mb-6">Compras</h2>
@@ -242,6 +270,7 @@ const ComprasView = () => {
                 searchColumns={searchColumns}
                 searchColumn={filterColumn}
                 onSearchColumnChange={setFilterColumn}
+                renderSearchInput={renderSearchInput}
                 renderExpandedRow={(row) => <ExpandedRow row={row} />}
                 rowKey="compra_id"
             />

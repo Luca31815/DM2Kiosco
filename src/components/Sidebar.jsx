@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
-import { LayoutDashboard, ShoppingCart, Calendar, Package, TrendingUp, FileBarChart, History, Clock, X, Menu } from 'lucide-react'
+import { LayoutDashboard, ShoppingCart, Calendar, Package, TrendingUp, FileBarChart, History, Clock, X, Menu, BarChart3 } from 'lucide-react'
 
 const Sidebar = ({ isOpen, onClose }) => {
     const location = useLocation()
@@ -11,6 +11,7 @@ const Sidebar = ({ isOpen, onClose }) => {
         { to: '/productos', label: 'Productos', icon: Package },
         { to: '/rentabilidad', label: 'Rentabilidad', icon: TrendingUp },
         { to: '/reportes', label: 'Reportes', icon: FileBarChart },
+        { to: '/reporte-productos', label: 'Ventas por Producto', icon: BarChart3 },
         { to: '/analisis-horarios', label: 'Análisis Horarios', icon: Clock },
         { to: '/historial', label: 'Historial', icon: History },
     ]

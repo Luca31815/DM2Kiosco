@@ -272,3 +272,33 @@ export function useMovimientosStock(referenciaId) {
         error
     }
 }
+
+export function useClientes(options = {}) {
+    const { data, error, isLoading } = useSWR(
+        ['clientes', options],
+        () => api.getClientes(options),
+        SWR_OPTIONS
+    )
+
+    return {
+        data: data?.data || [],
+        count: data?.count || 0,
+        loading: isLoading,
+        error
+    }
+}
+
+export function useReporteVentasPeriodico(options = {}) {
+    const { data, error, isLoading } = useSWR(
+        ['reporte-ventas-periodico', options],
+        () => api.getReporteVentasPeriodico(options),
+        SWR_OPTIONS
+    )
+
+    return {
+        data: data?.data || [],
+        count: data?.count || 0,
+        loading: isLoading,
+        error
+    }
+}

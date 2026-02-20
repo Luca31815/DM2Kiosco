@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { useProductos } from '../hooks/useData'
+import { useClientes } from '../hooks/useData'
 import { Loader2 } from 'lucide-react'
 
-const ProductAutocomplete = ({ value, onChange, placeholder = 'Buscar producto...', className = '' }) => {
+const ClientAutocomplete = ({ value, onChange, placeholder = 'Buscar cliente...', className = '' }) => {
     const [inputValue, setInputValue] = useState(value || '')
     const [showSuggestions, setShowSuggestions] = useState(false)
     const [debouncedQuery, setDebouncedQuery] = useState('')
@@ -22,7 +22,7 @@ const ProductAutocomplete = ({ value, onChange, placeholder = 'Buscar producto..
     }, [value])
 
     // Fetch suggestions
-    const { data: suggestions, loading } = useProductos({
+    const { data: suggestions, loading } = useClientes({
         filterColumn: 'nombre',
         filterValue: debouncedQuery,
         pageSize: 10,
@@ -72,16 +72,13 @@ const ProductAutocomplete = ({ value, onChange, placeholder = 'Buscar producto..
 
             {showSuggestions && inputValue.length > 0 && suggestions.length > 0 && (
                 <ul className="absolute z-[100] w-full mt-1 bg-gray-800 border border-gray-700 rounded shadow-xl max-h-60 overflow-y-auto divide-y divide-gray-700 scrollbar-thin scrollbar-thumb-gray-600">
-                    {suggestions.map((product) => (
+                    {suggestions.map((client, index) => (
                         <li
-                            key={product.producto_id}
+                            key={index}
                             className="px-4 py-2 hover:bg-white/5 cursor-pointer text-gray-300 transition-colors"
-                            onClick={() => handleSelect(product.nombre)}
+                            onClick={() => handleSelect(client.nombre)}
                         >
-                            <div className="flex flex-col">
-                                <span className="font-medium text-white">{product.nombre}</span>
-                                <span className="text-[10px] text-gray-500 uppercase">En stock: {product.stock_actual} • ${product.ultimo_precio_venta || '-'}</span>
-                            </div>
+                            <span className="font-medium text-white">{client.nombre}</span>
                         </li>
                     ))}
                 </ul>
@@ -90,4 +87,4 @@ const ProductAutocomplete = ({ value, onChange, placeholder = 'Buscar producto..
     )
 }
 
-export default ProductAutocomplete
+export default ClientAutocomplete

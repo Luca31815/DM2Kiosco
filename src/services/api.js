@@ -57,17 +57,19 @@ export const fetchDetails = async (tableName, foreignKeyColumn, foreignKeyValue)
     return data
 }
 
-export const getVentas = (options) => fetchTableData('ventas', options)
+export const getVentas = (options) => fetchTableData('vista_ventas_search', options)
 export const getVentasDetalles = (id) => fetchDetails('ventas_detalles', 'venta_id', id)
 
-export const getCompras = (options) => fetchTableData('compras', options)
+export const getCompras = (options) => fetchTableData('vista_compras_search', options)
 export const getComprasDetalles = (id) => fetchDetails('compras_detalles', 'compra_id', id)
 
-export const getReservas = (options) => fetchTableData('reservas', options)
+export const getReservas = (options) => fetchTableData('vista_reservas_search', options)
 export const getReservasAbiertas = (options) => fetchTableData('vista_reservas_abiertas', options)
 export const getReservasDetalles = (id) => fetchDetails('reservas_detalles', 'reserva_id', id)
 
 export const getProductos = (options) => fetchTableData('productos', options)
+
+export const getClientes = (options) => fetchTableData('vista_clientes_unicos', options)
 
 export const getReporteDiario = (options) => fetchTableData('vista_reporte_diario', options)
 export const getReporteSemanal = (options) => fetchTableData('vista_reporte_semanal', options)
@@ -82,6 +84,8 @@ export const getAnalisisHorarioSemanal = (options) => fetchTableData('vista_anal
 export const getAnalisisHorarioMensual = (options) => fetchTableData('vista_analisis_horario_mensual', options)
 
 export const getHitosVentas = (options) => fetchTableData('vista_hitos_ventas', options)
+
+export const getReporteVentasPeriodico = (options) => fetchTableData('vista_reporte_ventas_periodico', options)
 
 export const getMovimientosDinero = (id) => fetchDetails('movimientos_dinero', 'referencia_id', id)
 export const getMovimientosStock = (id) => fetchDetails('stock_movimientos', 'referencia_id', id)

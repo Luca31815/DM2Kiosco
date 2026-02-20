@@ -6,6 +6,7 @@ import ComprasView from './views/ComprasView'
 import ReservasView from './views/ReservasView'
 import ProductosView from './views/ProductosView'
 import ReportesView from './views/ReportesView'
+import ReporteProductosView from './views/ReporteProductosView'
 import HistorialView from './views/HistorialView'
 
 import RentabilidadProductosView from './views/RentabilidadProductosView'
@@ -22,6 +23,7 @@ function App() {
           <Route path="/productos" element={<ProductosView />} />
           <Route path="/rentabilidad" element={<RentabilidadProductosView />} />
           <Route path="/reportes" element={<ReportesView />} />
+          <Route path="/reporte-productos" element={<ReporteProductosView />} />
           <Route path="/analisis-horarios" element={<AnalisisHorariosView />} />
           <Route path="/historial" element={<HistorialView />} />
         </Routes>
