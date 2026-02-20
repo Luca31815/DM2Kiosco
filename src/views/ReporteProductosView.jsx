@@ -34,9 +34,9 @@ const ReporteProductosView = () => {
     const pivotData = React.useMemo(() => {
         if (viewMode !== 'PIVOT' || !filteredData.length) return { rows: [], periods: [] }
 
-        // Get unique periods and sort them
+        // Get unique periods and sort them (DESC order - most recent first)
         const uniquePeriods = Array.from(new Set(filteredData.map(item => item.periodo_inicio)))
-            .sort((a, b) => new Date(a) - new Date(b))
+            .sort((a, b) => new Date(b) - new Date(a))
 
         // Group by product
         const productMap = {}
@@ -124,8 +124,8 @@ const ReporteProductosView = () => {
                                 key={type}
                                 onClick={() => setPeriodType(type)}
                                 className={`px-3 py-1.5 rounded text-sm font-medium transition-all ${periodType === type
-                                        ? 'bg-blue-600 text-white shadow-lg'
-                                        : 'text-gray-400 hover:text-white'
+                                    ? 'bg-blue-600 text-white shadow-lg'
+                                    : 'text-gray-400 hover:text-white'
                                     }`}
                             >
                                 {type.charAt(0) + type.slice(1).toLowerCase()}
@@ -139,8 +139,8 @@ const ReporteProductosView = () => {
                         <button
                             onClick={() => setViewMode('PIVOT')}
                             className={`px-3 py-1.5 rounded text-sm font-medium transition-all ${viewMode === 'PIVOT'
-                                    ? 'bg-indigo-600 text-white shadow-lg'
-                                    : 'text-gray-400 hover:text-white'
+                                ? 'bg-indigo-600 text-white shadow-lg'
+                                : 'text-gray-400 hover:text-white'
                                 }`}
                         >
                             Pivote
@@ -148,8 +148,8 @@ const ReporteProductosView = () => {
                         <button
                             onClick={() => setViewMode('LIST')}
                             className={`px-3 py-1.5 rounded text-sm font-medium transition-all ${viewMode === 'LIST'
-                                    ? 'bg-indigo-600 text-white shadow-lg'
-                                    : 'text-gray-400 hover:text-white'
+                                ? 'bg-indigo-600 text-white shadow-lg'
+                                : 'text-gray-400 hover:text-white'
                                 }`}
                         >
                             Lista
