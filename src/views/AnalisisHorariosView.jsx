@@ -367,6 +367,51 @@ const AnalisisHorariosView = () => {
                 </div>
             </div>
 
+            {/* Stats Summary for Hitos */}
+            {analysisMode === 'hitos' && hitosRawData?.hitos?.length > 0 && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                    {[10, 20, 30, 40].map(n => {
+                        // Calculate average for this milestone across all days
+                        let sumMinutes = 0
+                        let count = 0
+
+                        hitosRawData.hitos.forEach(h => {
+                            if (h.hito_logrado === n && h.hora_exacta) {
+                                const [hStr, mStr] = h.hora_exacta.split(':')
+                                // Assuming typical opening at 08:00
+                                const minutesSinceOpening = (parseInt(hStr, 10) * 60 + parseInt(mStr, 10)) - (8 * 60)
+                                if (minutesSinceOpening > 0) {
+                                    sumMinutes += minutesSinceOpening
+                                    count++
+                                }
+                            }
+                        })
+
+                        const avgMinutes = count > 0 ? (sumMinutes / count) : 0
+                        const avgH = Math.floor(avgMinutes / 60)
+                        const avgM = Math.round(avgMinutes % 60)
+
+                        // Format for display (8am + avg offset)
+                        let displayH = 8 + avgH
+                        let displayM = avgM
+                        if (displayM >= 60) {
+                            displayH += 1
+                            displayM -= 60
+                        }
+
+                        const avgTime = count > 0 ? `${displayH.toString().padStart(2, '0')}:${displayM.toString().padStart(2, '0')}` : '--:--'
+
+                        return (
+                            <div key={n} className="bg-gray-700/30 border border-gray-700 p-4 rounded-xl flex flex-col items-center">
+                                <span className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Hito {n} Ventas</span>
+                                <span className="text-2xl font-black text-yellow-500 mt-1">{avgTime} <span className="text-xs font-normal text-gray-400">hs</span></span>
+                                <span className="text-[10px] text-gray-500 mt-1 italic italic">Promedio histórico ({count} días)</span>
+                            </div>
+                        )
+                    })}
+                </div>
+            )}
+
             <DataTable
                 data={currentData}
                 columns={getColumns()}
