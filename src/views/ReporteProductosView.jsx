@@ -60,7 +60,10 @@ const ReporteProductosView = () => {
             label: 'Periodo',
             render: (val) => {
                 if (!val) return ''
-                const date = new Date(val)
+                // Parse YYYY-MM-DD as local date to avoid timezone shift
+                const [year, month, day] = val.split('-').map(Number)
+                const date = new Date(year, month - 1, day)
+
                 if (periodType === 'MENSUAL') {
                     return date.toLocaleDateString('es-ES', { year: 'numeric', month: 'long' })
                 }
@@ -204,14 +207,18 @@ const ReporteProductosView = () => {
                                     <th className="px-6 py-4 sticky left-0 top-0 z-50 bg-gray-800 border-b border-r border-gray-700 shadow-xl min-w-[200px]">
                                         Producto
                                     </th>
-                                    {pivotData.periods.map(p => (
-                                        <th key={p} className="px-6 py-4 min-w-[120px] text-center whitespace-nowrap bg-gray-800 border-b border-gray-700">
-                                            {periodType === 'MENSUAL'
-                                                ? new Date(p).toLocaleDateString('es-ES', { month: 'short', year: '2-digit' })
-                                                : new Date(p).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' })
-                                            }
-                                        </th>
-                                    ))}
+                                    {pivotData.periods.map(p => {
+                                        const [year, month, day] = p.split('-').map(Number)
+                                        const d = new Date(year, month - 1, day)
+                                        return (
+                                            <th key={p} className="px-6 py-4 min-w-[120px] text-center whitespace-nowrap bg-gray-800 border-b border-gray-700">
+                                                {periodType === 'MENSUAL'
+                                                    ? d.toLocaleDateString('es-ES', { month: 'short', year: '2-digit' })
+                                                    : d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' })
+                                                }
+                                            </th>
+                                        )
+                                    })}
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-800">

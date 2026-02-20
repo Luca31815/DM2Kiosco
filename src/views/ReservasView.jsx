@@ -1,10 +1,11 @@
 import React, { useState } from 'react'
 import DataTable from '../components/DataTable'
 import { useReservas, useReservasDetalles, useMovimientosDinero, useMovimientosStock } from '../hooks/useData'
-import { Loader2, Edit2, Check, X } from 'lucide-react'
+import { Loader2, Edit2, Check, X, Search } from 'lucide-react'
 import * as api from '../services/api'
 import { useSWRConfig } from 'swr'
 import ProductAutocomplete from '../components/ProductAutocomplete'
+import ClientAutocomplete from '../components/ClientAutocomplete'
 
 const ExpandedRow = ({ row }) => {
     const { data: details, loading: loadingDetails } = useReservasDetalles(row.reserva_id)
