@@ -44,15 +44,19 @@ const StatCard = ({ title, value, icon: Icon, trend, trendValue, color }) => (
 
 const HomeView = () => {
     const { data: dailyReport, loading: loadingReport } = useReporte('diario', { sortColumn: 'fecha', sortOrder: 'desc', pageSize: 30 })
-    const { data: reservas, loading: loadingReservas } = useReservas({ openOnly: true })
-    const { data: productos, loading: loadingProductos } = useProductos({ pageSize: 5, sortColumn: 'stock', sortOrder: 'asc' })
+    const { data: reservas, loading: loadingReservas } = useReservas({}, true)
+    const { data: productos, loading: loadingProductos } = useProductos({ pageSize: 5, sortColumn: 'stock_actual', sortOrder: 'asc' })
 
     // Calcular KPIs
     const stats = useMemo(() => {
-        if (!dailyReport.length) return { today: '$0', thisMonth: '$0', lastWeekTrend: '0%' }
+        if (!dailyReport.length) return { today: '$0', thisMonth: '$0', countToday: 0 }
 
-        const todayData = dailyReport[0]
-        const totalMes = dailyReport.reduce((acc, curr) => acc + (curr.total_ventas || 0), 0)
+        // Obtener fecha de hoy en formato local YYYY-MM-DD
+        const now = new Date()
+        const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+
+        const todayData = dailyReport.find(d => d.fecha === todayStr) || { total_ventas: 0, cantidad_ventas: 0 }
+        const totalMes = dailyReport.reduce((acc, curr) => acc + (parseFloat(curr.total_ventas) || 0), 0)
 
         return {
             today: new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(todayData.total_ventas || 0),
@@ -62,15 +66,15 @@ const HomeView = () => {
     }, [dailyReport])
 
     const saldoReservas = useMemo(() => {
-        const total = reservas.reduce((acc, curr) => acc + (curr.saldo_pendiente || 0), 0)
+        const total = reservas.reduce((acc, curr) => acc + (parseFloat(curr.saldo_pendiente) || 0), 0)
         return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(total)
     }, [reservas])
 
     // Preparar datos para el gráfico (últimos 30 días cronológicamente)
     const chartData = useMemo(() => {
         return [...dailyReport].reverse().map(item => ({
-            date: new Date(item.fecha).toLocaleDateString('es-AR', { day: '2-digit', month: 'short' }),
-            ventas: item.total_ventas || 0,
+            date: new Date(item.fecha + 'T00:00:00').toLocaleDateString('es-AR', { day: '2-digit', month: 'short' }),
+            ventas: parseFloat(item.total_ventas) || 0,
             originalDate: item.fecha
         }))
     }, [dailyReport])
@@ -89,7 +93,7 @@ const HomeView = () => {
                     value={stats.today}
                     icon={DollarSign}
                     color="blue"
-                    trend="up"
+                    trend={stats.countToday > 0 ? "up" : null}
                     trendValue={`${stats.countToday} op.`}
                 />
                 <StatCard
@@ -108,7 +112,7 @@ const HomeView = () => {
                 />
                 <StatCard
                     title="Stock Crítico"
-                    value={productos.filter(p => (p.stock_actual || 0) <= 5).length}
+                    value={loadingProductos ? '...' : productos.filter(p => (p.stock_actual || 0) <= 5).length}
                     icon={Package}
                     color="yellow"
                 />
