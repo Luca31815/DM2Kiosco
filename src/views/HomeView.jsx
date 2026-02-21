@@ -67,10 +67,10 @@ const HomeView = () => {
 
         if (!dailyReport.length) return { today: '$0', thisMonth: '$0', countToday: 0, trend: null, trendValue: '0 op.' }
 
-        const todayData = dailyReport.find(d => d.fecha === todayStr) || { total_ventas: 0, cant_ventas: 0 }
-        const yesterdayData = dailyReport.find(d => d.fecha === yesterdayStr) || { total_ventas: 0, cant_ventas: 0 }
+        const todayData = dailyReport.find(d => d.fecha === todayStr) || { ingresos: 0, cant_ventas: 0, balance: 0 }
+        const yesterdayData = dailyReport.find(d => d.fecha === yesterdayStr) || { ingresos: 0, cant_ventas: 0 }
 
-        const totalMes = dailyReport.reduce((acc, curr) => acc + (parseFloat(curr.total_ventas) || 0), 0)
+        const totalMesGanancia = dailyReport.reduce((acc, curr) => acc + (parseFloat(curr.balance) || 0), 0)
 
         // Calculate trend based on count of sales
         let trend = null;
@@ -78,8 +78,8 @@ const HomeView = () => {
         else if (todayData.cant_ventas < yesterdayData.cant_ventas) trend = 'down';
 
         return {
-            today: new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(todayData.total_ventas || 0),
-            thisMonth: new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(totalMes),
+            today: new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(todayData.ingresos || 0),
+            thisMonth: new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(totalMesGanancia),
             countToday: todayData.cant_ventas || 0,
             trend,
             trendValue: `${todayData.cant_ventas} op.`,
@@ -111,7 +111,7 @@ const HomeView = () => {
             {/* Grid de KPIs */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <StatCard
-                    title="Ventas de Hoy"
+                    title="Ingresos de Hoy"
                     value={stats.today}
                     icon={DollarSign}
                     color="blue"
@@ -119,7 +119,7 @@ const HomeView = () => {
                     trendValue={stats.trendValue}
                 />
                 <StatCard
-                    title="Caja este Mes"
+                    title="Ganancia este Mes"
                     value={stats.thisMonth}
                     icon={TrendingUp}
                     color="green"
