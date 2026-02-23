@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documentación - Sistema Gestión Kiosco</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Inter:wght@400;500;600&display=swap"
+        rel="stylesheet">
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: true, theme: 'neutral' });
+    </script>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1e40af;
+            --bg: #ffffff;
+            --text: #1f2937;
+            --light-text: #6b7280;
+            --border: #e5e7eb;
+            --code-bg: #f3f4f6;
+            --accent: #f8fafc;
+        }
+
+        @media print {
+            body {
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+
+            .no-print {
+                display: none;
+            }
+
+            .page-break {
+                page-break-before: always;
+            }
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            color: var(--text);
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            background-color: var(--bg);
+        }
+
+        h1,
+        h2,
+        h3,
+        h4 {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            color: var(--primary-dark);
+            margin-top: 2em;
+            margin-bottom: 0.5em;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            text-align: center;
+            border-bottom: 4px solid var(--primary);
+            padding-bottom: 20px;
+            margin-top: 0;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: var(--light-text);
+            font-size: 1.2rem;
+            margin-bottom: 50px;
+        }
+
+        .card {
+            background: var(--accent);
+            border: 1px solid var(--border);
+            border-left: 5px solid var(--primary);
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        code {
+            background-color: var(--code-bg);
+            padding: 2px 5px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        pre {
+            background-color: var(--code-bg);
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+            margin: 30px 0;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+
+        ul {
+            padding-left: 20px;
+        }
+
+        li {
+            margin-bottom: 8px;
+        }
+
+        .footer {
+            margin-top: 100px;
+            text-align: center;
+            font-size: 0.8rem;
+            color: var(--light-text);
+            border-top: 1px solid var(--border);
+            padding-top: 20px;
+        }
+
+        blockquote {
+            font-style: italic;
+            border-left: 4px solid #cbd5e1;
+            margin-left: 0;
+            padding-left: 20px;
+            color: #475569;
+        }
+
+        /* Estilos para badges */
+        .badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-right: 5px;
+        }
+
+        .badge-ui {
+            background-color: #dcfce7;
+            color: #166534;
+        }
+
+        .badge-ia {
+            background-color: #dbeafe;
+            color: #1e40af;
+        }
+
+        .badge-db {
+            background-color: #fef9c3;
+            color: #854d0e;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="no-print" style="position: fixed; top: 10px; right: 10px;">
+        <button onclick="window.print()"
+            style="padding: 10px 20px; background: var(--primary); color: white; border: none; border-radius: 6px; cursor: pointer; font-family: sans-serif; font-weight: 600;">Descargar
+            PDF</button>
+    </div>
+
+    <header>
+        <h1>Sistema de Gestión de Kiosco</h1>
+        <p class="subtitle">Documentación Técnica del Proyecto - Dashboard Ventas</p>
+    </header>
+
+    <div class="card">
+        <strong>Resumen:</strong> Este ecosistema integra tecnologías de vanguardia para transformar la gestión
+        tradicional de un kiosco en una operación digital inteligente y optimizada.
+    </div>
+
+    <p>El sistema utiliza un enfoque híbrido de <strong>Frontend Reactivo</strong> + <strong>Backend SQL
+            Inteligente</strong> + <strong>Automatización NLP</strong>.</p>
+
+    <div class="card" style="border-left-color: var(--primary); background: #eff6ff;">
+        <strong>💡 Flujo de Operación:</strong> La <strong>creación</strong> de registros (ventas, compras, reservas) se
+        realiza exclusivamente via <strong>Bot de WhatsApp/Chat</strong>. El <strong>Dashboard</strong> se utiliza para
+        el monitoreo en tiempo real, la edición de registros existentes y el ajuste de stock.
+    </div>
+
+    <div class="mermaid">
+        graph TD
+        A[WhatsApp / Chat] -->|Voz o Texto| B(n8n Engine)
+        B -->|LLM Parser| C{SQL Logic}
+        C -->|Escritura| D[(Supabase DB)]
+        E[React Admin] -->|Lectura| D
+        E -->|SWR Sync| F[Dashboard Visual]
+    </div>
+
+    <img src="file:///c:/Users/luqui/.gemini/antigravity/brain/1c52c02c-e810-4b01-872d-3aad748d297f/screen_home.png"
+        alt="Dashboard Principal"
+        style="width:100%; border-radius:12px; margin:20px 0; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);">
+
+    <div class="page-break"></div>
+
+    <h2>Componentes Principales</h2>
+
+    <h3>1. Interfaz de Usuario (UI) <span class="badge badge-ui">Vite + React</span></h3>
+    <p>Diseñada con una estética profesional y minimalista. Se prioriza la legibilidad y la rapidez de acceso a la
+        información crítica.</p>
+
+    <img src="file:///c:/Users/luqui/.gemini/antigravity/brain/1c52c02c-e810-4b01-872d-3aad748d297f/screen_ventas.png"
+        alt="Vista de Ventas" style="width:100%; border-radius:12px; margin:20px 0; border: 1px solid var(--border);">
+
+    <ul>
+        <li><strong>Control Operativo:</strong> Monitoreo y <strong>edición</strong> de Ventas, Compras y Reservas ya
+            registradas.</li>
+        <li><strong>Dashboard de Métricas:</strong> Gráficos e indicadores de balance diario/mensual.</li>
+        <li><strong>Gestión de Stock:</strong> Ajuste manual de cantidades y control de productos críticos.</li>
+    </ul>
+
+    <h3>2. Automatización & IA <span class="badge badge-ia">n8n + Gemini/Groq</span></h3>
+    <p>El sistema permite el registro manual mediante lenguaje natural, eliminando la fricción de los formularios
+        estándar.</p>
+    <ul>
+        <li><strong>Procesamiento de Audio/Texto:</strong> Interpretación de frases coloquiales.</li>
+        <li><strong>Validación Cruzada:</strong> El sistema comprueba precios y stock contra el catálogo oficial antes
+            de impactar en la DB.</li>
+        <li><strong>Corrección Inteligente:</strong> Permite anular o corregir operaciones pasadas mediante lenguaje
+            natural.</li>
+    </ul>
+
+    <h3>3. Capa de Datos <span class="badge badge-db">PostgreSQL</span></h3>
+    <p>Utiliza Supabase como motor principal, moviendo la lógica de negocio a la base de datos para máxima eficiencia.
+    </p>
+    <ul>
+        <li><strong>Funciones SQL:</strong> <code>crear_operacion()</code>, <code>crear_o_modificar_reserva()</code>,
+            etc.</li>
+        <li><strong>Vistas de Análisis:</strong> Optimización de tiempos de respuesta mediante pre-agregaciones de
+            datos.</li>
+    </ul>
+
+    <div class="page-break"></div>
+
+    <h2>Funcionalidades Destacadas</h2>
+
+    <div class="card" style="border-left-color: #059669;">
+        <h4>📊 Análisis Horario</h4>
+        <p>Identificación de picos de venta para optimizar la atención y el stock.</p>
+        <img src="file:///c:/Users/luqui/.gemini/antigravity/brain/1c52c02c-e810-4b01-872d-3aad748d297f/screen_analisis.png"
+            alt="Análisis Horario" style="width:100%; border-radius:8px; margin-top:10px;">
+    </div>
+
+    <div class="card" style="border-left-color: #7c3aed;">
+        <h4>📦 Gestión de Reservas</h4>
+        <p>Control total de señas, pagos pendientes y entregas.</p>
+        <img src="file:///c:/Users/luqui/.gemini/antigravity/brain/1c52c02c-e810-4b01-872d-3aad748d297f/screen_reservas.png"
+            alt="Gestión de Reservas" style="width:100%; border-radius:8px; margin-top:10px;">
+    </div>
+
+    <div class="card" style="border-left-color: #ea580c;">
+        <h4>📈 Reporte de Rentabilidad</h4>
+        <p>Cálculo de ganancia neta basado en el costo real de compra.</p>
+        <img src="file:///c:/Users/luqui/.gemini/antigravity/brain/1c52c02c-e810-4b01-872d-3aad748d297f/screen_reportes.png"
+            alt="Reportes de Rentabilidad" style="width:100%; border-radius:8px; margin-top:10px;">
+    </div>
+
+    <h2>Guía de Uso Rápido</h2>
+    <ol>
+        <li><strong>Ventas:</strong> Se pueden registrar desde el dashboard o vía chat.</li>
+        <li><strong>Stock:</strong> Se actualiza automáticamente con cada venta/compra.</li>
+        <li><strong>Reportes:</strong> Consultar semanalmente para analizar el balance de caja.</li>
+    </ol>
+
+    <div class="footer">
+        Documentación generada automáticamente - Febrero 2026<br>
+        <strong>Kiosco Digital Dashboard</strong>
+    </div>
+
+</body>
+
+</html>
