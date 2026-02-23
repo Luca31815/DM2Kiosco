@@ -1,5 +1,7 @@
 import useSWR from 'swr'
 import * as api from '../services/api'
+import { useAuth } from '../context/AuthContext'
+import * as mock from '../services/mockData'
 
 // Global SWR config or helper could go here
 const SWR_OPTIONS = {
@@ -8,11 +10,14 @@ const SWR_OPTIONS = {
 }
 
 export function useVentas(options = {}) {
+    const { isDemoMode } = useAuth()
     const { data, error, isLoading } = useSWR(
-        ['ventas', options],
+        !isDemoMode ? ['ventas', options] : null,
         () => api.getVentas(options),
         SWR_OPTIONS
     )
+
+    if (isDemoMode) return { data: mock.MOCK_VENTAS, count: mock.MOCK_VENTAS.length, loading: false }
 
     return {
         data: data?.data || [],
@@ -23,11 +28,14 @@ export function useVentas(options = {}) {
 }
 
 export function useVentasDetalles(ventaId) {
+    const { isDemoMode } = useAuth()
     const { data, error, isLoading } = useSWR(
-        ventaId ? ['ventas_detalles', ventaId] : null,
+        (!isDemoMode && ventaId) ? ['ventas_detalles', ventaId] : null,
         () => api.getVentasDetalles(ventaId),
         SWR_OPTIONS
     )
+
+    if (isDemoMode) return { data: [], loading: false } // Simplificado para demo
 
     return {
         data: data || [],
@@ -37,11 +45,14 @@ export function useVentasDetalles(ventaId) {
 }
 
 export function useProductos(options = {}) {
+    const { isDemoMode } = useAuth()
     const { data, error, isLoading } = useSWR(
-        ['productos', options],
+        !isDemoMode ? ['productos', options] : null,
         () => api.getProductos(options),
         SWR_OPTIONS
     )
+
+    if (isDemoMode) return { data: mock.MOCK_PRODUCTOS, count: mock.MOCK_PRODUCTOS.length, loading: false }
 
     return {
         data: data?.data || [],
@@ -52,11 +63,14 @@ export function useProductos(options = {}) {
 }
 
 export function useCompras(options = {}) {
+    const { isDemoMode } = useAuth()
     const { data, error, isLoading } = useSWR(
-        ['compras', options],
+        !isDemoMode ? ['compras', options] : null,
         () => api.getCompras(options),
         SWR_OPTIONS
     )
+
+    if (isDemoMode) return { data: mock.MOCK_COMPRAS, count: mock.MOCK_COMPRAS.length, loading: false }
 
     return {
         data: data?.data || [],
@@ -67,11 +81,14 @@ export function useCompras(options = {}) {
 }
 
 export function useComprasDetalles(compraId) {
+    const { isDemoMode } = useAuth()
     const { data, error, isLoading } = useSWR(
-        compraId ? ['compras_detalles', compraId] : null,
+        (!isDemoMode && compraId) ? ['compras_detalles', compraId] : null,
         () => api.getComprasDetalles(compraId),
         SWR_OPTIONS
     )
+
+    if (isDemoMode) return { data: [], loading: false }
 
     return {
         data: data || [],
@@ -81,14 +98,17 @@ export function useComprasDetalles(compraId) {
 }
 
 export function useReservas(options = {}, openOnly = false) {
+    const { isDemoMode } = useAuth()
     const key = openOnly ? 'reservas_abiertas' : 'reservas'
     const fetcher = openOnly ? api.getReservasAbiertas : api.getReservas
 
     const { data, error, isLoading } = useSWR(
-        [key, options],
+        !isDemoMode ? [key, options] : null,
         () => fetcher(options),
         SWR_OPTIONS
     )
+
+    if (isDemoMode) return { data: mock.MOCK_RESERVAS, count: mock.MOCK_RESERVAS.length, loading: false }
 
     return {
         data: data?.data || [],
@@ -99,11 +119,14 @@ export function useReservas(options = {}, openOnly = false) {
 }
 
 export function useReservasDetalles(reservaId) {
+    const { isDemoMode } = useAuth()
     const { data, error, isLoading } = useSWR(
-        reservaId ? ['reservas_detalles', reservaId] : null,
+        (!isDemoMode && reservaId) ? ['reservas_detalles', reservaId] : null,
         () => api.getReservasDetalles(reservaId),
         SWR_OPTIONS
     )
+
+    if (isDemoMode) return { data: [], loading: false }
 
     return {
         data: data || [],
@@ -113,11 +136,14 @@ export function useReservasDetalles(reservaId) {
 }
 
 export function useHistorialBot(options = {}) {
+    const { isDemoMode } = useAuth()
     const { data, error, isLoading } = useSWR(
-        ['historial_bot', options],
+        !isDemoMode ? ['historial_bot', options] : null,
         () => api.getHistorialBot(options),
         SWR_OPTIONS
     )
+
+    if (isDemoMode) return { data: mock.MOCK_HISTORIAL, count: mock.MOCK_HISTORIAL.length, loading: false }
 
     return {
         data: data?.data || [],
@@ -128,11 +154,14 @@ export function useHistorialBot(options = {}) {
 }
 
 export function useRentabilidadProductos(options = {}) {
+    const { isDemoMode } = useAuth()
     const { data, error, isLoading } = useSWR(
-        ['rentabilidad_productos', options],
+        !isDemoMode ? ['rentabilidad_productos', options] : null,
         () => api.getRentabilidadProductos(options),
         SWR_OPTIONS
     )
+
+    if (isDemoMode) return { data: [], count: 0, loading: false }
 
     return {
         data: data?.data || [],
@@ -143,6 +172,7 @@ export function useRentabilidadProductos(options = {}) {
 }
 
 export function useReporte(type = 'diario', options = {}) {
+    const { isDemoMode } = useAuth()
     let key = 'reporte_diario'
     let fetcher = api.getReporteDiario
 
@@ -155,10 +185,12 @@ export function useReporte(type = 'diario', options = {}) {
     }
 
     const { data, error, isLoading } = useSWR(
-        [key, options],
+        !isDemoMode ? [key, options] : null,
         () => fetcher(options),
         SWR_OPTIONS
     )
+
+    if (isDemoMode) return { data: mock.MOCK_REPORTE_DIARIO, count: mock.MOCK_REPORTE_DIARIO.length, loading: false }
 
     return {
         data: data?.data || [],
@@ -169,6 +201,7 @@ export function useReporte(type = 'diario', options = {}) {
 }
 
 export function useAnalisisHorarios(type = 'diario', options = {}) {
+    const { isDemoMode } = useAuth()
     let key = 'analisis_horario_diario'
     let fetcher = api.getAnalisisHorarioDiario
 
@@ -181,10 +214,12 @@ export function useAnalisisHorarios(type = 'diario', options = {}) {
     }
 
     const { data, error, isLoading } = useSWR(
-        [key, options],
+        !isDemoMode ? [key, options] : null,
         () => fetcher(options),
         SWR_OPTIONS
     )
+
+    if (isDemoMode) return { data: [], count: 0, loading: false }
 
     return {
         data: data?.data || [],
@@ -195,8 +230,9 @@ export function useAnalisisHorarios(type = 'diario', options = {}) {
 }
 
 export function useHitosViewData(page = 1) {
+    const { isDemoMode } = useAuth()
     const { data, error, isLoading } = useSWR(
-        ['hitos_view_data', page],
+        !isDemoMode ? ['hitos_view_data', page] : null,
         async () => {
             const pageSize = 14
 
@@ -238,6 +274,8 @@ export function useHitosViewData(page = 1) {
         SWR_OPTIONS
     )
 
+    if (isDemoMode) return { data: { hitos: [], dailyReports: mock.MOCK_REPORTE_DIARIO, allSales: [], count: 0 }, loading: false }
+
     return {
         data: data,
         loading: isLoading,
@@ -246,11 +284,14 @@ export function useHitosViewData(page = 1) {
 }
 
 export function useMovimientosDinero(referenciaId) {
+    const { isDemoMode } = useAuth()
     const { data, error, isLoading } = useSWR(
-        referenciaId ? ['movimientos_dinero', referenciaId] : null,
+        (!isDemoMode && referenciaId) ? ['movimientos_dinero', referenciaId] : null,
         () => api.getMovimientosDinero(referenciaId),
         SWR_OPTIONS
     )
+
+    if (isDemoMode) return { data: [], loading: false }
 
     return {
         data: data || [],
@@ -260,11 +301,14 @@ export function useMovimientosDinero(referenciaId) {
 }
 
 export function useMovimientosStock(referenciaId) {
+    const { isDemoMode } = useAuth()
     const { data, error, isLoading } = useSWR(
-        referenciaId ? ['stock_movimientos', referenciaId] : null,
+        (!isDemoMode && referenciaId) ? ['stock_movimientos', referenciaId] : null,
         () => api.getMovimientosStock(referenciaId),
         SWR_OPTIONS
     )
+
+    if (isDemoMode) return { data: [], loading: false }
 
     return {
         data: data || [],
@@ -274,11 +318,14 @@ export function useMovimientosStock(referenciaId) {
 }
 
 export function useClientes(options = {}) {
+    const { isDemoMode } = useAuth()
     const { data, error, isLoading } = useSWR(
-        ['clientes', options],
+        !isDemoMode ? ['clientes', options] : null,
         () => api.getClientes(options),
         SWR_OPTIONS
     )
+
+    if (isDemoMode) return { data: [], count: 0, loading: false }
 
     return {
         data: data?.data || [],
@@ -289,11 +336,14 @@ export function useClientes(options = {}) {
 }
 
 export function useReporteVentasPeriodico(options = {}) {
+    const { isDemoMode } = useAuth()
     const { data, error, isLoading } = useSWR(
-        ['reporte-ventas-periodico', options],
+        !isDemoMode ? ['reporte-ventas-periodico', options] : null,
         () => api.getReporteVentasPeriodico(options),
         SWR_OPTIONS
     )
+
+    if (isDemoMode) return { data: [], count: 0, loading: false }
 
     return {
         data: data?.data || [],

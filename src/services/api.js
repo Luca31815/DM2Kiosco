@@ -1,7 +1,19 @@
 import { supabase } from '../lib/supabase'
 
+// Helper para detectar modo demo desde la cookie
+const isDemo = () => {
+    if (typeof document === 'undefined') return false;
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; dashboard_mode=`);
+    if (parts.length === 2) return parts.pop().split(';').shift() === 'demo';
+    return false;
+};
+
 export const fetchTableData = async (tableName, options = {}) => {
+    if (isDemo()) return { data: [], count: 0 }; // Failsafe
+
     const { sortColumn, sortOrder, filterColumn, filterValue, page, pageSize, dateRange, dateColumn, select = '*' } = options
+    // ... (rest of the file follows)
 
     let query = supabase.from(tableName).select(select, { count: 'exact' })
 
@@ -91,6 +103,7 @@ export const getMovimientosDinero = (id) => fetchDetails('movimientos_dinero', '
 export const getMovimientosStock = (id) => fetchDetails('stock_movimientos', 'referencia_id', id)
 
 export const corregirOperacion = async (data) => {
+    if (isDemo()) throw new Error('Acción deshabilitada en el modo Demo');
     const { data: result, error } = await supabase.rpc('corregir_operacion_v16', { p_input: data })
     if (error) {
         console.error('Error calling corregir_operacion_v16:', error)
@@ -100,6 +113,7 @@ export const corregirOperacion = async (data) => {
 }
 
 export const actualizarProducto = async (data) => {
+    if (isDemo()) throw new Error('Acción deshabilitada en el modo Demo');
     const { data: result, error } = await supabase.rpc('actualizar_producto_global', {
         p_id: data.producto_id,
         p_nuevo_nombre: data.nombre,

@@ -84,16 +84,16 @@ SELECT
     r.reserva_id,
     r.fecha_creacion,
     r."Cliente" as cliente,
-    COALESCE(NULLIF(regexp_replace(r.total_reserva, '[^0-9.]', '', 'g'), '')::numeric, 0) as total_reserva,
-    COALESCE(NULLIF(regexp_replace(r.total_pagado, '[^0-9.]', '', 'g'), '')::numeric, 0) as total_pagado,
-    COALESCE(NULLIF(regexp_replace(r.saldo_pendiente, '[^0-9.]', '', 'g'), '')::numeric, 0) as saldo_pendiente,
+    COALESCE(r.total_reserva, 0) as total_reserva,
+    COALESCE(r.total_pagado, 0) as total_pagado,
+    COALESCE(r.saldo_pendiente, 0) as saldo_pendiente,
     r.estado_pago,
     r.estado_entrega,
     r.estado_reserva,
     r."Notas" as notas,
     (SELECT string_agg(producto, ', ') FROM public.reservas_detalles rd WHERE rd.reserva_id = r.reserva_id) as lista_productos
 FROM public.reservas r
-WHERE r.estado_reserva NOT IN ('cerrada', 'cancelada', 'anulada')
+WHERE r.estado_reserva ILIKE ANY (ARRAY['ABIERTA', 'PENDIENTE'])
 ORDER BY r.fecha_creacion DESC;
 
 -- =========================================================
@@ -246,9 +246,9 @@ SELECT
     r.reserva_id,
     r.fecha_creacion,
     r."Cliente" as cliente,
-    COALESCE(NULLIF(regexp_replace(r.total_reserva, '[^0-9.]', '', 'g'), '')::numeric, 0) as total_reserva,
-    COALESCE(NULLIF(regexp_replace(r.total_pagado, '[^0-9.]', '', 'g'), '')::numeric, 0) as total_pagado,
-    COALESCE(NULLIF(regexp_replace(r.saldo_pendiente, '[^0-9.]', '', 'g'), '')::numeric, 0) as saldo_pendiente,
+    COALESCE(r.total_reserva, 0) as total_reserva,
+    COALESCE(r.total_pagado, 0) as total_pagado,
+    COALESCE(r.saldo_pendiente, 0) as saldo_pendiente,
     r.estado_pago,
     r.estado_entrega,
     r.estado_reserva,
