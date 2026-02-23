@@ -1,23 +1,27 @@
 export default function middleware(request) {
-    // 1. Obtener la IP del cliente
-    // Vercel rellena x-forwarded-for con la IP del cliente
-    const ip = request.headers.get('x-forwarded-for')?.split(',')[0] || '127.0.0.1';
+    // 1. Obtener la IP del cliente de la forma más robusta posible en Vercel Edge
+    // Vercel Edge Runtime proporciona request.ip directamente
+    const ip = request.ip || request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || '127.0.0.1';
 
-    // 2. Obtener lista de IPs permitidas de variables de entorno
-    // Se lee de process.env en el Edge Runtime de Vercel
+    // 2. Obtener lista de IPs permitidas (limpiando espacios y normalizando a minúsculas para IPv6)
     const allowedIps = (process.env.ALLOWED_IPS || '')
         .split(',')
-        .map(i => i.trim());
+        .map(i => i.trim().toLowerCase())
+        .filter(i => i !== '');
 
-    // 3. Determinar modo (localhost siempre es live)
-    const isLocal = ip === '127.0.0.1' || ip === '::1';
-    const isAllowed = allowedIps.includes(ip) || isLocal;
+    // 3. Normalizar IP actual para la comparación
+    const normalizedIp = ip.toLowerCase();
+
+    // 4. Determinar modo (localhost siempre es live)
+    const isLocal = normalizedIp === '127.0.0.1' || normalizedIp === '::1';
+    const isAllowed = allowedIps.includes(normalizedIp) || isLocal;
 
     const mode = isAllowed ? 'live' : 'demo';
 
-    // 4. Retornar una respuesta que "continúe" a la app pero setee la cookie
-    // Usamos el header interno de Vercel 'x-middleware-next' para permitir el paso
-    // en proyectos que NO son Next.js.
+    // LOG DE DEPURACIÓN (Se verá en el panel "Logs" de Vercel)
+    console.log(`[AUTH] IP Detectada: ${normalizedIp} | Permitidas: ${allowedIps.join(', ')} | Modo: ${mode}`);
+
+    // 5. Retornar respuesta con la cookie
     return new Response(null, {
         headers: {
             'x-middleware-next': '1',
@@ -26,7 +30,6 @@ export default function middleware(request) {
     });
 }
 
-// Configuración opcional para filtrar rutas
 export const config = {
     matcher: '/((?!api|_next/static|_next/image|favicon.ico).*)',
 };
