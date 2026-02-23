@@ -1,10 +1,13 @@
-export default function middleware(request) {
-    // 1. Obtener IP
-    const ip = request.ip || request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'Desconocida';
+// middleware.js - Versión ultra-compatible para Vercel Edge
+export const config = {
+    // Forzamos que corra en la raíz y rutas principales
+    matcher: ['/', '/index.html', '/ventas', '/productos', '/reportes'],
+};
 
-    // 2. Obtener lista de IPs (Normalización agresiva)
-    const allowedIpsRaw = process.env.ALLOWED_IPS || '';
-    const allowedIps = allowedIpsRaw
+export default function middleware(request) {
+    const ip = request.ip || request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+
+    const allowedIps = (process.env.ALLOWED_IPS || '')
         .split(',')
         .map(i => i.trim().toLowerCase())
         .filter(i => i !== '');
@@ -14,19 +17,16 @@ export default function middleware(request) {
 
     const mode = isAllowed ? 'live' : 'demo';
 
-    // LOGS DE EMERGENCIA
-    console.log(`MIDDLEWARE_RUNNING: IP=${normalizedIp} | ALLOWED=${allowedIps.join('|')} | MODE=${mode}`);
+    // Log para ver en Vercel
+    console.log(`[MIDDLEWARE] IP:${normalizedIp} | ALLOWED:${allowedIps.length} | MODE:${mode}`);
 
-    // 3. Respuesta con Headers de Debug (para que el usuario vea en F12 -> Network)
+    // Retornamos respuesta con headers de debug obligatorios
     return new Response(null, {
         headers: {
             'x-middleware-next': '1',
-            'x-debug-mode': mode,
             'x-debug-ip': normalizedIp,
+            'x-debug-mode': mode,
             'Set-Cookie': `dashboard_mode=${mode}; Path=/; Max-Age=86400; SameSite=Lax`
         }
     });
 }
-
-// QUITAMOS EL MATCHER PARA QUE CORRA EN TODO Y VER SI LOGUEA ALGO
-// export const config = { ... }
