@@ -1,13 +1,10 @@
-import { NextResponse } from 'next/server';
-
-export function middleware(request) {
-    const response = NextResponse.next();
-
-    // 1. Obtener la IP del cliente (priorizando el header de Vercel)
+export default function middleware(request) {
+    // 1. Obtener la IP del cliente
+    // Vercel rellena x-forwarded-for con la IP del cliente
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0] || '127.0.0.1';
 
     // 2. Obtener lista de IPs permitidas de variables de entorno
-    // Formato esperado: "1.2.3.4, 5.6.7.8"
+    // Se lee de process.env en el Edge Runtime de Vercel
     const allowedIps = (process.env.ALLOWED_IPS || '')
         .split(',')
         .map(i => i.trim());
@@ -18,19 +15,18 @@ export function middleware(request) {
 
     const mode = isAllowed ? 'live' : 'demo';
 
-    // 4. Setear cookie para el frontend (expira en 24h)
-    response.cookies.set('dashboard_mode', mode, {
-        path: '/',
-        maxAge: 60 * 60 * 24,
-        sameSite: 'lax',
+    // 4. Retornar una respuesta que "continúe" a la app pero setee la cookie
+    // Usamos el header interno de Vercel 'x-middleware-next' para permitir el paso
+    // en proyectos que NO son Next.js.
+    return new Response(null, {
+        headers: {
+            'x-middleware-next': '1',
+            'Set-Cookie': `dashboard_mode=${mode}; Path=/; Max-Age=86400; SameSite=Lax`
+        }
     });
-
-    console.log(`IP: ${ip} | Mode: ${mode}`);
-
-    return response;
 }
 
-// Configurar para que corra en todas las rutas del dashboard
+// Configuración opcional para filtrar rutas
 export const config = {
     matcher: '/((?!api|_next/static|_next/image|favicon.ico).*)',
 };
