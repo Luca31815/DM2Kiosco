@@ -55,7 +55,7 @@ const ReportesView = () => {
             { key: 'cant_compras', label: 'Compras (#)' },
             { key: 'ingresos', label: 'Ingresos', render: (val) => <span className="text-green-400">${val}</span> },
             { key: 'egresos', label: 'Egresos', render: (val) => <span className="text-red-400">${val}</span> },
-            { key: 'balance', label: 'Balance', render: (val) => <span className={`font-bold ${val >= 0 ? 'text-green-500' : 'text-red-500'}`}>${val}</span> },
+            { key: 'saldo', label: 'Balance', render: (val) => <span className={`font-bold ${val >= 0 ? 'text-green-500' : 'text-red-500'}`}>${val}</span> },
         ]
 
         if (reportType === 'diario') {
@@ -91,7 +91,7 @@ const ReportesView = () => {
         compras: acc.compras + Number(curr.cant_compras || 0),
         ingresos: acc.ingresos + Number(curr.ingresos || 0),
         egresos: acc.egresos + Number(curr.egresos || 0),
-        balance: acc.balance + Number(curr.balance || 0),
+        balance: acc.balance + Number(curr.saldo || 0),
     }), { ventas: 0, compras: 0, ingresos: 0, egresos: 0, balance: 0 })
 
     return (
