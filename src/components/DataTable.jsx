@@ -150,16 +150,16 @@ const DataTable = ({
                                             initial={{ opacity: 0, y: 10 }}
                                             animate={{ opacity: 1, y: 0 }}
                                             transition={{ delay: rowIndex * 0.03 }}
-                                            onClick={() => toggleRow(row[rowKey])}
-                                            className={`hover:bg-white/10 transition-all group ${renderExpandedRow ? 'cursor-pointer' : ''} ${expandedRow === row[rowKey] ? 'bg-white/10' : ''}`}
+                                            onClick={() => toggleRow(row[rowKey] !== undefined ? row[rowKey] : rowIndex)}
+                                            className={`hover:bg-white/10 transition-all group ${renderExpandedRow ? 'cursor-pointer' : ''} ${expandedRow === (row[rowKey] !== undefined ? row[rowKey] : rowIndex) ? 'bg-white/10' : ''}`}
                                         >
                                             {columns.map((col) => (
-                                                <td key={`${rowIndex}-${col.key}`} className={`whitespace-nowrap text-slate-300 group-hover:text-white transition-colors font-medium ${compact ? 'px-4 py-3 text-xs' : 'px-6 py-4.5'}`}>
+                                                <td key={`${rowIndex}-${col.key}`} className={`whitespace-nowrap text-slate-300 group-hover:text-white transition-colors font-medium ${compact ? 'px-4 py-2 text-[11px]' : 'px-6 py-3.5'}`}>
                                                     {col.render ? col.render(row[col.key], row) : row[col.key]}
                                                 </td>
                                             ))}
                                         </motion.tr>
-                                        {renderExpandedRow && expandedRow === row[rowKey] && (
+                                        {renderExpandedRow && expandedRow === (row[rowKey] !== undefined ? row[rowKey] : rowIndex) && (
                                             <motion.tr
                                                 initial={{ opacity: 0, height: 0 }}
                                                 animate={{ opacity: 1, height: 'auto' }}

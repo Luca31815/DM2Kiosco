@@ -107,7 +107,7 @@ const SystemView = () => {
         <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="p-4 sm:p-8 space-y-8"
+            className="p-4 sm:p-6 space-y-6"
         >
             <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div className="space-y-1">
@@ -158,6 +158,7 @@ const SystemView = () => {
                             onFilter={setFilterValue}
                             renderExpandedRow={renderExpandedAudit}
                             rowKey="id"
+                            compact
                         />
                     )}
                     {activeTab === 'stock' && (
@@ -167,6 +168,7 @@ const SystemView = () => {
                             isLoading={loadingStock}
                             onFilter={setFilterValue}
                             rowKey="nombre"
+                            compact
                         />
                     )}
                     {activeTab === 'n8n' && (
@@ -179,6 +181,7 @@ const SystemView = () => {
                             sortOrder={sortConfig.order}
                             onFilter={setFilterValue}
                             rowKey="id"
+                            compact
                             renderExpandedRow={(row) => (
                                 <div className="space-y-4 font-mono text-xs">
                                     <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl">
