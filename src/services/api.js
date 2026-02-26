@@ -141,3 +141,8 @@ export const crearReserva = async (reserva, productos, pagos) => {
     }
     return result
 }
+
+// --- MONITOREO Y SISTEMA ---
+export const getAuditLogs = (options) => fetchTableData('logs_auditoria', { sortColumn: 'fecha', sortOrder: 'desc', ...options })
+export const getN8nErrors = (options) => fetchTableData('logs_errores_n8n', { sortColumn: 'fecha', sortOrder: 'desc', ...options })
+export const getPredictiveStock = (options) => fetchTableData('vista_prediccion_stock', options)

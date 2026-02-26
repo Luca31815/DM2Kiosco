@@ -2,20 +2,19 @@ import React, { useState, useMemo } from 'react'
 import DataTable from '../components/DataTable'
 import { useAnalisisHorarios, useHitosViewData } from '../hooks/useData'
 import { Clock, Trophy } from 'lucide-react'
+import { motion } from 'framer-motion'
 
 const AnalisisHorariosView = () => {
     const [viewType, setViewType] = useState('diario')
-    const [analysisMode, setAnalysisMode] = useState('horarios') // 'horarios' | 'hitos'
+    const [analysisMode, setAnalysisMode] = useState('horarios')
     const [page, setPage] = useState(1)
 
-    // DataTable states
     const [sortColumn, setSortColumn] = useState('fecha')
     const [sortOrder, setSortOrder] = useState('desc')
     const [filterValue, setFilterValue] = useState('')
 
-    // Hooks
     const { data: horariosData, loading: loadingHorarios } = useAnalisisHorarios(viewType, {
-        sortColumn, // Note: The API might expect different sort columns based on viewType
+        sortColumn,
         sortOrder,
         filterColumn: ['diario', 'semanal'].includes(viewType) ? (viewType === 'diario' ? 'fecha' : 'semana_del') : undefined,
         filterValue
@@ -23,7 +22,6 @@ const AnalisisHorariosView = () => {
 
     const { data: hitosRawData, loading: loadingHitos } = useHitosViewData(page)
 
-    // Derived state for Horarios
     const processedHorariosData = useMemo(() => {
         if (analysisMode !== 'horarios' || !horariosData) return []
 
@@ -39,13 +37,11 @@ const AnalisisHorariosView = () => {
         })
     }, [horariosData, analysisMode])
 
-    // Derived state for Hitos
     const { processedHitosData, minHour, maxHour } = useMemo(() => {
         if (analysisMode !== 'hitos' || !hitosRawData) return { processedHitosData: [], minHour: 8, maxHour: 24 }
 
         const { hitos, dailyReports, allSales } = hitosRawData
 
-        // Map daily totals
         const dailyTotalsMap = dailyReports.reduce((acc, curr) => {
             if (!curr.fecha) return acc
             const dateKey = curr.fecha.split('T')[0]
@@ -53,7 +49,6 @@ const AnalisisHorariosView = () => {
             return acc
         }, {})
 
-        // Calculate Last Sale Time per day
         const dailyLastSaleMap = allSales.reduce((acc, curr) => {
             if (!curr.fecha) return acc
             const dateKey = curr.fecha.substring(0, 10)
@@ -65,12 +60,10 @@ const AnalisisHorariosView = () => {
             return acc
         }, {})
 
-        // Calculate global min/max hours
-        let globalMinH = 8 // Forced start at 08:00
-        let globalMaxH = 21 // Minimum end at 21:00
+        let globalMinH = 8
+        let globalMaxH = 21
         let hasData = false
 
-        // Combine data
         const grouped = hitos.reduce((acc, curr) => {
             if (!curr.dia) return acc
             const date = curr.dia
@@ -89,7 +82,6 @@ const AnalisisHorariosView = () => {
             return acc
         }, {})
 
-        // Incorporate daily reports and last sale times
         Object.keys(dailyLastSaleMap).forEach(date => {
             hasData = true
             if (!grouped[date]) {
@@ -103,7 +95,6 @@ const AnalisisHorariosView = () => {
 
             if (dailyLastSaleMap[date]) {
                 grouped[date].lastSaleTime = dailyLastSaleMap[date]
-                // Extract hour
                 let timePart = ''
                 if (dailyLastSaleMap[date].includes('T')) {
                     timePart = dailyLastSaleMap[date].split('T')[1]
@@ -126,7 +117,6 @@ const AnalisisHorariosView = () => {
                 const hour = parseInt(h.hora_exacta?.split(':')[0] || 0)
                 if (hour > globalMaxH) globalMaxH = hour
             })
-            // Extra check for last sales
             Object.values(grouped).forEach(g => {
                 if (g.lastSaleTime) {
                     const h = parseInt(g.lastSaleTime.includes('T') ? g.lastSaleTime.split('T')[1].split(':')[0] : g.lastSaleTime.split(' ')[1].split(':')[0])
@@ -137,7 +127,6 @@ const AnalisisHorariosView = () => {
 
         let pivotedData = Object.values(grouped)
 
-        // Client-side Sort
         if (sortColumn) {
             pivotedData.sort((a, b) => {
                 let valA = a[sortColumn]
@@ -215,9 +204,9 @@ const AnalisisHorariosView = () => {
 
                         return (
                             <div className="flex items-center gap-2">
-                                <span>{`${d}/${m}/${y}`}</span>
-                                {isToday && <span className="bg-blue-500/20 text-blue-400 text-[9px] font-bold px-1.5 py-0.5 rounded border border-blue-500/30">HOY</span>}
-                                {isYesterday && <span className="bg-gray-700 text-gray-400 text-[9px] font-bold px-1.5 py-0.5 rounded border border-gray-600/30">AYER</span>}
+                                <span className="font-bold text-slate-300">{`${d}/${m}/${y}`}</span>
+                                {isToday && <span className="bg-blue-500/20 text-blue-400 text-[10px] font-black px-2 py-0.5 rounded border border-blue-500/30 uppercase tracking-tighter">HOY</span>}
+                                {isYesterday && <span className="bg-slate-700/50 text-slate-400 text-[10px] font-black px-2 py-0.5 rounded border border-slate-600/30 uppercase tracking-tighter">AYER</span>}
                             </div>
                         )
                     }
@@ -255,14 +244,14 @@ const AnalisisHorariosView = () => {
                         const lastPos = row.lastSaleTime ? getPos(row.lastSaleTime) : -1
 
                         return (
-                            <div className="relative w-full h-16 bg-gray-900/40 rounded-lg border border-gray-800 overflow-hidden text-xs">
+                            <div className="relative w-full h-18 bg-white/5 rounded-xl border border-white/5 overflow-hidden backdrop-blur-sm">
                                 {Array.from({ length: totalH + 1 }).map((_, i) => (
                                     <div
                                         key={i}
-                                        className="absolute top-0 bottom-0 border-r border-gray-800/50 text-[9px] text-gray-700 pt-1"
+                                        className="absolute top-0 bottom-0 border-r border-white/5 text-[9px] font-black text-slate-600 pt-1 px-1"
                                         style={{ left: `${(i / totalH) * 100}%` }}
                                     >
-                                        <span className="ml-1">{startH + i}h</span>
+                                        <span>{startH + i}h</span>
                                     </div>
                                 ))}
 
@@ -272,22 +261,16 @@ const AnalisisHorariosView = () => {
                                     return (
                                         <div
                                             key={m.n}
-                                            className="absolute top-4 bottom-0 flex flex-col items-center group z-10"
+                                            className="absolute top-5 bottom-0 flex flex-col items-center group z-10"
                                             style={{ left: `${mPos}%` }}
                                         >
-                                            <div className="w-px h-full bg-yellow-500/30 group-hover:bg-yellow-500/60 transition-colors"></div>
-                                            {/* Flag Banderín */}
-                                            <div className="absolute top-[-14px] flex flex-col items-center">
-                                                <div className="bg-yellow-500 text-gray-900 text-[10px] font-black px-1.5 py-0.5 rounded-sm shadow-[0_0_10px_rgba(234,179,8,0.3)] transform -translate-x-1/2 flex items-center gap-1">
-                                                    <Trophy className="h-2 w-2" />
+                                            <div className="w-px h-full bg-yellow-500/40 group-hover:bg-yellow-500/80 transition-all duration-300"></div>
+                                            <div className="absolute top-[-16px] flex flex-col items-center">
+                                                <div className="bg-yellow-500 text-slate-950 text-[10px] font-black px-1.5 py-0.5 rounded shadow-[0_0_15px_rgba(234,179,8,0.4)] transform -translate-x-1/2 flex items-center gap-1 group-hover:scale-110 transition-transform">
+                                                    <Trophy className="h-2.5 w-2.5" />
                                                     {m.n}
                                                 </div>
                                                 <div className="w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-t-[4px] border-t-yellow-500 transform -translate-x-1/2"></div>
-                                            </div>
-
-                                            {/* Tooltip on hover */}
-                                            <div className="absolute bottom-full mb-4 bg-gray-900 border border-yellow-500/30 text-[10px] text-yellow-500 px-2 py-1 rounded shadow-xl whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity z-30 pointer-events-none transform -translate-x-1/2">
-                                                Hito #{m.n} logreado a las {m.hour}hs
                                             </div>
                                         </div>
                                     )
@@ -298,27 +281,26 @@ const AnalisisHorariosView = () => {
                                         className="absolute top-0 bottom-0 flex flex-col items-center group z-20"
                                         style={{ left: `${lastPos}%` }}
                                     >
-                                        <div className="w-px h-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]"></div>
-                                        {/* Ribbon for Total */}
-                                        <div className="absolute top-6 bg-blue-600/90 border border-blue-400/50 text-[10px] font-bold text-white px-2 py-0.5 rounded shadow-lg transform -translate-x-1/2 backdrop-blur-sm">
-                                            Ventas: {row.total_ventas}
+                                        <div className="w-px h-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.6)]"></div>
+                                        <div className="absolute top-7 bg-blue-600 border border-blue-400/50 text-[10px] font-black text-white px-2 py-0.5 rounded-lg shadow-xl transform -translate-x-1/2 backdrop-blur-md group-hover:scale-110 transition-transform">
+                                            {row.total_ventas} v.
                                         </div>
-                                        <div className="w-2.5 h-2.5 rounded-full bg-blue-400 border-2 border-blue-600 mt-[-1.25px] shadow-[0_0_10px_rgba(59,130,246,0.8)]"></div>
+                                        <div className="w-3 h-3 rounded-full bg-blue-400 border-2 border-blue-600 mt-[-1.5px] shadow-[0_0_12px_rgba(59,130,246,0.9)] group-hover:scale-125 transition-transform"></div>
                                     </div>
                                 )}
                             </div>
                         )
                     }
                 },
-                { key: 'total_ventas', label: 'Total', render: (val) => <span className="font-bold text-blue-400">{val}</span> },
+                { key: 'total_ventas', label: 'Total', render: (val) => <span className="font-black text-blue-400 tabular-nums text-lg">{val}</span> },
             ]
         }
 
         const commonColumns = [
-            { key: 'ventas_manana', label: 'Mañana (06-13)', render: (val) => val || 0 },
-            { key: 'ventas_tarde', label: 'Tarde (13-19)', render: (val) => val || 0 },
-            { key: 'ventas_noche', label: 'Noche (19-00)', render: (val) => val || 0 },
-            { key: 'total_ventas', label: 'Total', render: (val) => <span className="font-bold text-blue-400">{val || 0}</span> },
+            { key: 'ventas_manana', label: 'Mañana (06-13)', render: (val) => <span className="font-bold text-slate-300">{val || 0}</span> },
+            { key: 'ventas_tarde', label: 'Tarde (13-19)', render: (val) => <span className="font-bold text-slate-300">{val || 0}</span> },
+            { key: 'ventas_noche', label: 'Noche (19-00)', render: (val) => <span className="font-bold text-slate-300">{val || 0}</span> },
+            { key: 'total_ventas', label: 'Total', render: (val) => <span className="font-black text-blue-400 tabular-nums text-lg">{val || 0}</span> },
         ]
 
         if (viewType === 'diario') {
@@ -328,9 +310,9 @@ const AnalisisHorariosView = () => {
                         if (!val) return ''
                         if (typeof val === 'string' && val.includes('-')) {
                             const [y, m, d] = val.split('T')[0].split('-')
-                            return `${d}/${m}/${y}`
+                            return <span className="font-bold text-slate-300">{`${d}/${m}/${y}`}</span>
                         }
-                        return new Date(val).toLocaleDateString()
+                        return <span className="font-bold text-slate-300">{new Date(val).toLocaleDateString()}</span>
                     }
                 },
                 ...commonColumns
@@ -343,9 +325,9 @@ const AnalisisHorariosView = () => {
                         if (!val) return ''
                         if (typeof val === 'string' && val.includes('-')) {
                             const [y, m, d] = val.split('T')[0].split('-')
-                            return `${d}/${m}/${y}`
+                            return <span className="font-bold text-slate-300">{`${d}/${m}/${y}`}</span>
                         }
-                        return new Date(val).toLocaleDateString()
+                        return <span className="font-bold text-slate-300">{new Date(val).toLocaleDateString()}</span>
                     }
                 },
                 ...commonColumns
@@ -353,8 +335,8 @@ const AnalisisHorariosView = () => {
         }
         if (viewType === 'mensual') {
             return [
-                { key: 'anio', label: 'Año' },
-                { key: 'mes', label: 'Mes' },
+                { key: 'anio', label: 'Año', render: (val) => <span className="font-black text-slate-500">{val}</span> },
+                { key: 'mes', label: 'Mes', render: (val) => <span className="font-bold text-slate-300 uppercase tracking-widest text-xs">{val}</span> },
                 ...commonColumns
             ]
         }
@@ -362,39 +344,47 @@ const AnalisisHorariosView = () => {
     }
 
     return (
-        <div>
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-                <h2 className="text-3xl font-bold text-white flex items-center gap-2">
-                    {analysisMode === 'horarios' ? <Clock className="h-8 w-8 text-purple-500" /> : <Trophy className="h-8 w-8 text-yellow-500" />}
-                    {analysisMode === 'horarios' ? 'Análisis Horarios' : 'Hitos de Ventas'}
-                </h2>
+        <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-8"
+        >
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                <div>
+                    <h2 className="text-4xl font-black text-white tracking-tight flex items-center gap-4">
+                        <div className={`p-3 rounded-2xl ${analysisMode === 'horarios' ? 'bg-purple-500/10' : 'bg-yellow-500/10'} border border-white/5 shadow-2xl`}>
+                            {analysisMode === 'horarios' ? <Clock className="h-8 w-8 text-purple-400" /> : <Trophy className="h-8 w-8 text-yellow-400" />}
+                        </div>
+                        <span className="bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-500">
+                            {analysisMode === 'horarios' ? 'Análisis Horarios' : 'Hitos de Negocio'}
+                        </span>
+                    </h2>
+                    <p className="text-slate-400 font-medium mt-1">Inteligencia de ventas y picos de demanda.</p>
+                </div>
 
-                <div className="flex items-center gap-4">
-                    {/* Mode Toggle */}
-                    <div className="flex bg-gray-800 rounded-md p-1 border border-gray-700">
+                <div className="flex flex-wrap items-center gap-4">
+                    <div className="flex glass-panel p-1 border-white/10 rounded-xl">
                         <button
                             onClick={() => setAnalysisMode('horarios')}
-                            className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${analysisMode === 'horarios' ? 'bg-purple-600 text-white shadow-sm' : 'text-gray-400 hover:text-white'}`}
+                            className={`px-4 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${analysisMode === 'horarios' ? 'bg-purple-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
                         >
                             Horarios
                         </button>
                         <button
                             onClick={() => setAnalysisMode('hitos')}
-                            className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${analysisMode === 'hitos' ? 'bg-yellow-600 text-white shadow-sm' : 'text-gray-400 hover:text-white'}`}
+                            className={`px-4 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${analysisMode === 'hitos' ? 'bg-yellow-600 text-slate-950 shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
                         >
                             Hitos
                         </button>
                     </div>
 
-                    {/* Period Selector (Only for Horarios) */}
                     {analysisMode === 'horarios' && (
-                        <div className="flex bg-gray-800 rounded-md p-1 border border-gray-700">
+                        <div className="flex glass-panel p-1 border-white/10 rounded-xl">
                             {['diario', 'semanal', 'mensual'].map((type) => (
                                 <button
                                     key={type}
                                     onClick={() => setViewType(type)}
-                                    className={`px-3 py-1.5 rounded text-sm font-medium capitalize transition-colors ${viewType === type ? 'bg-purple-600 text-white shadow-sm' : 'text-gray-400 hover:text-white'
-                                        }`}
+                                    className={`px-4 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${viewType === type ? 'bg-white/10 text-white' : 'text-slate-500 hover:text-slate-300'}`}
                                 >
                                     {type}
                                 </button>
@@ -402,42 +392,38 @@ const AnalisisHorariosView = () => {
                         </div>
                     )}
 
-                    {/* Pagination for Hitos */}
                     {analysisMode === 'hitos' && (
-                        <div className="flex bg-gray-800 rounded-md p-1 border border-gray-700 gap-1">
+                        <div className="flex glass-panel p-1 border-white/10 rounded-xl gap-1">
                             <button
                                 onClick={() => setPage(p => p + 1)}
-                                className="px-3 py-1.5 rounded text-xs font-semibold text-gray-400 hover:text-white hover:bg-gray-700 transition-colors"
+                                className="px-3 py-2 rounded-lg text-[10px] font-black text-slate-400 hover:bg-white/5 transition-all"
                             >
-                                &lt; Periodo Anterior
+                                Anterior
                             </button>
-                            <div className="px-2 py-1.5 text-xs font-bold text-yellow-500 bg-gray-900/50 rounded border border-gray-700">
-                                14 Días
+                            <div className="px-3 py-2 text-[10px] font-black text-yellow-500 bg-white/5 rounded-lg border border-white/5">
+                                Período {page}
                             </div>
                             <button
                                 onClick={() => setPage(p => Math.max(1, p - 1))}
                                 disabled={page === 1}
-                                className={`px-3 py-1.5 rounded text-xs font-semibold transition-colors ${page === 1 ? 'opacity-30 cursor-not-allowed' : 'text-gray-400 hover:text-white hover:bg-gray-700'}`}
+                                className={`px-3 py-2 rounded-lg text-[10px] font-black transition-all ${page === 1 ? 'opacity-20' : 'text-slate-400 hover:bg-white/5'}`}
                             >
-                                Siguiente &gt;
+                                Sig.
                             </button>
                         </div>
                     )}
                 </div>
             </div>
 
-            {/* Stats Summary for Hitos */}
             {analysisMode === 'hitos' && hitosRawData?.hitos?.length > 0 && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                    {[10, 20, 30, 40].map(n => {
-                        // Calculate average for this milestone across all days
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {[10, 20, 30, 40].map((n, i) => {
                         let sumMinutes = 0
                         let count = 0
 
                         hitosRawData.hitos.forEach(h => {
                             if (h.hito_logrado === n && h.hora_exacta) {
                                 const [hStr, mStr] = h.hora_exacta.split(':')
-                                // Assuming typical opening at 08:00
                                 const minutesSinceOpening = (parseInt(hStr, 10) * 60 + parseInt(mStr, 10)) - (8 * 60)
                                 if (minutesSinceOpening > 0) {
                                     sumMinutes += minutesSinceOpening
@@ -450,7 +436,6 @@ const AnalisisHorariosView = () => {
                         const avgH = Math.floor(avgMinutes / 60)
                         const avgM = Math.round(avgMinutes % 60)
 
-                        // Format for display (8am + avg offset)
                         let displayH = 8 + avgH
                         let displayM = avgM
                         if (displayM >= 60) {
@@ -461,11 +446,21 @@ const AnalisisHorariosView = () => {
                         const avgTime = count > 0 ? `${displayH.toString().padStart(2, '0')}:${displayM.toString().padStart(2, '0')}` : '--:--'
 
                         return (
-                            <div key={n} className="bg-gray-700/30 border border-gray-700 p-4 rounded-xl flex flex-col items-center">
-                                <span className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Hito {n} Ventas</span>
-                                <span className="text-2xl font-black text-yellow-500 mt-1">{avgTime} <span className="text-xs font-normal text-gray-400">hs</span></span>
-                                <span className="text-[10px] text-gray-500 mt-1 italic italic">Promedio histórico ({count} días)</span>
-                            </div>
+                            <motion.div
+                                key={n}
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: i * 0.1 }}
+                                className="glass-card p-6 rounded-2xl flex flex-col items-center group relative overflow-hidden"
+                            >
+                                <div className="absolute top-0 right-0 w-16 h-16 bg-yellow-500/5 rounded-full blur-2xl group-hover:bg-yellow-500/10 transition-colors" />
+                                <span className="text-[10px] text-slate-500 uppercase tracking-widest font-black group-hover:text-slate-400 transition-colors">Hito {n} Ventas</span>
+                                <span className="text-4xl font-black text-yellow-500 mt-2 tabular-nums group-hover:scale-110 transition-transform">{avgTime} <span className="text-sm font-medium text-slate-600">hs</span></span>
+                                <div className="mt-4 flex items-center gap-2">
+                                    <div className="h-1.5 w-1.5 rounded-full bg-yellow-500 animate-pulse" />
+                                    <span className="text-[9px] text-slate-500 font-bold uppercase tracking-widest italic leading-none">Promedio en {count} días</span>
+                                </div>
+                            </motion.div>
                         )
                     })}
                 </div>
@@ -480,7 +475,7 @@ const AnalisisHorariosView = () => {
                 sortOrder={sortOrder}
                 onFilter={setFilterValue}
             />
-        </div>
+        </motion.div>
     )
 }
 

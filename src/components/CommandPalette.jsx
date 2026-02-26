@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { Search, Package, User, Receipt, Calendar, ArrowRight, Loader2, Command } from 'lucide-react'
+import { Search, Package, User, Receipt, Calendar, ArrowRight, Loader2, Command, ShieldCheck } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import * as api from '../services/api'
 import { useNavigate } from 'react-router-dom'
@@ -57,7 +57,10 @@ const CommandPalette = ({ isOpen, onClose }) => {
         ...results.products.map(p => ({ ...p, type: 'product', icon: Package, label: p.nombre, sub: `$${p.ultimo_precio_venta}`, path: '/productos' })),
         ...results.clients.map(c => ({ ...c, type: 'client', icon: User, label: c.cliente_nombre, sub: 'Cliente', path: '/ventas' })),
         ...results.sales.map(s => ({ ...s, type: 'sale', icon: Receipt, label: `Venta #${s.venta_id}`, sub: s.cliente, path: '/ventas' })),
-        ...results.reservations.map(r => ({ ...r, type: 'reservation', icon: Calendar, label: `Reserva #${r.reserva_id}`, sub: r.cliente, path: '/reservas' }))
+        ...results.reservations.map(r => ({ ...r, type: 'reservation', icon: Calendar, label: `Reserva #${r.reserva_id}`, sub: r.cliente, path: '/reservas' })),
+        ...(query.toLowerCase().includes('sist') || query.toLowerCase().includes('cont') || query.toLowerCase().includes('admin')
+            ? [{ type: 'system', icon: ShieldCheck, label: 'Centro de Control Digital', sub: 'Auditoría y Monitoreo', path: '/sistema' }]
+            : [])
     ]
 
     const handleKeyDown = (e) => {

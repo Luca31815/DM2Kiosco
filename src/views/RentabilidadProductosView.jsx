@@ -2,13 +2,13 @@ import React, { useState, useMemo } from 'react'
 import DataTable from '../components/DataTable'
 import { useRentabilidadProductos } from '../hooks/useData'
 import { TrendingUp, AlertTriangle, CheckCircle, Ban } from 'lucide-react'
+import { motion } from 'framer-motion'
 
 const RentabilidadProductosView = () => {
     const [sortColumn, setSortColumn] = useState('ingresos_totales')
     const [sortOrder, setSortOrder] = useState('desc')
     const [filterValue, setFilterValue] = useState('')
 
-    // We fetch data with basic sort options, but we might do client-side sort for specific cases
     const { data: fetchedData, loading } = useRentabilidadProductos({
         sortColumn,
         sortOrder,
@@ -17,7 +17,6 @@ const RentabilidadProductosView = () => {
         pageSize: 1000
     })
 
-    // Apply custom client-side sort logic
     const data = useMemo(() => {
         if (!fetchedData) return []
         let processedData = [...fetchedData]
@@ -37,22 +36,22 @@ const RentabilidadProductosView = () => {
     }, [fetchedData, sortColumn, sortOrder])
 
     const columns = [
-        { key: 'producto', label: 'Producto' },
-        { key: 'unidades_vendidas', label: 'U. Vendidas', render: (val) => (val || 0).toLocaleString() },
-        { key: 'ingresos_totales', label: 'Ingresos', render: (val) => `$${(val || 0).toLocaleString()}` },
-        { key: 'unidades_compradas', label: 'U. Compradas', render: (val) => (val || 0).toLocaleString() },
-        { key: 'costo_total_compras', label: 'Costo Total', render: (val) => `$${(val || 0).toLocaleString()}` },
-        { key: 'ppp_costo_unitario', label: 'Costo Unit.', render: (val) => `$${val || 0}` },
-        { key: 'costo_mercaderia_vendida', label: 'CMV', render: (val) => `$${(val || 0).toLocaleString()}` },
-        { key: 'ganancia_neta', label: 'Ganancia', render: (val) => <span className={`font-bold ${(val || 0) >= 0 ? 'text-green-500' : 'text-red-500'}`}>${(val || 0).toLocaleString()}</span> },
+        { key: 'producto', label: 'Producto', render: (val) => <span className="font-bold text-slate-200">{val}</span> },
+        { key: 'unidades_vendidas', label: 'U. Vendidas', render: (val) => <span className="tabular-nums font-semibold">{(val || 0).toLocaleString()}</span> },
+        { key: 'ingresos_totales', label: 'Ingresos', render: (val) => <span className="tabular-nums text-blue-400 font-bold">${(val || 0).toLocaleString()}</span> },
+        { key: 'unidades_compradas', label: 'U. Compradas', render: (val) => <span className="tabular-nums text-slate-400">{(val || 0).toLocaleString()}</span> },
+        { key: 'costo_total_compras', label: 'Costo Total', render: (val) => <span className="tabular-nums text-slate-400">${(val || 0).toLocaleString()}</span> },
+        { key: 'ppp_costo_unitario', label: 'Costo Unit.', render: (val) => <span className="tabular-nums text-slate-500">${val || 0}</span> },
+        { key: 'costo_mercaderia_vendida', label: 'CMV', render: (val) => <span className="tabular-nums text-slate-500">${(val || 0).toLocaleString()}</span> },
+        { key: 'ganancia_neta', label: 'Ganancia', render: (val) => <span className={`font-black tracking-tight tabular-nums text-lg ${(val || 0) >= 0 ? 'text-green-400' : 'text-red-400'}`}>${(val || 0).toLocaleString()}</span> },
         {
             key: 'estado_del_dato',
             label: 'Estado',
             render: (val) => {
                 const status = val || ''
-                if (status === 'OK') return <span className="flex items-center gap-1 text-green-400"><CheckCircle className="h-4 w-4" /> OK</span>
-                if (status.includes('PÉRDIDA')) return <span className="flex items-center gap-1 text-red-400"><AlertTriangle className="h-4 w-4" /> Pérdida</span>
-                if (status.includes('FALTA COSTO')) return <span className="flex items-center gap-1 text-yellow-400"><Ban className="h-4 w-4" /> Sin Costo</span>
+                if (status === 'OK') return <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-500/10 text-green-400 text-xs font-black uppercase tracking-tighter border border-green-500/20"><CheckCircle className="h-3 w-3" /> OK</span>
+                if (status.includes('PÉRDIDA')) return <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-500/10 text-red-400 text-xs font-black uppercase tracking-tighter border border-red-500/20"><AlertTriangle className="h-3 w-3" /> Pérdida</span>
+                if (status.includes('FALTA COSTO')) return <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-yellow-500/10 text-yellow-400 text-xs font-black uppercase tracking-tighter border border-yellow-500/20"><Ban className="h-3 w-3" /> Sin Costo</span>
                 return status
             }
         },
@@ -72,11 +71,21 @@ const RentabilidadProductosView = () => {
     }
 
     return (
-        <div>
-            <h2 className="text-3xl font-bold text-white mb-6 flex items-center gap-2">
-                <TrendingUp className="h-8 w-8 text-green-500" />
-                Rentabilidad por Producto
-            </h2>
+        <motion.div
+            initial={{ opacity: 0, scale: 0.99 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="space-y-6"
+        >
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                <div>
+                    <h2 className="text-4xl font-black text-white tracking-tight flex items-center gap-3">
+                        <TrendingUp className="h-10 w-10 text-green-500" />
+                        <span className="bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-500">Rentabilidad</span>
+                    </h2>
+                    <p className="text-slate-400 font-medium mt-1">Análisis profundo de márgenes por producto.</p>
+                </div>
+            </div>
+
             <DataTable
                 data={data}
                 columns={columns}
@@ -88,7 +97,7 @@ const RentabilidadProductosView = () => {
                 rowKey="producto"
                 compact={true}
             />
-        </div>
+        </motion.div>
     )
 }
 
