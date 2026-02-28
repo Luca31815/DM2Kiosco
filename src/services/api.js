@@ -56,6 +56,18 @@ export const fetchTableData = async (tableName, options = {}) => {
     return { data, count }
 }
 
+export const rollbackLog = async (logId) => {
+    if (isDemo()) throw new Error('Acción deshabilitada en el modo Demo');
+    const { data, error } = await supabase.rpc('fn_rollback_log', { p_log_id: logId })
+    if (error) {
+        console.error('Error calling fn_rollback_log:', error)
+        throw error
+    }
+    return data
+}
+
+export const getAISummaries = (options) => fetchTableData('resumenes_ia', { sortColumn: 'fecha', sortOrder: 'desc', ...options })
+
 export const fetchDetails = async (tableName, foreignKeyColumn, foreignKeyValue) => {
     const { data, error } = await supabase
         .from(tableName)

@@ -1,9 +1,10 @@
 import React, { useState } from 'react'
 import useSWR from 'swr'
-import { getAuditLogs, getN8nErrors, getPredictiveStock } from '../services/api'
+import { getAuditLogs, getN8nErrors, getPredictiveStock, rollbackLog, getAISummaries } from '../services/api'
 import DataTable from '../components/DataTable'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ShieldCheck, Activity, PackageSearch, AlertCircle, Clock, Database, Terminal, User, Cpu, ArrowRight, Code2 } from 'lucide-react'
+import { ShieldCheck, Activity, PackageSearch, AlertCircle, Clock, Database, Terminal, User, Cpu, ArrowRight, Code2, RotateCcw, Sparkles } from 'lucide-react'
+import ReactMarkdown from 'react-markdown'
 
 // Helper para formatear fechas usando Intl nativo
 const formatDate = (dateStr, includeTime = false) => {
@@ -73,6 +74,46 @@ const calculateDiff = (oldVal, newVal) => {
     )
 }
 
+const DailyAISummary = ({ data, isLoading }) => {
+    if (isLoading) return <div className="h-32 flex items-center justify-center bg-white/5 rounded-2xl border border-white/5 animate-pulse">Cargando inteligencia...</div>
+    if (!data || data.length === 0) return (
+        <div className="p-8 text-center bg-white/5 rounded-2xl border border-white/5 space-y-3">
+            <Sparkles className="h-8 w-8 text-slate-600 mx-auto" />
+            <p className="text-slate-400 font-medium tracking-tight">No hay resúmenes generados para hoy todavía.</p>
+            <p className="text-slate-500 text-xs">El sistema genera el resumen automáticamente cada día a las 22:00.</p>
+        </div>
+    )
+
+    const latest = data[0]
+
+    return (
+        <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="relative overflow-hidden group"
+        >
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-purple-500/5 to-transparent -z-10" />
+            <div className="p-6 bg-slate-900/40 rounded-3xl border border-white/10 backdrop-blur-2xl space-y-4">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-blue-500/20 rounded-xl">
+                            <Sparkles className="h-5 w-5 text-blue-400" />
+                        </div>
+                        <div>
+                            <h3 className="text-lg font-black text-white tracking-tight italic">Resumen del Auditor IA</h3>
+                            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{formatDate(latest.fecha)}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="prose prose-invert prose-sm max-w-none text-slate-300 leading-relaxed font-medium">
+                    <ReactMarkdown>{latest.contenido}</ReactMarkdown>
+                </div>
+            </div>
+        </motion.div>
+    )
+}
+
 const formatQueryContext = (context) => {
     if (!context) return null
 
@@ -115,6 +156,7 @@ const SystemView = () => {
     const [activeTab, setActiveTab] = useState('audit')
     const [sortConfig, setSortConfig] = useState({ column: 'fecha', order: 'desc' })
     const [filterValue, setFilterValue] = useState('')
+    const [rollbackStatus, setRollbackStatus] = useState({ id: null, status: 'idle' })
 
     // Fetchers
     const { data: auditLogs, isLoading: loadingAudit } = useSWR(
@@ -132,8 +174,32 @@ const SystemView = () => {
         () => getPredictiveStock({ filter: filterValue })
     )
 
+    const { data: aiSummaries, isLoading: loadingAI } = useSWR(
+        activeTab === 'audit' || activeTab === 'ia' ? 'aiSummaries' : null,
+        () => getAISummaries({ pageSize: 5 })
+    )
+
+    const handleRollback = async (id) => {
+        if (!confirm('¿Seguro que querés deshacer este cambio?')) return
+        setRollbackStatus({ id, status: 'loading' })
+        try {
+            const res = await rollbackLog(id)
+            if (res.success) {
+                alert('¡Cambio deshecho con éxito!')
+                setRollbackStatus({ id: null, status: 'success' })
+            } else {
+                alert('Error: ' + res.error)
+                setRollbackStatus({ id: null, status: 'error' })
+            }
+        } catch (err) {
+            alert('Falló el rollback: ' + err.message)
+            setRollbackStatus({ id: null, status: 'error' })
+        }
+    }
+
     const tabs = [
         { id: 'audit', label: 'Cámara de Seguridad', icon: ShieldCheck, color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20' },
+        { id: 'ia', label: 'Resúmenes IA', icon: Sparkles, color: 'text-cyan-400', bg: 'bg-cyan-500/10', border: 'border-cyan-500/20' },
         { id: 'stock', label: 'Radar de Stock', icon: PackageSearch, color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20' },
         { id: 'n8n', label: 'Monitor n8n', icon: Terminal, color: 'text-purple-400', bg: 'bg-purple-500/10', border: 'border-purple-500/20' }
     ]
@@ -171,6 +237,21 @@ const SystemView = () => {
                 </div>
             )
         },
+        {
+            key: 'acciones', label: '', render: (_, row) => (
+                <button
+                    onClick={() => handleRollback(row.id)}
+                    disabled={rollbackStatus.id === row.id && rollbackStatus.status === 'loading'}
+                    className={`p-2 rounded-lg border transition-all hover:scale-110 active:scale-95 ${rollbackStatus.id === row.id && rollbackStatus.status === 'loading'
+                        ? 'bg-slate-800 border-white/10 opacity-50 cursor-not-allowed'
+                        : 'bg-red-500/10 border-red-500/20 text-red-400 hover:bg-red-500 hover:text-white'
+                        }`}
+                    title="Deshacer este cambio"
+                >
+                    <RotateCcw className={`h-3 w-3 ${rollbackStatus.id === row.id && rollbackStatus.status === 'loading' ? 'animate-spin' : ''}`} />
+                </button>
+            )
+        }
     ]
 
     const stockColumns = [
@@ -263,22 +344,68 @@ const SystemView = () => {
                     exit={{ opacity: 0, x: -20 }}
                     transition={{ duration: 0.2 }}
                 >
+                    {activeTab === 'ia' && (
+                        <div className="space-y-6">
+                            <DailyAISummary data={aiSummaries?.data} isLoading={loadingAI} />
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="p-6 bg-white/5 rounded-2xl border border-white/5 space-y-4">
+                                    <div className="flex items-center gap-3 text-cyan-400">
+                                        <Clock className="h-5 w-5" />
+                                        <h4 className="font-bold tracking-tight">Historial de Resúmenes</h4>
+                                    </div>
+                                    <div className="space-y-3">
+                                        {aiSummaries?.data?.slice(1).map((s, i) => (
+                                            <div key={i} className="p-3 bg-white/5 rounded-xl border border-white/5 hover:border-white/10 transition-colors cursor-pointer group">
+                                                <div className="flex items-center justify-between">
+                                                    <span className="text-xs font-bold text-slate-400">{formatDate(s.fecha)}</span>
+                                                    <ArrowRight className="h-3 w-3 text-slate-600 group-hover:text-cyan-400 transition-colors" />
+                                                </div>
+                                                <p className="text-[11px] text-slate-500 line-clamp-1 mt-1">{s.contenido.substring(0, 100)}...</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div className="p-6 bg-gradient-to-br from-blue-500/5 to-transparent rounded-2xl border border-blue-500/10 space-y-4">
+                                    <div className="flex items-center gap-3 text-blue-400">
+                                        <Database className="h-5 w-5" />
+                                        <h4 className="font-bold tracking-tight">Estado del Auditor</h4>
+                                    </div>
+                                    <p className="text-xs text-slate-400 leading-relaxed">
+                                        El motor de IA analiza todos los cambios significativos guardados en la tabla de auditoría,
+                                        filtrando el ruido técnico para ofrecerte una visión clara del negocio.
+                                    </p>
+                                    <div className="pt-2">
+                                        <div className="flex items-center justify-between text-[10px] uppercase font-black tracking-widest text-slate-500 mb-1">
+                                            <span>Cobertura</span>
+                                            <span>100%</span>
+                                        </div>
+                                        <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                                            <div className="h-full bg-blue-500 w-full" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     {activeTab === 'audit' && (
-                        <DataTable
-                            data={(auditLogs?.data || []).filter(row => {
-                                if (row.accion === 'INSERT' || row.accion === 'DELETE') return true
-                                return getChanges(row.valor_anterior, row.valor_nuevo).length > 0
-                            })}
-                            columns={auditColumns}
-                            isLoading={loadingAudit}
-                            onSort={(col) => setSortConfig(s => ({ column: col, order: s.column === col && s.order === 'asc' ? 'desc' : 'asc' }))}
-                            sortColumn={sortConfig.column}
-                            sortOrder={sortConfig.order}
-                            onFilter={setFilterValue}
-                            renderExpandedRow={renderExpandedAudit}
-                            rowKey="id"
-                            compact
-                        />
+                        <div className="space-y-6">
+                            <DailyAISummary data={aiSummaries?.data} isLoading={loadingAI} />
+                            <DataTable
+                                data={(auditLogs?.data || []).filter(row => {
+                                    const changes = getChanges(row.valor_anterior, row.valor_nuevo)
+                                    // Si no hay cambios significativos Y no es INSERT/DELETE, ocultar
+                                    return changes.length > 0 || row.accion !== 'UPDATE'
+                                })}
+                                columns={auditColumns}
+                                isLoading={loadingAudit}
+                                sortConfig={sortConfig}
+                                onSort={setSortConfig}
+                                filterValue={filterValue}
+                                onFilterChange={setFilterValue}
+                                expandableRow={renderExpandedAudit}
+                            />
+                        </div>
                     )}
                     {activeTab === 'stock' && (
                         <DataTable
