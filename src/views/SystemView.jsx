@@ -3,7 +3,7 @@ import useSWR from 'swr'
 import { getAuditLogs, getN8nErrors, getPredictiveStock } from '../services/api'
 import DataTable from '../components/DataTable'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ShieldCheck, Activity, PackageSearch, AlertCircle, Clock, Database, Terminal, User } from 'lucide-react'
+import { ShieldCheck, Activity, PackageSearch, AlertCircle, Clock, Database, Terminal, User, Cpu, ArrowRight } from 'lucide-react'
 
 // Helper para formatear fechas usando Intl nativo
 const formatDate = (dateStr, includeTime = false) => {
@@ -15,6 +15,43 @@ const formatDate = (dateStr, includeTime = false) => {
         ...(includeTime ? { hour: '2-digit', minute: '2-digit' } : {})
     }
     return new Intl.DateTimeFormat('es-AR', options).format(date)
+}
+
+const calculateDiff = (oldVal, newVal) => {
+    if (!newVal) return null
+    if (!oldVal) return <span className="text-green-400 font-bold italic">Registro Nuevo</span>
+
+    const changes = []
+    const keys = Object.keys(newVal)
+
+    keys.forEach(key => {
+        if (JSON.stringify(oldVal[key]) !== JSON.stringify(newVal[key])) {
+            // Ignorar campos de timestamp internos si existen
+            if (['fecha_actualizacion', 'updated_at'].includes(key)) return
+
+            changes.push({
+                key,
+                from: oldVal[key],
+                to: newVal[key]
+            })
+        }
+    })
+
+    if (changes.length === 0) return <span className="text-slate-500 italic">Sin cambios detectados</span>
+    if (changes.length > 2) return <span className="text-blue-400 font-bold">{changes.length} campos modificados</span>
+
+    return (
+        <div className="flex flex-col gap-1">
+            {changes.map((c, i) => (
+                <div key={i} className="flex items-center gap-2 text-[10px]">
+                    <span className="text-slate-500 uppercase font-black">{c.key}:</span>
+                    <span className="text-red-400/80 line-through truncate max-w-[60px]">{String(c.from)}</span>
+                    <ArrowRight className="h-2 w-2 text-slate-600" />
+                    <span className="text-green-400 font-bold truncate max-w-[80px]">{String(c.to)}</span>
+                </div>
+            ))}
+        </div>
+    )
 }
 
 const SystemView = () => {
@@ -54,7 +91,26 @@ const SystemView = () => {
                     }`}>{val}</span>
             )
         },
-        { key: 'usuario', label: 'Usuario', render: (val) => <div className="flex items-center gap-2"><User className="h-3 w-3 text-slate-500" /><span>{val}</span></div> },
+        {
+            key: 'resumen', label: 'Cambios', render: (_, row) => calculateDiff(row.valor_anterior, row.valor_nuevo)
+        },
+        {
+            key: 'usuario', label: 'Origen', render: (val) => (
+                <div className="flex items-center gap-2">
+                    {val === 'postgres' ? (
+                        <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-purple-500/10 border border-purple-500/20">
+                            <Cpu className="h-3 w-3 text-purple-400" />
+                            <span className="text-purple-300 font-bold text-[10px] uppercase tracking-wider">Sistema (n8n)</span>
+                        </div>
+                    ) : (
+                        <div className="flex items-center gap-2">
+                            <User className="h-3 w-3 text-slate-500" />
+                            <span className="text-slate-300">{val}</span>
+                        </div>
+                    )}
+                </div>
+            )
+        },
     ]
 
     const stockColumns = [
