@@ -179,13 +179,13 @@ const SystemView = () => {
             <div className="space-y-2">
                 <div className="text-slate-500 uppercase tracking-widest font-black text-[10px]">Valor Anterior</div>
                 <pre className="bg-slate-950/50 p-3 rounded-xl border border-white/5 overflow-x-auto text-red-300/80">
-                    {JSON.stringify(row.datos_anteriores, null, 2)}
+                    {JSON.stringify(row.valor_anterior, null, 2)}
                 </pre>
             </div>
             <div className="space-y-2">
                 <div className="text-slate-500 uppercase tracking-widest font-black text-[10px]">Valor Nuevo</div>
                 <pre className="bg-slate-950/50 p-3 rounded-xl border border-white/5 overflow-x-auto text-green-300/80">
-                    {JSON.stringify(row.datos_nuevos, null, 2)}
+                    {JSON.stringify(row.valor_nuevo, null, 2)}
                 </pre>
             </div>
         </div>
