@@ -17,10 +17,8 @@ const formatDate = (dateStr, includeTime = false) => {
     return new Intl.DateTimeFormat('es-AR', options).format(date)
 }
 
-const calculateDiff = (oldVal, newVal) => {
-    if (!newVal) return null
-    if (!oldVal) return <span className="text-green-400 font-bold italic">Registro Nuevo</span>
-
+const getChanges = (oldVal, newVal) => {
+    if (!newVal || !oldVal) return []
     const changes = []
     const keys = Object.keys(newVal)
 
@@ -49,6 +47,14 @@ const calculateDiff = (oldVal, newVal) => {
             })
         }
     })
+    return changes
+}
+
+const calculateDiff = (oldVal, newVal) => {
+    if (!newVal) return null
+    if (!oldVal) return <span className="text-green-400 font-bold italic">Registro Nuevo</span>
+
+    const changes = getChanges(oldVal, newVal)
 
     if (changes.length === 0) return null // Si solo hubo ruido de fecha, no mostrar fila de cambios
     if (changes.length > 2) return <span className="text-blue-400 font-bold">{changes.length} campos modificados</span>
@@ -237,7 +243,10 @@ const SystemView = () => {
                 >
                     {activeTab === 'audit' && (
                         <DataTable
-                            data={auditLogs?.data || []}
+                            data={(auditLogs?.data || []).filter(row => {
+                                if (row.accion === 'INSERT' || row.accion === 'DELETE') return true
+                                return getChanges(row.valor_anterior, row.valor_nuevo).length > 0
+                            })}
                             columns={auditColumns}
                             isLoading={loadingAudit}
                             onSort={(col) => setSortConfig(s => ({ column: col, order: s.column === col && s.order === 'asc' ? 'desc' : 'asc' }))}
