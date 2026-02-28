@@ -3,7 +3,7 @@ import useSWR from 'swr'
 import { getAuditLogs, getN8nErrors, getPredictiveStock } from '../services/api'
 import DataTable from '../components/DataTable'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ShieldCheck, Activity, PackageSearch, AlertCircle, Clock, Database, Terminal, User, Cpu, ArrowRight } from 'lucide-react'
+import { ShieldCheck, Activity, PackageSearch, AlertCircle, Clock, Database, Terminal, User, Cpu, ArrowRight, Code2 } from 'lucide-react'
 
 // Helper para formatear fechas usando Intl nativo
 const formatDate = (dateStr, includeTime = false) => {
@@ -73,20 +73,42 @@ const calculateDiff = (oldVal, newVal) => {
     )
 }
 
-const formatQueryContext = (query) => {
-    if (!query) return null
-    // Intentar extraer el nombre de la función de una llamada RPC o query
-    // Ejemplo: SELECT * FROM public.crear_operacion_v3(...)
-    const match = query.match(/public\.(\w+)/i) || query.match(/FROM\s+(\w+)/i)
-    if (match) {
-        return (
-            <div className="flex items-center gap-1 text-[9px] text-slate-500 font-mono italic">
-                <Terminal className="h-2.5 w-2.5 text-slate-600" />
-                {match[1]}
-            </div>
-        )
+const formatQueryContext = (context) => {
+    if (!context) return null
+
+    // Separar Stack de Query si existe el nuevo formato
+    // Formato: "STACK:... | QUERY:..."
+    const parts = context.split(' | QUERY:')
+    const stackPart = parts[0].replace('STACK:', '')
+    const queryPart = parts[1] || parts[0]
+
+    // Extraer nombres de funciones del stack de PL/pgSQL
+    // Formato típico: "PL/pgSQL function fn_name() line 5 at ..."
+    const stackMatch = [...stackPart.matchAll(/function\s+([\w.]+)\(/g)].map(m => m[1])
+
+    // Si no hay stack (formato viejo o consulta simple), intentar extraer de la query
+    if (stackMatch.length === 0) {
+        const queryMatch = queryPart.match(/public\.(\w+)/i) || queryPart.match(/FROM\s+(\w+)/i)
+        if (queryMatch) stackMatch.push(queryMatch[1])
     }
-    return <span className="text-[9px] text-slate-600 truncate max-w-[100px]">{query.substring(0, 20)}...</span>
+
+    // Filtrar la función de auditoría propia de la lista si aparece
+    const functions = [...new Set(stackMatch.filter(fn => fn !== 'fn_audit_trigger'))]
+
+    if (functions.length === 0) {
+        return <span className="text-[9px] text-slate-600 truncate max-w-[100px]">{queryPart.substring(0, 20)}...</span>
+    }
+
+    return (
+        <div className="flex flex-col gap-1 mt-1">
+            {functions.map((fn, i) => (
+                <div key={i} className="flex items-center gap-1.5 text-[9px] font-bold text-slate-400 bg-white/5 px-2 py-0.5 rounded border border-white/5">
+                    <Code2 className="h-2.5 w-2.5 text-blue-400/70" />
+                    <span className="font-mono">{fn}</span>
+                </div>
+            ))}
+        </div>
+    )
 }
 
 const SystemView = () => {
