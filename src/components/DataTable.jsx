@@ -55,9 +55,9 @@ const DataTable = ({
     }
 
     return (
-        <div className="w-full glass-panel rounded-2xl overflow-hidden">
+        <div className="w-full glass-panel rounded-2xl overflow-visible">
             {/* Header / Filter */}
-            <div className="p-6 flex flex-col sm:flex-row justify-between items-center gap-6 bg-white/5">
+            <div className="p-6 flex flex-col sm:flex-row justify-between items-center gap-6 bg-white/5 overflow-visible">
                 <div className="relative flex items-center gap-4 w-full sm:w-auto">
                     {searchColumns && searchColumns.length > 0 && (
                         <select
@@ -104,7 +104,7 @@ const DataTable = ({
             </div>
 
             {/* Table */}
-            <div className="overflow-x-auto custom-scrollbar">
+            <div className="overflow-x-auto overflow-y-visible custom-scrollbar">
                 <table className="w-full text-left text-sm border-collapse">
                     <thead className="bg-white/5 text-slate-400 uppercase text-[11px] font-black tracking-widest border-y border-white/5">
                         <tr>
