@@ -154,6 +154,7 @@ const formatQueryContext = (context) => {
 
 const SystemView = () => {
     const [activeTab, setActiveTab] = useState('audit')
+    const [summaryType, setSummaryType] = useState('diario') // 'diario', 'semanal', 'mensual'
     const [sortConfig, setSortConfig] = useState({ column: 'fecha', order: 'desc' })
     const [filterValue, setFilterValue] = useState('')
     const [rollbackStatus, setRollbackStatus] = useState({ id: null, status: 'idle' })
@@ -175,8 +176,8 @@ const SystemView = () => {
     )
 
     const { data: aiSummaries, isLoading: loadingAI } = useSWR(
-        activeTab === 'audit' || activeTab === 'ia' ? 'aiSummaries' : null,
-        () => getAISummaries({ pageSize: 5 })
+        activeTab === 'audit' || activeTab === 'ia' ? ['aiSummaries', summaryType] : null,
+        () => getAISummaries({ tipo: summaryType, pageSize: 12 })
     )
 
     const handleRollback = async (id) => {
@@ -346,6 +347,21 @@ const SystemView = () => {
                 >
                     {activeTab === 'ia' && (
                         <div className="space-y-6">
+                            <div className="flex items-center gap-2 p-1 bg-white/5 rounded-2xl border border-white/5 w-fit">
+                                {['diario', 'semanal', 'mensual'].map(type => (
+                                    <button
+                                        key={type}
+                                        onClick={() => setSummaryType(type)}
+                                        className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${summaryType === type
+                                            ? 'bg-cyan-500 text-white shadow-lg shadow-cyan-500/20'
+                                            : 'text-slate-500 hover:text-slate-300'
+                                            }`}
+                                    >
+                                        {type}
+                                    </button>
+                                ))}
+                            </div>
+
                             <DailyAISummary data={aiSummaries?.data} isLoading={loadingAI} />
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="p-6 bg-white/5 rounded-2xl border border-white/5 space-y-4">

@@ -1,12 +1,14 @@
 -- Parche para Fase 2: Resúmenes de IA Diarios y Rollback
 
--- 1. Tabla para almacenar los resúmenes generados por la IA
+-- 1. Tabla para almacenar los resúmenes generados por la IA (Diarios, Semanales, Mensuales)
 CREATE TABLE IF NOT EXISTS public.resumenes_ia (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    fecha DATE UNIQUE DEFAULT CURRENT_DATE,
+    fecha DATE DEFAULT CURRENT_DATE,
+    tipo TEXT NOT NULL DEFAULT 'diario', -- 'diario', 'semanal', 'mensual'
     contenido TEXT NOT NULL,
     metadata JSONB DEFAULT '{}'::jsonb,
-    creado_el TIMESTAMPTZ DEFAULT NOW()
+    creado_el TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(fecha, tipo) -- Evita duplicados del mismo tipo para el mismo día
 );
 
 -- 2. Vista para que n8n obtenga los cambios significativos del día
