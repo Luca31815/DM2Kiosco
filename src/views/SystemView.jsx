@@ -25,19 +25,32 @@ const calculateDiff = (oldVal, newVal) => {
     const keys = Object.keys(newVal)
 
     keys.forEach(key => {
-        if (JSON.stringify(oldVal[key]) !== JSON.stringify(newVal[key])) {
-            // Ignorar campos de timestamp internos si existen
+        const vOld = oldVal[key]
+        const vNew = newVal[key]
+
+        if (JSON.stringify(vOld) !== JSON.stringify(vNew)) {
+            // Ignorar campos de timestamp internos
             if (['fecha_actualizacion', 'updated_at'].includes(key)) return
+
+            // Lógica especial para fechas: ignorar si la diferencia es < 5 minutos
+            if (key.includes('fecha') || key.includes('_at')) {
+                const dOld = new Date(vOld).getTime()
+                const dNew = new Date(vNew).getTime()
+                if (!isNaN(dOld) && !isNaN(dNew)) {
+                    const diffMinutes = Math.abs(dNew - dOld) / 1000 / 60
+                    if (diffMinutes < 5) return // Omitir cambio de ruido temporal
+                }
+            }
 
             changes.push({
                 key,
-                from: oldVal[key],
-                to: newVal[key]
+                from: vOld,
+                to: vNew
             })
         }
     })
 
-    if (changes.length === 0) return <span className="text-slate-500 italic">Sin cambios detectados</span>
+    if (changes.length === 0) return null // Si solo hubo ruido de fecha, no mostrar fila de cambios
     if (changes.length > 2) return <span className="text-blue-400 font-bold">{changes.length} campos modificados</span>
 
     return (
@@ -52,6 +65,22 @@ const calculateDiff = (oldVal, newVal) => {
             ))}
         </div>
     )
+}
+
+const formatQueryContext = (query) => {
+    if (!query) return null
+    // Intentar extraer el nombre de la función de una llamada RPC o query
+    // Ejemplo: SELECT * FROM public.crear_operacion_v3(...)
+    const match = query.match(/public\.(\w+)/i) || query.match(/FROM\s+(\w+)/i)
+    if (match) {
+        return (
+            <div className="flex items-center gap-1 text-[9px] text-slate-500 font-mono italic">
+                <Terminal className="h-2.5 w-2.5 text-slate-600" />
+                {match[1]}
+            </div>
+        )
+    }
+    return <span className="text-[9px] text-slate-600 truncate max-w-[100px]">{query.substring(0, 20)}...</span>
 }
 
 const SystemView = () => {
@@ -83,7 +112,7 @@ const SystemView = () => {
 
     const auditColumns = [
         { key: 'fecha', label: 'Fecha/Hora', render: (val) => formatDate(val, true) },
-        { key: 'tabla_nombre', label: 'Tabla', render: (val) => <span className="px-2 py-1 rounded bg-white/5 text-xs font-mono uppercase tracking-tighter">{val}</span> },
+        { key: 'nombre_tabla', label: 'Tabla', render: (val) => <span className="px-2 py-1 rounded bg-white/5 text-xs font-mono uppercase tracking-tighter">{val}</span> },
         {
             key: 'accion', label: 'Acción', render: (val) => (
                 <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest ${val === 'INSERT' ? 'bg-green-500/20 text-green-400' :
@@ -95,19 +124,22 @@ const SystemView = () => {
             key: 'resumen', label: 'Cambios', render: (_, row) => calculateDiff(row.valor_anterior, row.valor_nuevo)
         },
         {
-            key: 'usuario', label: 'Origen', render: (val) => (
-                <div className="flex items-center gap-2">
-                    {val === 'postgres' ? (
-                        <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-purple-500/10 border border-purple-500/20">
-                            <Cpu className="h-3 w-3 text-purple-400" />
-                            <span className="text-purple-300 font-bold text-[10px] uppercase tracking-wider">Sistema (n8n)</span>
-                        </div>
-                    ) : (
-                        <div className="flex items-center gap-2">
-                            <User className="h-3 w-3 text-slate-500" />
-                            <span className="text-slate-300">{val}</span>
-                        </div>
-                    )}
+            key: 'usuario', label: 'Origen', render: (val, row) => (
+                <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-2">
+                        {val === 'postgres' ? (
+                            <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-purple-500/10 border border-purple-500/20">
+                                <Cpu className="h-3 w-3 text-purple-400" />
+                                <span className="text-purple-300 font-bold text-[10px] uppercase tracking-wider">Sistema (n8n)</span>
+                            </div>
+                        ) : (
+                            <div className="flex items-center gap-2">
+                                <User className="h-3 w-3 text-slate-500" />
+                                <span className="text-slate-300">{val}</span>
+                            </div>
+                        )}
+                    </div>
+                    {row.query_context && formatQueryContext(row.query_context)}
                 </div>
             )
         },
