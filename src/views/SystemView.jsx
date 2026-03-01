@@ -180,6 +180,11 @@ const SystemView = () => {
         () => getAISummaries({ tipo: summaryType, pageSize: 12 })
     )
 
+    const { data: systemAlerts, isLoading: loadingAlerts } = useSWR(
+        activeTab === 'alerts' ? 'systemAlerts' : null,
+        () => getSystemAlerts()
+    )
+
     const handleRollback = async (id) => {
         if (!confirm('¿Seguro que querés deshacer este cambio?')) return
         setRollbackStatus({ id, status: 'loading' })

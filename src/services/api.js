@@ -66,19 +66,28 @@ export const rollbackLog = async (logId) => {
     return data
 }
 
-export const getAISummaries = (options) => fetchTableData('resumenes_ia', { sortColumn: 'fecha', sortOrder: 'desc', ...options })
-
-export const fetchDetails = async (tableName, foreignKeyColumn, foreignKeyValue) => {
-    const { data, error } = await supabase
-        .from(tableName)
+export const getAISummaries = async ({ tipo = 'diario', pageSize = 12 } = {}) => {
+    let query = supabase
+        .from('resumenes_ia')
         .select('*')
-        .eq(foreignKeyColumn, foreignKeyValue)
+        .eq('tipo', tipo)
+        .order('fecha', { ascending: false })
+        .limit(pageSize)
 
-    if (error) {
-        console.error(`Error fetching details from ${tableName}:`, error)
-        throw error
-    }
-    return data
+    const { data, error } = await query
+    if (error) throw error
+    return { data }
+}
+
+export const getSystemAlerts = async () => {
+    const { data, error } = await supabase
+        .from('alertas_log')
+        .select('*, logs_auditoria(*)')
+        .order('creado_el', { ascending: false })
+        .limit(50)
+
+    if (error) throw error
+    return { data }
 }
 
 export const getVentas = (options) => fetchTableData('vista_ventas_search', { sortColumn: 'fecha', sortOrder: 'desc', ...options })
