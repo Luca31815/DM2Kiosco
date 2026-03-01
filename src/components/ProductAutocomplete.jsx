@@ -38,8 +38,8 @@ const ProductAutocomplete = ({ value, onChange, placeholder = 'Buscar producto..
         if (inputRef.current) {
             const rect = inputRef.current.getBoundingClientRect()
             setCoords({
-                top: rect.bottom + window.scrollY,
-                left: rect.left + window.scrollX,
+                top: rect.bottom,
+                left: rect.left,
                 width: rect.width
             })
         }
@@ -62,7 +62,8 @@ const ProductAutocomplete = ({ value, onChange, placeholder = 'Buscar producto..
         }
     }, [])
 
-    const handleSelect = (name) => {
+    const handleSelect = (e, name) => {
+        e.preventDefault() // Evitar pérdida de foco
         setInputValue(name)
         onChange(name)
         setShowSuggestions(false)
@@ -90,7 +91,7 @@ const ProductAutocomplete = ({ value, onChange, placeholder = 'Buscar producto..
                 <li
                     key={product.producto_id}
                     className="px-4 py-2 hover:bg-white/5 cursor-pointer text-gray-300 transition-colors"
-                    onClick={() => handleSelect(product.nombre)}
+                    onMouseDown={(e) => handleSelect(e, product.nombre)}
                 >
                     <div className="flex flex-col">
                         <span className="font-medium text-white">{product.nombre}</span>

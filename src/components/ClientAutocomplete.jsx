@@ -38,8 +38,8 @@ const ClientAutocomplete = ({ value, onChange, placeholder = 'Buscar cliente...'
         if (inputRef.current) {
             const rect = inputRef.current.getBoundingClientRect()
             setCoords({
-                top: rect.bottom + window.scrollY,
-                left: rect.left + window.scrollX,
+                top: rect.bottom,
+                left: rect.left,
                 width: rect.width
             })
         }
@@ -62,7 +62,8 @@ const ClientAutocomplete = ({ value, onChange, placeholder = 'Buscar cliente...'
         }
     }, [])
 
-    const handleSelect = (name) => {
+    const handleSelect = (e, name) => {
+        e.preventDefault() // Evitar pérdida de foco
         setInputValue(name)
         onChange(name)
         setShowSuggestions(false)
@@ -90,7 +91,7 @@ const ClientAutocomplete = ({ value, onChange, placeholder = 'Buscar cliente...'
                 <li
                     key={index}
                     className="px-4 py-2 hover:bg-white/5 cursor-pointer text-gray-300 transition-colors"
-                    onClick={() => handleSelect(client.nombre)}
+                    onMouseDown={(e) => handleSelect(e, client.nombre)}
                 >
                     <span className="font-medium text-white">{client.nombre}</span>
                 </li>
