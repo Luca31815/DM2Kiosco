@@ -37,56 +37,38 @@ WHERE fecha >= CURRENT_DATE -- Solo hoy
 GROUP BY nombre_tabla, accion;
 
 -- 3. Función de Rollback (Fase 1)
--- Permite revertir un cambio específico usando su log_id
-CREATE OR REPLACE FUNCTION public.fn_rollback_log(p_log_id UUID)
-RETURNS JSONB
-LANGUAGE plpgsql
-SECURITY DEFINER
-AS $$
+-- Permite revertir-- 1. Función para deshacer un cambio (Rollback)
+CREATE OR REPLACE FUNCTION public.fn_rollback_log(p_log_id BIGINT)
+RETURNS JSONB AS $$
 DECLARE
     v_log RECORD;
     v_sql TEXT;
-    v_table TEXT;
-    v_target_id TEXT;
-    v_old_data JSONB;
     v_key TEXT;
     v_val JSONB;
-    v_set_clause TEXT := '';
+    v_updates TEXT := '';
 BEGIN
-    -- Obtener el log
-    SELECT * INTO v_log FROM public.logs_auditoria WHERE id = p_log_id;
+    -- Obtener el log de auditoría
+    SELECT * INTO v_log FROM public.logs_auditoria WHERE log_id = p_log_id;
     
     IF NOT FOUND THEN
-        RETURN jsonb_build_object('success', false, 'error', 'Log no encontrado');
+        RETURN jsonb_build_object('success', false, 'message', 'Log no encontrado');
     END IF;
 
-    v_table := quote_ident(v_log.nombre_tabla);
-    v_target_id := v_log.registro_id;
-    v_old_data := v_log.valor_anterior;
-
-    -- Solo podemos revertir UPDATE y DELETE (en INSERT no hay valor anterior útil para restaurar el estado previo)
-    IF v_log.accion = 'INSERT' THEN
-        -- Para INSERT, el rollback sería borrarlo
-        v_sql := format('DELETE FROM public.%I WHERE id::text = %L', v_log.nombre_tabla, v_target_id);
+    IF v_log.accion = 'DELETE' THEN
+        -- Para DELETE, el rollback es un INSERT del valor anterior
+        -- (Implementación simplificada)
+        RETURN jsonb_build_object('success', false, 'message', 'Rollback de DELETE no implementado automáticamente');
+    ELSIF v_log.accion = 'INSERT' THEN
+        -- Para INSERT, el rollback es un DELETE
+        v_sql := format('DELETE FROM %I WHERE id = %L', v_log.nombre_tabla, (v_log.valor_nuevo->>'id')::uuid);
+        EXECUTE v_sql;
+        RETURN jsonb_build_object('success', true, 'message', 'Rollback exitoso: Registro eliminado');
     ELSIF v_log.accion = 'UPDATE' THEN
-        -- Construir clausula SET desde jsonb
-        FOR v_key, v_val IN SELECT * FROM jsonb_each(v_old_data)
+        -- Para UPDATE, volvemos a poner los valores de valor_anterior
+        FOR v_key, v_val IN SELECT * FROM jsonb_each(v_log.valor_anterior)
         LOOP
-            v_set_clause := v_set_clause || format('%I = %L, ', v_key, v_val#>>'{}');
+            v_updates := v_updates || format('%I = %L, ', v_key, v_val#>>'{}');
         END LOOP;
-        v_set_clause := rtrim(v_set_clause, ', ');
-        
-        v_sql := format('UPDATE public.%I SET %s WHERE id::text = %L', v_log.nombre_tabla, v_set_clause, v_target_id);
-    ELSIF v_log.accion = 'DELETE' THEN
-        -- Para DELETE, el rollback es re-insertar
-        -- (Esto es más complejo por los tipos de datos, pero se asume estructura estándar)
-        RETURN jsonb_build_object('success', false, 'error', 'Rollback de DELETE no implementado en esta versión simple');
-    END IF;
-
-    EXECUTE v_sql;
-
-    RETURN jsonb_build_object('success', true, 'mensaje', 'Reversión exitosa');
-EXCEPTION WHEN OTHERS THEN
     RETURN jsonb_build_object('success', false, 'error', SQLERRM);
 END;
 $$;
