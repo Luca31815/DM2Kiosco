@@ -13,7 +13,6 @@ export const fetchTableData = async (tableName, options = {}) => {
     if (isDemo()) return { data: [], count: 0 }; // Failsafe
 
     const { sortColumn, sortOrder, filterColumn, filterValue, page, pageSize, dateRange, dateColumn, select = '*' } = options
-    // ... (rest of the file follows)
 
     let query = supabase.from(tableName).select(select, { count: 'exact' })
 
@@ -55,6 +54,21 @@ export const fetchTableData = async (tableName, options = {}) => {
 
     return { data, count }
 }
+
+const fetchDetails = async (tableName, shadowColumn, id) => {
+    if (isDemo()) return []
+    const { data, error } = await supabase
+        .from(tableName)
+        .select('*')
+        .eq(shadowColumn, id)
+
+    if (error) {
+        console.error(`Error fetching details from ${tableName}:`, error)
+        throw error
+    }
+    return data || []
+}
+
 
 export const rollbackLog = async (logId) => {
     if (isDemo()) throw new Error('Acción deshabilitada en el modo Demo');
