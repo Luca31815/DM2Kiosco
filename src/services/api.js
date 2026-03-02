@@ -139,7 +139,7 @@ export const getMovimientosStock = (id) => fetchDetails('stock_movimientos', 're
 
 export const corregirOperacion = async (data) => {
     if (isDemo()) throw new Error('Acción deshabilitada en el modo Demo');
-    const { data: result, error } = await supabase.rpc('corregir_operacion_v16', { p_input: data })
+    const { data: result, error } = await supabase.rpc('corregir_operacion_v17', { p_input: data })
     if (error) {
         console.error('Error calling corregir_operacion_v16:', error)
         throw error
