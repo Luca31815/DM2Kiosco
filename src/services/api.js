@@ -165,7 +165,7 @@ export const actualizarProducto = async (data) => {
 
 export const crearReserva = async (reserva, productos, pagos) => {
     if (isDemo()) throw new Error('Acción deshabilitada en el modo Demo');
-    const { data: result, error } = await supabase.rpc('crear_o_modificar_reserva_v4', {
+    const { data: result, error } = await supabase.rpc('crear_o_modificar_reserva_v5', {
         p_reserva: reserva,
         p_productos: productos,
         p_pagos: pagos
