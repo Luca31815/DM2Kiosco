@@ -3,6 +3,7 @@ import Sidebar from './Sidebar'
 import { Menu, Search, Command } from 'lucide-react'
 import { Toaster } from 'react-hot-toast'
 import CommandPalette from './CommandPalette'
+import { useAuth } from '../context/AuthContext'
 
 const Layout = ({ children }) => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false)
@@ -64,13 +65,52 @@ const Layout = ({ children }) => {
                 </div>
 
                 <div className="p-4 md:p-8 overflow-y-auto overflow-x-hidden custom-scrollbar">
-                    <div className="max-w-7xl mx-auto">
+                    <div className="max-w-7xl mx-auto pb-16">
                         {children}
                     </div>
                 </div>
+
+                {/* Status Badge & Authorization Prompt */}
+                <AuthBadge />
             </main>
         </div>
     )
+}
+
+const AuthBadge = () => {
+    const { isDemoMode } = useAuth();
+    const [ip, setIp] = React.useState('detectando...');
+
+    React.useEffect(() => {
+        // Obtenemos la IP del header inyectado por el middleware mediante un fetch simple
+        fetch(window.location.href, { method: 'HEAD' })
+            .then(res => setIp(res.headers.get('x-debug-ip') || 'unknown'))
+            .catch(() => setIp('error'));
+    }, []);
+
+    const handleAuth = () => {
+        if (!isDemoMode) return;
+        const key = prompt('Introduce la Clave Maestra para autorizar este dispositivo:');
+        if (key) {
+            window.location.search = `?admin=${encodeURIComponent(key)}`;
+        }
+    };
+
+    return (
+        <div
+            onClick={handleAuth}
+            className={`fixed bottom-4 right-4 z-50 px-3 py-1.5 rounded-full border text-[10px] font-bold uppercase tracking-wider cursor-pointer transition-all active:scale-95 shadow-lg backdrop-blur-md ${isDemoMode
+                ? 'bg-amber-500/10 border-amber-500/20 text-amber-500 hover:bg-amber-500/20'
+                : 'bg-green-500/10 border-green-500/20 text-green-500 hover:bg-green-500/20'
+                }`}
+        >
+            <div className="flex items-center gap-2">
+                <div className={`h-1.5 w-1.5 rounded-full animate-pulse ${isDemoMode ? 'bg-amber-500' : 'bg-green-500'}`} />
+                <span>Modo: {isDemoMode ? 'Demo (Restringido)' : 'Fijado (Live)'}</span>
+                {isDemoMode && <span className="opacity-50 ml-1">| IP: {ip}</span>}
+            </div>
+        </div>
+    );
 }
 
 export default Layout

@@ -6,7 +6,6 @@ export const AuthProvider = ({ children }) => {
     const [isDemoMode, setIsDemoMode] = useState(false);
 
     useEffect(() => {
-        // Función simple para leer cookies
         const getCookie = (name) => {
             const value = `; ${document.cookie}`;
             const parts = value.split(`; ${name}=`);
@@ -15,8 +14,7 @@ export const AuthProvider = ({ children }) => {
         };
 
         const mode = getCookie('dashboard_mode');
-        // Si no hay cookie (ej: desarrollo local sin middleware), asumimos live para el dueño
-        // Pero el middleware en Vercel se encargará de setearla.
+        // El modo es demo SOLO si la cookie dice explícitamente demo y no hay sesión de admin
         setIsDemoMode(mode === 'demo');
     }, []);
 
