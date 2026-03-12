@@ -46,10 +46,7 @@ const Layout = ({ children }) => {
                         >
                             <Menu className="h-6 w-6" />
                         </button>
-                        <div className="flex items-center gap-3">
-                            <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-                            <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">DM2Kiosco</h1>
-                        </div>
+                        <LogoTrigger />
                     </div>
 
                     <button
@@ -70,44 +67,75 @@ const Layout = ({ children }) => {
                     </div>
                 </div>
 
-                {/* Status Badge & Authorization Prompt */}
+                {/* Status Badge - Only visible when Live */}
                 <AuthBadge />
             </main>
         </div>
     )
 }
 
+const LogoTrigger = () => {
+    const [clicks, setClicks] = useState(0)
+    const { isDemoMode } = useAuth()
+
+    useEffect(() => {
+        if (clicks === 0) return
+        const timer = setTimeout(() => setClicks(0), 2000)
+        return () => clearTimeout(timer)
+    }, [clicks])
+
+    const handleClick = () => {
+        if (!isDemoMode) return
+        const newClicks = clicks + 1
+        if (newClicks >= 5) {
+            setClicks(0)
+            const key = prompt('Introduce la Clave Maestra para autorizar este dispositivo:')
+            if (key) {
+                window.location.search = `?admin=${encodeURIComponent(key)}`
+            }
+        } else {
+            setClicks(newClicks)
+        }
+    }
+
+    return (
+        <div onClick={handleClick} className="flex items-center gap-3 cursor-default select-none">
+            <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+            <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">DM2Kiosco</h1>
+        </div>
+    )
+}
+
 const AuthBadge = () => {
     const { isDemoMode } = useAuth();
-    const [ip, setIp] = React.useState('detectando...');
+    if (isDemoMode) {
+        // En modo demo, si hay un 'admin' en la URL, lo limpiamos para que no quede expuesto
+        useEffect(() => {
+            const url = new URL(window.location.href);
+            if (url.searchParams.has('admin')) {
+                url.searchParams.delete('admin');
+                window.history.replaceState({}, '', url.toString());
+            }
+        }, []);
+        return null;
+    }
 
-    React.useEffect(() => {
-        // Obtenemos la IP del header inyectado por el middleware mediante un fetch simple
-        fetch(window.location.href, { method: 'HEAD' })
-            .then(res => setIp(res.headers.get('x-debug-ip') || 'unknown'))
-            .catch(() => setIp('error'));
-    }, []);
-
-    const handleAuth = () => {
-        if (!isDemoMode) return;
-        const key = prompt('Introduce la Clave Maestra para autorizar este dispositivo:');
-        if (key) {
-            window.location.search = `?admin=${encodeURIComponent(key)}`;
+    // Modo Live: mostramos el badge y la función de Lock
+    const handleLock = () => {
+        if (confirm('¿Querés BLOQUEAR el dashboard y volver al modo restringido?')) {
+            window.location.search = '?logout=true';
         }
     };
 
     return (
         <div
-            onClick={handleAuth}
-            className={`fixed bottom-4 right-4 z-50 px-3 py-1.5 rounded-full border text-[10px] font-bold uppercase tracking-wider cursor-pointer transition-all active:scale-95 shadow-lg backdrop-blur-md ${isDemoMode
-                ? 'bg-amber-500/10 border-amber-500/20 text-amber-500 hover:bg-amber-500/20'
-                : 'bg-green-500/10 border-green-500/20 text-green-500 hover:bg-green-500/20'
-                }`}
+            onClick={handleLock}
+            className="fixed bottom-4 right-4 z-50 px-3 py-1.5 rounded-full border border-green-500/20 text-[10px] font-bold uppercase tracking-wider cursor-pointer transition-all active:scale-95 shadow-lg backdrop-blur-md bg-green-500/10 text-green-500 hover:bg-green-500/20 group"
         >
             <div className="flex items-center gap-2">
-                <div className={`h-1.5 w-1.5 rounded-full animate-pulse ${isDemoMode ? 'bg-amber-500' : 'bg-green-500'}`} />
-                <span>Modo: {isDemoMode ? 'Demo (Restringido)' : 'Fijado (Live)'}</span>
-                {isDemoMode && <span className="opacity-50 ml-1">| IP: {ip}</span>}
+                <div className="h-1.5 w-1.5 rounded-full animate-pulse bg-green-500" />
+                <span>Fijado (Live)</span>
+                <span className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity">| Click para Bloquear</span>
             </div>
         </div>
     );
