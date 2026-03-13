@@ -31,10 +31,34 @@ const ProductosView = () => {
     }
 
     const handleSave = async () => {
+        // Normalización y saneamiento de datos
+        const nombreNormalizado = editForm.nombre?.trim().toUpperCase()
+        const stockNum = parseInt(editForm.stock_actual)
+        const precioVentaNum = parseFloat(editForm.ultimo_precio_venta)
+        const precioCompraNum = parseFloat(editForm.ultimo_costo_compra)
+
+        // Validaciones básicas
+        if (!nombreNormalizado) {
+            toast.error('El nombre del producto no puede estar vacío')
+            return
+        }
+        if (isNaN(stockNum)) {
+            toast.error('El stock debe ser un número válido')
+            return
+        }
+
+        const dataToSend = {
+            ...editForm,
+            nombre: nombreNormalizado,
+            stock_actual: stockNum,
+            ultimo_precio_venta: isNaN(precioVentaNum) ? 0 : precioVentaNum,
+            ultimo_costo_compra: isNaN(precioCompraNum) ? 0 : precioCompraNum
+        }
+
         const loadingToast = toast.loading('Procesando cambios...')
         setIsSaving(true)
         try {
-            const result = await api.actualizarProducto(editForm)
+            const result = await api.actualizarProducto(dataToSend)
             if (result.success) {
                 // Refrescar lista de productos
                 mutate(key => Array.isArray(key) && key[0] === 'productos')

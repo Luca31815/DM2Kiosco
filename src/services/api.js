@@ -141,7 +141,7 @@ export const corregirOperacion = async (data) => {
     if (isDemo()) throw new Error('Acción deshabilitada en el modo Demo');
     const { data: result, error } = await supabase.rpc('corregir_operacion_v17', { p_input: data })
     if (error) {
-        console.error('Error calling corregir_operacion_v16:', error)
+        console.error('Error calling corregir_operacion_v17:', error)
         throw error
     }
     return result
@@ -149,7 +149,7 @@ export const corregirOperacion = async (data) => {
 
 export const actualizarProducto = async (data) => {
     if (isDemo()) throw new Error('Acción deshabilitada en el modo Demo');
-    const { data: result, error } = await supabase.rpc('actualizar_producto_global', {
+    const { data: result, error } = await supabase.rpc('actualizar_producto_global_v2', {
         p_id: data.producto_id,
         p_nuevo_nombre: data.nombre,
         p_nuevo_precio_venta: data.ultimo_precio_venta,
@@ -157,7 +157,7 @@ export const actualizarProducto = async (data) => {
         p_nuevo_stock: data.stock_actual
     })
     if (error) {
-        console.error('Error calling actualizar_producto_global:', error)
+        console.error('Error calling actualizar_producto_global_v2:', error)
         throw error
     }
     return result
@@ -171,7 +171,7 @@ export const crearReserva = async (reserva, productos, pagos) => {
         p_pagos: pagos
     })
     if (error) {
-        console.error('Error calling crear_o_modificar_reserva_v4:', error)
+        console.error('Error calling crear_o_modificar_reserva_v5:', error)
         throw error
     }
     return result
