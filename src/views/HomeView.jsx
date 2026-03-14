@@ -288,63 +288,53 @@ const HomeView = () => {
                 </motion.div>
 
                 <div className="space-y-8">
-                    {/* Radar de Stock */}
-                    <motion.div variants={itemVariants} className="glass-panel p-6 rounded-2xl relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-500/5 rounded-full blur-3xl -mr-16 -mt-16" />
-                        <div className="flex items-center justify-between mb-6 relative z-10">
-                            <h3 className="text-lg font-black text-white tracking-tight flex items-center gap-2">
-                                <BrainCircuit className="h-5 w-5 text-yellow-400" /> Radar Stock
-                            </h3>
-                            <button onClick={() => navigate('/reporte-productos')} className="p-1.5 rounded-lg bg-white/5 border border-white/10 text-slate-400 hover:text-white transition-colors">
-                                <ArrowUpRight className="h-4 w-4" />
-                            </button>
+                    {/* Reservas Pendientes */}
+                    <motion.div variants={itemVariants} className="glass-panel p-6 rounded-2xl">
+                        <div className="flex items-center justify-between mb-6">
+                            <h3 className="text-lg font-black text-white tracking-tight">Deudores</h3>
+                            <Calendar className="h-5 w-5 text-purple-400" />
                         </div>
-                        <div className="space-y-3 relative z-10">
-                            {loadingPred ? (
-                                <div className="py-4 text-center text-slate-500 animate-pulse">Analizando ciclos...</div>
-                            ) : topAgotados.length === 0 ? (
-                                <div className="py-4 text-center text-slate-500 italic text-xs">Abastecimiento estable</div>
+                        <div className="space-y-4">
+                            {loadingReservas ? (
+                                <div className="py-8 text-center text-slate-500 animate-pulse">Analizando deudas...</div>
+                            ) : reservas.length === 0 ? (
+                                <div className="py-8 text-center text-slate-500 italic">No hay saldos pendientes</div>
                             ) : (
-                                topAgotados.map(p => (
-                                    <div key={p.producto} className="bg-white/5 p-3 rounded-xl border border-white/5 flex flex-col gap-1">
-                                        <div className="flex justify-between items-center">
-                                            <span className="text-[11px] font-bold text-slate-300 truncate max-w-[120px]">{p.producto}</span>
-                                            <span className={`text-[10px] font-black px-2 py-0.5 rounded-md ${p.dias_restantes < 3 ? 'bg-rose-500/20 text-rose-400' : 'bg-amber-500/20 text-amber-400'}`}>
-                                                {p.dias_restantes} d.
-                                            </span>
-                                        </div>
-                                        <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden mt-1">
-                                            <motion.div 
-                                                initial={{ width: 0 }}
-                                                animate={{ width: `${Math.max(10, 100 - (p.dias_restantes * 10))}%` }}
-                                                className={`h-full ${p.dias_restantes < 3 ? 'bg-rose-500' : 'bg-amber-500'}`}
-                                            />
-                                        </div>
+                                reservas.slice(0, 5).map(r => (
+                                    <div key={r.reserva_id} className="flex justify-between items-center p-3 rounded-xl bg-white/5 hover:bg-white/10 border border-transparent hover:border-white/5 transition-all group">
+                                        <span className="text-sm font-bold text-slate-300 group-hover:text-white transition-colors">{r.cliente}</span>
+                                        <span className="text-sm font-black text-red-500 tabular-nums">
+                                            {new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(parseFloat(r.saldo_pendiente) || 0)}
+                                        </span>
                                     </div>
                                 ))
                             )}
                         </div>
+                        {reservas.length > 5 && (
+                            <button className="w-full mt-4 py-2 text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-white transition-colors cursor-pointer">
+                                Ver todos ({reservas.length})
+                            </button>
+                        )}
                     </motion.div>
 
-                    {/* Flujo de Actividad Unificado */}
-                    <motion.div variants={itemVariants} className="glass-panel p-6 rounded-2xl border-white/10 group">
-                        <div className="flex items-center justify-between mb-6">
-                            <h3 className="text-lg font-black text-white tracking-tight flex items-center gap-2">
-                                <Activity className="h-5 w-5 text-blue-400" /> Actividad
-                            </h3>
-                            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest bg-white/5 px-2 py-1 rounded-md">Vivo</span>
+                    {/* Tip de Gestión */}
+                    <motion.div
+                        variants={itemVariants}
+                        whileHover={{ scale: 1.02 }}
+                        className="bg-gradient-to-br from-blue-600 to-indigo-700 p-6 rounded-2xl text-white shadow-2xl shadow-blue-500/20 relative overflow-hidden group cursor-pointer"
+                        onClick={() => navigate('/analisis-horarios')}
+                    >
+                        <AlertCircle className="absolute top-2 right-2 h-20 w-20 text-white/10 -mr-6 -mt-6 group-hover:scale-110 transition-transform duration-700" />
+                        <h3 className="text-xl font-black mb-2 flex items-center gap-2">
+                            Gestión Proactiva
+                        </h3>
+                        <p className="text-blue-50 text-sm leading-relaxed font-semibold opacity-90">
+                            Detectamos picos de demanda a las 19:00 hs. Optimizá tu stock de productos estrella para maximizar cierres.
+                        </p>
+                        <div className="mt-6 flex items-center gap-2 text-xs font-black uppercase tracking-wider">
+                            <span>Ver detalles interactivos</span>
+                            <ArrowUpRight className="h-4 w-4" />
                         </div>
-                        {loadingFeed ? (
-                            <div className="py-8 text-center text-slate-500 animate-pulse">Conectando...</div>
-                        ) : (
-                            <ActivityFeed data={unifiedFeed} />
-                        )}
-                        <button 
-                            onClick={() => navigate('/reportes')}
-                            className="w-full mt-6 py-2.5 rounded-xl bg-white/5 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-white hover:bg-white/10 transition-all border border-white/5"
-                        >
-                            Ver Balance Completo
-                        </button>
                     </motion.div>
                 </div>
             </div>

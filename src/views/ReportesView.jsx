@@ -65,9 +65,9 @@ const ReportesView = () => {
         const common = [
             { key: 'cant_ventas', label: 'Ventas (#)', render: (val) => <span className="font-bold text-slate-400">{val}</span> },
             { key: 'cant_compras', label: 'Compras (#)', render: (val) => <span className="font-bold text-slate-500">{val}</span> },
-            { key: 'ingresos', label: 'Ingresos', render: (val) => <span className="font-black text-emerald-400 tabular-nums">${val}</span> },
-            { key: 'egresos', label: 'Egresos', render: (val) => <span className="font-black text-rose-400 tabular-nums">${val}</span> },
-            { key: 'saldo', label: 'Balance', render: (val) => <span className={`font-black tabular-nums ${val >= 0 ? 'text-blue-400' : 'text-rose-500'}`}>${val}</span> },
+            { key: 'ingresos', label: 'Ingresos', render: (val) => <span className="font-black text-emerald-400 tabular-nums">${Math.floor(val).toLocaleString()}</span> },
+            { key: 'egresos', label: 'Egresos', render: (val) => <span className="font-black text-rose-400 tabular-nums">${Math.floor(val).toLocaleString()}</span> },
+            { key: 'saldo', label: 'Balance', render: (val) => <span className={`font-black tabular-nums ${val >= 0 ? 'text-blue-400' : 'text-rose-500'}`}>${Math.floor(val).toLocaleString()}</span> },
         ]
 
         if (reportType === 'diario') {
@@ -186,7 +186,7 @@ const ReportesView = () => {
 
         return (
             <div className="space-y-1">
-                {data.map((p, idx) => (
+                {data.slice(0, 5).map((p, idx) => (
                     <div key={idx} className="flex justify-between items-center group/item hover:bg-white/5 p-1 rounded-lg transition-colors">
                         <div className="flex items-center gap-2">
                             <div className="w-1 h-1 rounded-full bg-blue-500" />
@@ -233,16 +233,16 @@ const ReportesView = () => {
                 <div className="space-y-1 text-[10px] font-bold">
                     <div className="flex justify-between text-emerald-400">
                         <span>INGRESOS</span>
-                        <span>${item.ingresos.toLocaleString()}</span>
+                        <span>${Math.floor(item.ingresos).toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between text-rose-400">
                         <span>EGRESOS</span>
-                        <span>${item.egresos.toLocaleString()}</span>
+                        <span>${Math.floor(item.egresos).toLocaleString()}</span>
                     </div>
                     <div className="h-px bg-white/10 my-2" />
                     <div className="flex justify-between text-white text-xs">
                         <span>SALDO</span>
-                        <span>${item.saldo.toLocaleString()}</span>
+                        <span>${Math.floor(item.saldo).toLocaleString()}</span>
                     </div>
                 </div>
             </div>
@@ -304,7 +304,7 @@ const ReportesView = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <KPICard 
                     title="Ventas (Ingresos)"
-                    value={`$${totals.ingresos.toLocaleString()}`}
+                    value={`$${Math.floor(totals.ingresos).toLocaleString()}`}
                     subValue={`${totals.ventas} tickets generados`}
                     trend={trends.ingresos}
                     icon={ShoppingCart}
@@ -313,7 +313,7 @@ const ReportesView = () => {
                 />
                 <KPICard 
                     title="Gastos (Egresos)"
-                    value={`$${totals.egresos.toLocaleString()}`}
+                    value={`$${Math.floor(totals.egresos).toLocaleString()}`}
                     subValue={`${totals.compras} facturas cargadas`}
                     trend={trends.egresos}
                     icon={Package}
@@ -331,7 +331,7 @@ const ReportesView = () => {
                 />
                 <KPICard 
                     title="Balance Neto"
-                    value={`$${totals.balance.toLocaleString()}`}
+                    value={`$${Math.floor(totals.balance).toLocaleString()}`}
                     subValue="Resultado del periodo"
                     trend={undefined}
                     icon={Activity}
@@ -396,7 +396,7 @@ const ReportesView = () => {
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart
                                     layout="vertical"
-                                    data={topProductsData}
+                                    data={(topProductsData || []).slice(0, 5)}
                                     margin={{ left: 20, right: 20, top: 0, bottom: 0 }}
                                 >
                                     <XAxis type="number" hide />
@@ -454,15 +454,15 @@ const ReportesView = () => {
                     <div className="flex items-center gap-12 w-full md:w-auto justify-around">
                         <div className="flex flex-col">
                             <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500 mb-1">Ingresos</span>
-                            <span className="text-xl font-black text-white tabular-nums">${totals.ingresos.toLocaleString()}</span>
+                            <span className="text-xl font-black text-white tabular-nums">${Math.floor(totals.ingresos).toLocaleString()}</span>
                         </div>
                         <div className="flex flex-col">
                             <span className="text-[10px] font-black uppercase tracking-widest text-rose-500 mb-1">Egresos</span>
-                            <span className="text-xl font-black text-white tabular-nums">${totals.egresos.toLocaleString()}</span>
+                            <span className="text-xl font-black text-white tabular-nums">${Math.floor(totals.egresos).toLocaleString()}</span>
                         </div>
                         <div className="flex flex-col">
                             <span className="text-[10px] font-black uppercase tracking-widest text-blue-500 mb-1">Balance</span>
-                            <span className="text-xl font-black text-white tabular-nums">${totals.balance.toLocaleString()}</span>
+                            <span className="text-xl font-black text-white tabular-nums">${Math.floor(totals.balance).toLocaleString()}</span>
                         </div>
                     </div>
 
