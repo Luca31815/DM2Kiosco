@@ -3,7 +3,7 @@ import DataTable from '../components/DataTable'
 import { useReporte, useReporteVentasPeriodico } from '../hooks/useData'
 import { FileBarChart, Calendar, ChevronRight, TrendingUp, TrendingDown, DollarSign, Loader2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell, PieChart, Pie } from 'recharts'
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell, PieChart, Pie, LabelList } from 'recharts'
 import { ShoppingCart, Package, ArrowUpRight, ArrowDownRight, Activity, Clock, Tag } from 'lucide-react'
 
 const ReportesView = () => {
@@ -418,6 +418,14 @@ const ReportesView = () => {
                                         {topProductsData.map((entry, index) => (
                                             <Cell key={`cell-${index}`} fill={index === 0 ? '#3b82f6' : '#3b82f680'} />
                                         ))}
+                                        <LabelList 
+                                            dataKey="cantidad_total" 
+                                            position="right" 
+                                            fill="#94a3b8" 
+                                            fontSize={10} 
+                                            fontWeight="black" 
+                                            formatter={(val) => `${val} u.`}
+                                        />
                                     </Bar>
                                 </BarChart>
                             </ResponsiveContainer>
