@@ -6,7 +6,7 @@ import { motion } from 'framer-motion'
 
 const AnalisisHorariosView = () => {
     const [viewType, setViewType] = useState('diario')
-    const [analysisMode, setAnalysisMode] = useState('horarios')
+    const [analysisMode, setAnalysisMode] = useState('horarios') // horarios, hitos, heatmap
     const [page, setPage] = useState(1)
 
     const [sortColumn, setSortColumn] = useState('fecha')
@@ -163,6 +163,58 @@ const AnalisisHorariosView = () => {
         }
 
     }, [hitosRawData, analysisMode, sortColumn, sortOrder])
+
+    const HeatmapMode = ({ data }) => {
+        const slots = [
+            { key: 'ventas_madrugada', label: 'Madrugada (00-06)' },
+            { key: 'ventas_manana', label: 'Mañana (06-13)' },
+            { key: 'ventas_tarde', label: 'Tarde (13-19)' },
+            { key: 'ventas_noche', label: 'Noche (19-00)' }
+        ]
+
+        const maxVal = Math.max(...data.flatMap(row => slots.map(s => Number(row[s.key] || 0))), 1)
+
+        const getColor = (val) => {
+            if (val === 0) return 'bg-slate-900/40 text-slate-700'
+            const opacity = Math.max(0.3, val / maxVal)
+            return `bg-purple-600 shadow-[0_0_20px_rgba(147,51,234,${opacity * 0.4})] text-white border-purple-400/30`
+        }
+
+        return (
+            <div className="bg-slate-900/20 rounded-[2.5rem] border border-white/5 p-8 overflow-x-auto backdrop-blur-sm">
+                <div className="min-w-[800px]">
+                    <div className="grid grid-cols-5 gap-4 mb-8">
+                        <div />
+                        {slots.map(s => (
+                            <div key={s.key} className="text-[10px] font-black uppercase tracking-widest text-slate-500 text-center">{s.label}</div>
+                        ))}
+                    </div>
+                    <div className="space-y-4">
+                        {data.slice(0, 10).map((row, idx) => (
+                            <div key={idx} className="grid grid-cols-5 gap-4 items-center">
+                                <div className="text-xs font-black text-slate-400 uppercase tracking-tighter">
+                                    {new Date((row.fecha || row.semana_del) + 'T12:00:00').toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' })}
+                                </div>
+                                {slots.map(s => {
+                                    const val = Number(row[s.key] || 0)
+                                    return (
+                                        <motion.div
+                                            key={s.key}
+                                            whileHover={{ scale: 1.02, y: -2 }}
+                                            className={`h-20 rounded-2xl flex flex-col justify-center items-center font-black text-2xl transition-all duration-500 border ${getColor(val)}`}
+                                        >
+                                            {val}
+                                            <span className="text-[9px] opacity-60 uppercase mt-1 tracking-widest">vnts</span>
+                                        </motion.div>
+                                    )
+                                })}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        )
+    }
 
     const currentData = analysisMode === 'horarios' ? processedHorariosData : processedHitosData
     const loading = analysisMode === 'horarios' ? loadingHorarios : loadingHitos
@@ -371,6 +423,12 @@ const AnalisisHorariosView = () => {
                             Horarios
                         </button>
                         <button
+                            onClick={() => setAnalysisMode('heatmap')}
+                            className={`px-4 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${analysisMode === 'heatmap' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'text-slate-500 hover:text-slate-300'}`}
+                        >
+                            Heatmap
+                        </button>
+                        <button
                             onClick={() => setAnalysisMode('hitos')}
                             className={`px-4 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${analysisMode === 'hitos' ? 'bg-yellow-600 text-slate-950 shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
                         >
@@ -466,15 +524,19 @@ const AnalisisHorariosView = () => {
                 </div>
             )}
 
-            <DataTable
-                data={currentData}
-                columns={getColumns()}
-                isLoading={loading}
-                onSort={handleSort}
-                sortColumn={sortColumn}
-                sortOrder={sortOrder}
-                onFilter={setFilterValue}
-            />
+            {analysisMode === 'heatmap' ? (
+                <HeatmapMode data={processedHorariosData} />
+            ) : (
+                <DataTable
+                    data={currentData}
+                    columns={getColumns()}
+                    isLoading={loading}
+                    onSort={handleSort}
+                    sortColumn={sortColumn}
+                    sortOrder={sortOrder}
+                    onFilter={setFilterValue}
+                />
+            )}
         </motion.div>
     )
 }

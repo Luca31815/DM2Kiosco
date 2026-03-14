@@ -116,6 +116,8 @@ export const getReservasDetalles = (id) => fetchDetails('reservas_detalles', 're
 
 export const getProductos = (options) => fetchTableData('productos', options)
 
+export const getRetiros = (options) => fetchTableData('retiros', { sortColumn: 'fecha', sortOrder: 'desc', ...options })
+
 export const getClientes = (options) => fetchTableData('vista_clientes_unicos', options)
 
 export const getReporteDiario = (options) => fetchTableData('vista_reporte_diario', options)
@@ -175,6 +177,24 @@ export const crearReserva = async (reserva, productos, pagos) => {
         throw error
     }
     return result
+}
+
+export const crearRetiro = async (retiro) => {
+    if (isDemo()) throw new Error('Acción deshabilitada en el modo Demo');
+    const { data, error } = await supabase
+        .from('retiros')
+        .insert([{
+            retiro_id: `RET_${Date.now()}`,
+            fecha: new Date().toISOString(),
+            ...retiro
+        }])
+        .select()
+
+    if (error) {
+        console.error('Error creating retiro:', error)
+        throw error
+    }
+    return data[0]
 }
 
 // --- MONITOREO Y SISTEMA ---

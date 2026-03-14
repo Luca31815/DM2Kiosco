@@ -1,9 +1,10 @@
 import React, { useState, useMemo } from 'react'
 import DataTable from '../components/DataTable'
-import { useReporte } from '../hooks/useData'
+import { useReporte, useReporteVentasPeriodico } from '../hooks/useData'
 import { FileBarChart, Calendar, ChevronRight, TrendingUp, TrendingDown, DollarSign, Loader2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell } from 'recharts'
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell, PieChart, Pie } from 'recharts'
+import { ShoppingCart, Package, ArrowUpRight, ArrowDownRight, Activity, Clock, Tag } from 'lucide-react'
 
 const ReportesView = () => {
     const [reportType, setReportType] = useState('diario')
@@ -105,6 +106,149 @@ const ReportesView = () => {
         balance: acc.balance + Number(curr.saldo || 0),
     }), { ventas: 0, compras: 0, ingresos: 0, egresos: 0, balance: 0 })
 
+    const ticketPromedio = totals.ventas > 0 ? totals.ingresos / totals.ventas : 0
+
+    // Trends calculation (comparing first two rows representing the last two periods)
+    const trends = useMemo(() => {
+        if (data.length < 2) return { ingresos: 0, egresos: 0, ticket: 0 }
+        const curr = data[0]
+        const prev = data[1]
+
+        const getTrend = (c, p) => p > 0 ? ((c - p) / p) * 100 : 0
+        
+        const currTicket = curr.cant_ventas > 0 ? curr.ingresos / curr.cant_ventas : 0
+        const prevTicket = prev.cant_ventas > 0 ? prev.ingresos / prev.cant_ventas : 0
+
+        return {
+            ingresos: getTrend(curr.ingresos, prev.ingresos),
+            egresos: getTrend(curr.egresos, prev.egresos),
+            ticket: getTrend(currTicket, prevTicket)
+        }
+    }, [data])
+
+    const KPICard = ({ title, value, subValue, trend, icon: Icon, colorClass, gradient }) => (
+        <motion.div
+            whileHover={{ y: -5 }}
+            className="relative overflow-hidden p-6 rounded-3xl border border-white/10 backdrop-blur-md bg-slate-900/40 group"
+        >
+            <div className={`absolute top-0 right-0 w-32 h-32 -mr-16 -mt-16 rounded-full blur-3xl opacity-20 ${gradient}`} />
+            <div className="relative z-10">
+                <div className="flex justify-between items-start mb-4">
+                    <div className={`p-3 rounded-2xl bg-white/5 border border-white/10 ${colorClass}`}>
+                        <Icon className="h-6 w-6" />
+                    </div>
+                    {trend !== undefined && (
+                        <div className={`flex items-center gap-1 text-[10px] font-black px-2 py-1 rounded-lg ${trend >= 0 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
+                            {trend >= 0 ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
+                            {Math.abs(trend).toFixed(1)}%
+                        </div>
+                    )}
+                </div>
+                <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">{title}</h4>
+                <div className="flex flex-col">
+                    <span className="text-3xl font-black text-white tracking-tight tabular-nums">
+                        {value}
+                    </span>
+                    {subValue && <span className="text-[10px] font-bold text-slate-500 mt-1 uppercase tracking-wider">{subValue}</span>}
+                </div>
+            </div>
+        </motion.div>
+    )
+
+    const { data: topProductsData, loading: loadingTop } = useReporteVentasPeriodico({
+        filterColumn: 'tipo_periodo',
+        filterValue: reportType.toUpperCase(),
+        sortColumn: 'cantidad_total',
+        sortOrder: 'desc',
+        pageSize: 5
+    })
+
+    const DayMix = ({ item, type }) => {
+        const date = type === 'diario' ? item.fecha : type === 'semanal' ? item.semana_del : item.anio;
+        
+        const { data, loading } = useReporteVentasPeriodico({
+            filterColumn: 'tipo_periodo',
+            filterValue: type.toUpperCase(),
+            dateColumn: 'periodo_inicio',
+            dateRange: { start: date, end: date },
+            sortColumn: 'cantidad_total',
+            sortOrder: 'desc',
+            pageSize: 5
+        })
+
+        if (loading) return (
+            <div className="space-y-2">
+                {[1,2,3].map(i => <div key={i} className="h-4 bg-white/5 rounded-md animate-pulse" />)}
+            </div>
+        )
+
+        if (!data.length) return <span className="text-[10px] text-slate-500 italic font-medium">Sin datos de productos</span>
+
+        return (
+            <div className="space-y-1">
+                {data.map((p, idx) => (
+                    <div key={idx} className="flex justify-between items-center group/item hover:bg-white/5 p-1 rounded-lg transition-colors">
+                        <div className="flex items-center gap-2">
+                            <div className="w-1 h-1 rounded-full bg-blue-500" />
+                            <span className="text-[10px] text-slate-300 font-bold truncate max-w-[120px]">{p.producto}</span>
+                        </div>
+                        <span className="text-[10px] font-black text-white tabular-nums">
+                            {p.cantidad_total} <span className="text-[8px] text-slate-500 uppercase">u.</span>
+                        </span>
+                    </div>
+                ))}
+            </div>
+        )
+    }
+
+    const renderExpandedRow = (item) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animate-in fade-in slide-in-from-top-2 duration-300">
+            <div className="bg-slate-900/60 p-5 rounded-2xl border border-white/5 space-y-4">
+                <h5 className="text-xs font-black uppercase tracking-widest text-blue-400 flex items-center gap-2">
+                    <Activity className="h-4 w-4" /> Resumen Día
+                </h5>
+                <div className="space-y-2">
+                    <div className="flex justify-between items-center bg-white/5 p-3 rounded-xl border border-white/5">
+                        <span className="text-[10px] text-slate-400 font-bold uppercase">Ticket Promedio</span>
+                        <span className="text-xs font-black text-white">${(item.ingresos / (item.cant_ventas || 1)).toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+                    </div>
+                    <div className="flex justify-between items-center bg-white/5 p-3 rounded-xl border border-white/5">
+                        <span className="text-[10px] text-slate-400 font-bold uppercase">Eficiencia C/V</span>
+                        <span className="text-xs font-black text-white">{(item.cant_compras / (item.cant_ventas || 1)).toFixed(2)}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div className="bg-slate-900/60 p-5 rounded-2xl border border-white/5 lg:col-span-2">
+                <h5 className="text-xs font-black uppercase tracking-widest text-emerald-400 flex items-center gap-2 mb-4">
+                    <Tag className="h-4 w-4" /> Top Productos del Día
+                </h5>
+                <DayMix item={item} type={reportType} />
+            </div>
+
+            <div className="bg-slate-900/60 p-5 rounded-2xl border border-white/5 space-y-4">
+                <h5 className="text-xs font-black uppercase tracking-widest text-rose-400 flex items-center gap-2">
+                    <Clock className="h-4 w-4" /> Flujo Caja
+                </h5>
+                <div className="space-y-1 text-[10px] font-bold">
+                    <div className="flex justify-between text-emerald-400">
+                        <span>INGRESOS</span>
+                        <span>${item.ingresos.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between text-rose-400">
+                        <span>EGRESOS</span>
+                        <span>${item.egresos.toLocaleString()}</span>
+                    </div>
+                    <div className="h-px bg-white/10 my-2" />
+                    <div className="flex justify-between text-white text-xs">
+                        <span>SALDO</span>
+                        <span>${item.saldo.toLocaleString()}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    )
+
     return (
         <motion.div
             initial={{ opacity: 0 }}
@@ -156,6 +300,46 @@ const ReportesView = () => {
                 </div>
             </div>
 
+            {/* KPI Cards Section */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <KPICard 
+                    title="Ventas (Ingresos)"
+                    value={`$${totals.ingresos.toLocaleString()}`}
+                    subValue={`${totals.ventas} tickets generados`}
+                    trend={trends.ingresos}
+                    icon={ShoppingCart}
+                    colorClass="text-emerald-400"
+                    gradient="bg-emerald-500"
+                />
+                <KPICard 
+                    title="Gastos (Egresos)"
+                    value={`$${totals.egresos.toLocaleString()}`}
+                    subValue={`${totals.compras} facturas cargadas`}
+                    trend={trends.egresos}
+                    icon={Package}
+                    colorClass="text-rose-400"
+                    gradient="bg-rose-500"
+                />
+                <KPICard 
+                    title="Ticket Promedio"
+                    value={`$${ticketPromedio.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
+                    subValue="Por cada venta realizada"
+                    trend={trends.ticket}
+                    icon={DollarSign}
+                    colorClass="text-blue-400"
+                    gradient="bg-blue-500"
+                />
+                <KPICard 
+                    title="Balance Neto"
+                    value={`$${totals.balance.toLocaleString()}`}
+                    subValue="Resultado del periodo"
+                    trend={undefined}
+                    icon={Activity}
+                    colorClass={totals.balance >= 0 ? "text-emerald-400" : "text-rose-400"}
+                    gradient={totals.balance >= 0 ? "bg-emerald-500" : "bg-rose-500"}
+                />
+            </div>
+
             {/* Charts Section */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-2 bg-slate-900/40 rounded-3xl border border-white/5 p-6 backdrop-blur-md h-[350px]">
@@ -197,21 +381,52 @@ const ReportesView = () => {
                     </ResponsiveContainer>
                 </div>
 
-                <div className="bg-slate-900/40 rounded-3xl border border-white/5 p-6 backdrop-blur-md h-[350px] flex flex-col">
-                    <h3 className="text-sm font-black uppercase tracking-widest text-slate-500 flex items-center gap-2 mb-6">
-                        <DollarSign className="h-4 w-4 text-blue-400" />
-                        Balance Acumulado
+                <div className="bg-slate-900/40 rounded-3xl border border-white/5 p-6 backdrop-blur-md h-[350px] flex flex-col group relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-48 h-48 -mr-24 -mt-24 rounded-full blur-[80px] bg-blue-500/20 group-hover:bg-blue-500/30 transition-all duration-500" />
+                    
+                    <h3 className="text-sm font-black uppercase tracking-widest text-slate-500 flex items-center gap-2 mb-6 relative z-10">
+                        <TrendingUp className="h-4 w-4 text-blue-400" />
+                        Top 5 Productos
                     </h3>
-                    <div className="flex-1 flex flex-col justify-center items-center gap-2">
-                        <span className={`text-5xl font-black tabular-nums tracking-tighter ${totals.balance >= 0 ? 'text-blue-400' : 'text-rose-500'}`}>
-                            ${totals.balance.toLocaleString()}
-                        </span>
-                        <span className="text-xs font-black uppercase tracking-widest text-slate-600">Total en el periodo</span>
+                    
+                    <div className="flex-1 relative z-10">
+                        {loadingTop ? (
+                            <div className="animate-spin h-8 w-8 text-blue-500 mx-auto mt-20" />
+                        ) : (
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart
+                                    layout="vertical"
+                                    data={topProductsData}
+                                    margin={{ left: 20, right: 20, top: 0, bottom: 0 }}
+                                >
+                                    <XAxis type="number" hide />
+                                    <YAxis 
+                                        dataKey="producto" 
+                                        type="category" 
+                                        axisLine={false} 
+                                        tickLine={false} 
+                                        fontSize={10} 
+                                        width={100}
+                                        tick={{ fill: '#94a3b8', fontWeight: 700 }}
+                                    />
+                                    <Tooltip 
+                                        cursor={{ fill: '#ffffff05' }}
+                                        contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #ffffff10', borderRadius: '12px' }}
+                                        itemStyle={{ fontSize: '10px', fontWeight: 'bold' }}
+                                    />
+                                    <Bar dataKey="cantidad_total" radius={[0, 4, 4, 0]} barSize={20}>
+                                        {topProductsData.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={index === 0 ? '#3b82f6' : '#3b82f680'} />
+                                        ))}
+                                    </Bar>
+                                </BarChart>
+                            </ResponsiveContainer>
+                        )}
                     </div>
                 </div>
             </div>
 
-            <div className="bg-slate-900/20 rounded-3xl border border-white/5 overflow-hidden">
+            <div className="bg-slate-900/20 rounded-[2.5rem] border border-white/5 overflow-hidden shadow-2xl backdrop-blur-sm">
                 <DataTable
                     data={data}
                     columns={getColumns()}
@@ -220,6 +435,12 @@ const ReportesView = () => {
                     sortColumn={sortColumn}
                     sortOrder={sortOrder}
                     onFilter={setFilterValue}
+                    renderExpandedRow={renderExpandedRow}
+                    rowKey={(row) => 
+                        reportType === 'diario' ? row.fecha : 
+                        reportType === 'semanal' ? row.semana_del : 
+                        `${row.mes}-${row.anio}`
+                    }
                 />
             </div>
 

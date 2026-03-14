@@ -11,6 +11,7 @@ const Sidebar = ({ isOpen, onClose }) => {
         { to: '/compras', label: 'Compras', icon: ShoppingCart },
         { to: '/reservas', label: 'Reservas', icon: Calendar },
         { to: '/productos', label: 'Productos', icon: Package },
+        { to: '/retiros', label: 'Gestión de Caja', icon: TrendingUp },
         { to: '/rentabilidad', label: 'Rentabilidad', icon: TrendingUp },
         { to: '/reportes', label: 'Reportes', icon: FileBarChart },
         { to: '/reporte-productos', label: 'Ventas por Producto', icon: BarChart3 },
