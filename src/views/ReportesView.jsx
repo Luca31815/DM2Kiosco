@@ -158,12 +158,12 @@ const ReportesView = () => {
     const { data: topProductsData, loading: loadingTop } = useReporteVentasPeriodico({
         filterColumn: 'tipo_periodo',
         filterValue: reportType.toUpperCase(),
-        sortColumn: 'cantidad_total',
+        sortColumn: 'recaudacion_total',
         sortOrder: 'desc',
         pageSize: 30 // Increased to catch fragmented entries and still show 5 unique ones
     })
 
-    // Aggregation helper for fragmented data
+    // Aggregation helper for fragmented data (Now by REVENUE)
     const aggregatedTopData = useMemo(() => {
         if (!topProductsData) return []
         const map = topProductsData.reduce((acc, curr) => {
@@ -171,11 +171,12 @@ const ReportesView = () => {
             if (!acc[name]) {
                 acc[name] = { ...curr, producto: name }
             } else {
+                acc[name].recaudacion_total = Number(acc[name].recaudacion_total || 0) + Number(curr.recaudacion_total || 0)
                 acc[name].cantidad_total = Number(acc[name].cantidad_total || 0) + Number(curr.cantidad_total || 0)
             }
             return acc
         }, {})
-        return Object.values(map).sort((a, b) => b.cantidad_total - a.cantidad_total).slice(0, 5)
+        return Object.values(map).sort((a, b) => b.recaudacion_total - a.recaudacion_total).slice(0, 5)
     }, [topProductsData])
 
     const DayMix = ({ item, type }) => {
@@ -186,7 +187,7 @@ const ReportesView = () => {
             filterValue: type.toUpperCase(),
             dateColumn: 'periodo_inicio',
             dateRange: { start: date, end: date },
-            sortColumn: 'cantidad_total',
+            sortColumn: 'recaudacion_total',
             sortOrder: 'desc',
             pageSize: 30
         })
@@ -198,11 +199,12 @@ const ReportesView = () => {
                 if (!acc[name]) {
                     acc[name] = { ...curr, producto: name }
                 } else {
+                    acc[name].recaudacion_total = Number(acc[name].recaudacion_total || 0) + Number(curr.recaudacion_total || 0)
                     acc[name].cantidad_total = Number(acc[name].cantidad_total || 0) + Number(curr.cantidad_total || 0)
                 }
                 return acc
             }, {})
-            return Object.values(map).sort((a, b) => b.cantidad_total - a.cantidad_total).slice(0, 5)
+            return Object.values(map).sort((a, b) => b.recaudacion_total - a.recaudacion_total).slice(0, 5)
         }, [rawData])
 
         if (loading) return (
@@ -222,7 +224,7 @@ const ReportesView = () => {
                             <span className="text-[10px] text-slate-300 font-bold truncate max-w-[120px]">{p.producto}</span>
                         </div>
                         <span className="text-[10px] font-black text-white tabular-nums">
-                            {p.cantidad_total} <span className="text-[8px] text-slate-500 uppercase">u.</span>
+                            ${Math.floor(p.recaudacion_total).toLocaleString()}
                         </span>
                     </div>
                 ))}
@@ -415,7 +417,7 @@ const ReportesView = () => {
                     
                     <h3 className="text-sm font-black uppercase tracking-widest text-slate-500 flex items-center gap-2 mb-6 relative z-10">
                         <TrendingUp className="h-4 w-4 text-blue-400" />
-                        Top 5 Productos
+                        Top 5 Recaudación
                     </h3>
                     
                     <div className="flex-1 relative z-10">
@@ -426,7 +428,7 @@ const ReportesView = () => {
                                     <BarChart
                                         layout="vertical"
                                         data={aggregatedTopData}
-                                        margin={{ left: 20, right: 30, top: 0, bottom: 0 }}
+                                        margin={{ left: 20, right: 40, top: 0, bottom: 0 }}
                                     >
                                     <XAxis type="number" hide />
                                     <YAxis 
@@ -442,18 +444,19 @@ const ReportesView = () => {
                                         cursor={{ fill: '#ffffff05' }}
                                         contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #ffffff10', borderRadius: '12px' }}
                                         itemStyle={{ fontSize: '10px', fontWeight: 'bold' }}
+                                        formatter={(val) => [`$${Math.floor(val).toLocaleString()}`, 'Recaudación']}
                                     />
-                                    <Bar dataKey="cantidad_total" radius={[0, 4, 4, 0]} barSize={20}>
-                                        {topProductsData.map((entry, index) => (
+                                    <Bar dataKey="recaudacion_total" radius={[0, 4, 4, 0]} barSize={20}>
+                                        {aggregatedTopData.map((entry, index) => (
                                             <Cell key={`cell-${index}`} fill={index === 0 ? '#3b82f6' : '#3b82f680'} />
                                         ))}
                                         <LabelList 
-                                            dataKey="cantidad_total" 
+                                            dataKey="recaudacion_total" 
                                             position="right" 
                                             fill="#94a3b8" 
                                             fontSize={10} 
                                             fontWeight="black" 
-                                            formatter={(val) => `${val} u.`}
+                                            formatter={(val) => `$${Math.floor(val).toLocaleString()}`}
                                         />
                                     </Bar>
                                 </BarChart>
