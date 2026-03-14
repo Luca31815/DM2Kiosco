@@ -155,6 +155,14 @@ const ReportesView = () => {
         </motion.div>
     )
 
+    const { data: topProductsData, loading: loadingTop } = useReporteVentasPeriodico({
+        filterColumn: 'tipo_periodo',
+        filterValue: reportType.toUpperCase(),
+        sortColumn: 'cantidad_total',
+        sortOrder: 'desc',
+        pageSize: 30 // Increased to catch fragmented entries and still show 5 unique ones
+    })
+
     // Aggregation helper for fragmented data
     const aggregatedTopData = useMemo(() => {
         if (!topProductsData) return []
@@ -169,14 +177,6 @@ const ReportesView = () => {
         }, {})
         return Object.values(map).sort((a, b) => b.cantidad_total - a.cantidad_total).slice(0, 5)
     }, [topProductsData])
-
-    const { data: topProductsData, loading: loadingTop } = useReporteVentasPeriodico({
-        filterColumn: 'tipo_periodo',
-        filterValue: reportType.toUpperCase(),
-        sortColumn: 'cantidad_total',
-        sortOrder: 'desc',
-        pageSize: 30 // Increased to catch fragmented entries and still show 5 unique ones
-    })
 
     const DayMix = ({ item, type }) => {
         const date = type === 'diario' ? item.fecha : type === 'semanal' ? item.semana_del : item.anio;
