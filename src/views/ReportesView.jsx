@@ -158,12 +158,12 @@ const ReportesView = () => {
     const { data: topProductsData, loading: loadingTop } = useReporteVentasPeriodico({
         filterColumn: 'tipo_periodo',
         filterValue: reportType.toUpperCase(),
-        sortColumn: 'recaudacion_total',
+        sortColumn: 'ganancia_total',
         sortOrder: 'desc',
         pageSize: 30 // Increased to catch fragmented entries and still show 5 unique ones
     })
 
-    // Aggregation helper for fragmented data (Now by REVENUE)
+    // Aggregation helper for fragmented data (Now by REAL PROFIT)
     const aggregatedTopData = useMemo(() => {
         if (!topProductsData) return []
         const map = topProductsData.reduce((acc, curr) => {
@@ -171,12 +171,13 @@ const ReportesView = () => {
             if (!acc[name]) {
                 acc[name] = { ...curr, producto: name }
             } else {
+                acc[name].ganancia_total = Number(acc[name].ganancia_total || 0) + Number(curr.ganancia_total || 0)
                 acc[name].recaudacion_total = Number(acc[name].recaudacion_total || 0) + Number(curr.recaudacion_total || 0)
                 acc[name].cantidad_total = Number(acc[name].cantidad_total || 0) + Number(curr.cantidad_total || 0)
             }
             return acc
         }, {})
-        return Object.values(map).sort((a, b) => b.recaudacion_total - a.recaudacion_total).slice(0, 5)
+        return Object.values(map).sort((a, b) => b.ganancia_total - a.ganancia_total).slice(0, 5)
     }, [topProductsData])
 
     const DayMix = ({ item, type }) => {
@@ -187,7 +188,7 @@ const ReportesView = () => {
             filterValue: type.toUpperCase(),
             dateColumn: 'periodo_inicio',
             dateRange: { start: date, end: date },
-            sortColumn: 'recaudacion_total',
+            sortColumn: 'ganancia_total',
             sortOrder: 'desc',
             pageSize: 30
         })
@@ -199,12 +200,13 @@ const ReportesView = () => {
                 if (!acc[name]) {
                     acc[name] = { ...curr, producto: name }
                 } else {
+                    acc[name].ganancia_total = Number(acc[name].ganancia_total || 0) + Number(curr.ganancia_total || 0)
                     acc[name].recaudacion_total = Number(acc[name].recaudacion_total || 0) + Number(curr.recaudacion_total || 0)
                     acc[name].cantidad_total = Number(acc[name].cantidad_total || 0) + Number(curr.cantidad_total || 0)
                 }
                 return acc
             }, {})
-            return Object.values(map).sort((a, b) => b.recaudacion_total - a.recaudacion_total).slice(0, 5)
+            return Object.values(map).sort((a, b) => b.ganancia_total - a.ganancia_total).slice(0, 5)
         }, [rawData])
 
         if (loading) return (
@@ -224,7 +226,7 @@ const ReportesView = () => {
                             <span className="text-[10px] text-slate-300 font-bold truncate max-w-[120px]">{p.producto}</span>
                         </div>
                         <span className="text-[10px] font-black text-white tabular-nums">
-                            ${Math.floor(p.recaudacion_total).toLocaleString()}
+                            ${Math.floor(p.ganancia_total).toLocaleString()}
                         </span>
                     </div>
                 ))}
@@ -416,8 +418,8 @@ const ReportesView = () => {
                     <div className="absolute top-0 right-0 w-48 h-48 -mr-24 -mt-24 rounded-full blur-[80px] bg-blue-500/20 group-hover:bg-blue-500/30 transition-all duration-500" />
                     
                     <h3 className="text-sm font-black uppercase tracking-widest text-slate-500 flex items-center gap-2 mb-6 relative z-10">
-                        <TrendingUp className="h-4 w-4 text-blue-400" />
-                        Top 5 Recaudación
+                        <TrendingUp className="h-4 w-4 text-emerald-400" />
+                        Top 5 Ganancia Real
                     </h3>
                     
                     <div className="flex-1 relative z-10">
@@ -444,14 +446,14 @@ const ReportesView = () => {
                                         cursor={{ fill: '#ffffff05' }}
                                         contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #ffffff10', borderRadius: '12px' }}
                                         itemStyle={{ fontSize: '10px', fontWeight: 'bold' }}
-                                        formatter={(val) => [`$${Math.floor(val).toLocaleString()}`, 'Recaudación']}
+                                        formatter={(val) => [`$${Math.floor(val).toLocaleString()}`, 'Ganancia']}
                                     />
-                                    <Bar dataKey="recaudacion_total" radius={[0, 4, 4, 0]} barSize={20}>
+                                    <Bar dataKey="ganancia_total" radius={[0, 4, 4, 0]} barSize={20}>
                                         {aggregatedTopData.map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={index === 0 ? '#3b82f6' : '#3b82f680'} />
+                                            <Cell key={`cell-${index}`} fill={index === 0 ? '#10b981' : '#10b98180'} />
                                         ))}
                                         <LabelList 
-                                            dataKey="recaudacion_total" 
+                                            dataKey="ganancia_total" 
                                             position="right" 
                                             fill="#94a3b8" 
                                             fontSize={10} 

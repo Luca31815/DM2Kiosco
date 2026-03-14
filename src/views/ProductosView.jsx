@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import DataTable from '../components/DataTable'
-import { useProductos } from '../hooks/useData'
-import { Edit2, Check, X, Loader2, Package, TrendingUp, TrendingDown, Clock, Search } from 'lucide-react'
+import { useProductos, usePredictiveStock } from '../hooks/useData'
+import { Edit2, Check, X, Loader2, Package, TrendingUp, TrendingDown, Clock, Search, Timer } from 'lucide-react'
 import * as api from '../services/api'
 import { useSWRConfig } from 'swr'
 import ProductAutocomplete from '../components/ProductAutocomplete'
@@ -24,6 +24,20 @@ const ProductosView = () => {
         filterColumn: 'nombre',
         filterValue
     })
+    
+    const { data: predictionData } = usePredictiveStock()
+    
+    const productsWithPrediction = React.useMemo(() => {
+        if (!data) return []
+        return data.map(p => {
+            const prediction = predictionData?.find(pred => pred.nombre === p.nombre)
+            return {
+                ...p,
+                dias_para_quiebre: prediction ? prediction.dias_para_quiebre : null,
+                ventas_diarias_promedio: prediction ? prediction.ventas_diarias_promedio : 0
+            }
+        })
+    }, [data, predictionData])
 
     const handleEditStart = (product) => {
         setEditingId(product.producto_id)
@@ -153,6 +167,27 @@ const ProductosView = () => {
             )
         },
         {
+            key: 'dias_para_quiebre',
+            label: 'Predicción',
+            render: (val) => (
+                <div className="flex flex-col gap-1">
+                    {val !== null ? (
+                        <>
+                            <div className="flex items-center gap-1.5 font-bold text-xs uppercase tracking-wider">
+                                <Timer className={`h-3 w-3 ${val < 3 ? 'text-rose-500 animate-pulse' : val < 7 ? 'text-amber-500' : 'text-emerald-500'}`} />
+                                <span className={val < 3 ? 'text-rose-400' : val < 7 ? 'text-amber-400' : 'text-emerald-400'}>
+                                    {val} días
+                                </span>
+                            </div>
+                            <span className="text-[10px] text-slate-500 font-medium">Stock estimado</span>
+                        </>
+                    ) : (
+                        <span className="text-[10px] text-slate-600 italic">Sin datos de venta</span>
+                    )}
+                </div>
+            )
+        },
+        {
             key: 'fecha_actualizacion',
             label: 'Actualización',
             render: (val) => val ? (
@@ -240,7 +275,7 @@ const ProductosView = () => {
             </div>
 
             <DataTable
-                data={data}
+                data={productsWithPrediction}
                 columns={columns}
                 isLoading={loading}
                 onSort={handleSort}
