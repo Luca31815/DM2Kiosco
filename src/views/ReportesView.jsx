@@ -155,26 +155,55 @@ const ReportesView = () => {
         </motion.div>
     )
 
+    // Aggregation helper for fragmented data
+    const aggregatedTopData = useMemo(() => {
+        if (!topProductsData) return []
+        const map = topProductsData.reduce((acc, curr) => {
+            const name = curr.producto?.trim() || 'Sin Nombre'
+            if (!acc[name]) {
+                acc[name] = { ...curr, producto: name }
+            } else {
+                acc[name].cantidad_total = Number(acc[name].cantidad_total || 0) + Number(curr.cantidad_total || 0)
+            }
+            return acc
+        }, {})
+        return Object.values(map).sort((a, b) => b.cantidad_total - a.cantidad_total).slice(0, 5)
+    }, [topProductsData])
+
     const { data: topProductsData, loading: loadingTop } = useReporteVentasPeriodico({
         filterColumn: 'tipo_periodo',
         filterValue: reportType.toUpperCase(),
         sortColumn: 'cantidad_total',
         sortOrder: 'desc',
-        pageSize: 5
+        pageSize: 30 // Increased to catch fragmented entries and still show 5 unique ones
     })
 
     const DayMix = ({ item, type }) => {
         const date = type === 'diario' ? item.fecha : type === 'semanal' ? item.semana_del : item.anio;
         
-        const { data, loading } = useReporteVentasPeriodico({
+        const { data: rawData, loading } = useReporteVentasPeriodico({
             filterColumn: 'tipo_periodo',
             filterValue: type.toUpperCase(),
             dateColumn: 'periodo_inicio',
             dateRange: { start: date, end: date },
             sortColumn: 'cantidad_total',
             sortOrder: 'desc',
-            pageSize: 5
+            pageSize: 30
         })
+
+        const aggregatedData = useMemo(() => {
+            if (!rawData) return []
+            const map = rawData.reduce((acc, curr) => {
+                const name = curr.producto?.trim() || 'Sin Nombre'
+                if (!acc[name]) {
+                    acc[name] = { ...curr, producto: name }
+                } else {
+                    acc[name].cantidad_total = Number(acc[name].cantidad_total || 0) + Number(curr.cantidad_total || 0)
+                }
+                return acc
+            }, {})
+            return Object.values(map).sort((a, b) => b.cantidad_total - a.cantidad_total).slice(0, 5)
+        }, [rawData])
 
         if (loading) return (
             <div className="space-y-2">
@@ -182,11 +211,11 @@ const ReportesView = () => {
             </div>
         )
 
-        if (!data.length) return <span className="text-[10px] text-slate-500 italic font-medium">Sin datos de productos</span>
+        if (!aggregatedData.length) return <span className="text-[10px] text-slate-500 italic font-medium">Sin datos de productos</span>
 
         return (
             <div className="space-y-1">
-                {data.slice(0, 5).map((p, idx) => (
+                {aggregatedData.map((p, idx) => (
                     <div key={idx} className="flex justify-between items-center group/item hover:bg-white/5 p-1 rounded-lg transition-colors">
                         <div className="flex items-center gap-2">
                             <div className="w-1 h-1 rounded-full bg-blue-500" />
@@ -394,11 +423,11 @@ const ReportesView = () => {
                             <div className="animate-spin h-8 w-8 text-blue-500 mx-auto mt-20" />
                         ) : (
                             <ResponsiveContainer width="100%" height="100%">
-                                <BarChart
-                                    layout="vertical"
-                                    data={(topProductsData || []).slice(0, 5)}
-                                    margin={{ left: 20, right: 20, top: 0, bottom: 0 }}
-                                >
+                                    <BarChart
+                                        layout="vertical"
+                                        data={aggregatedTopData}
+                                        margin={{ left: 20, right: 30, top: 0, bottom: 0 }}
+                                    >
                                     <XAxis type="number" hide />
                                     <YAxis 
                                         dataKey="producto" 
