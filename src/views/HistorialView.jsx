@@ -45,8 +45,8 @@ const HistorialView = () => {
     ]
 
     const columns = [
-        { key: 'log_id', label: 'ID', width: 'w-16', render: (val) => <span className="text-gray-500">#{val}</span> },
-        { key: 'fecha', label: 'Fecha', width: 'w-44', render: (val) => new Date(val).toLocaleString() },
+        { key: 'log_id', label: 'ID', width: 'w-24', render: (val) => <span className="text-gray-500">#{val}</span> },
+        { key: 'fecha', label: 'Fecha', width: 'w-48', render: (val) => new Date(val).toLocaleString() },
         { key: 'tipo_accion', label: 'Acción', width: 'w-32', render: (val) => <span className="uppercase text-xs font-bold tracking-wider text-purple-400">{val}</span> },
         {
             key: 'estado', label: 'Estado', width: 'w-24', render: (val) => {

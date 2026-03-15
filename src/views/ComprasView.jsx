@@ -230,9 +230,9 @@ const ComprasView = () => {
     ]
 
     const columns = [
-        { key: 'compra_id', label: 'ID', width: 'w-16', render: (val) => <span className="font-bold text-slate-500">{val}</span> },
+        { key: 'compra_id', label: 'ID', width: 'w-40', render: (val) => <span className="font-bold text-slate-500 truncate block">{val}</span> },
         {
-            key: 'fecha', label: 'Fecha', width: 'w-32', render: (val) => {
+            key: 'fecha', label: 'Fecha', width: 'w-44', render: (val) => {
                 if (!val) return ''
                 const date = new Date(val)
                 return (

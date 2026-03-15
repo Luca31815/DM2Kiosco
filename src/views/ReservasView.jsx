@@ -233,9 +233,9 @@ const ReservasView = () => {
     ]
 
     const columns = [
-        { key: 'reserva_id', label: 'ID', width: 'w-16', render: (val) => <span className="font-bold text-slate-500">{val}</span> },
+        { key: 'reserva_id', label: 'ID', width: 'w-40', render: (val) => <span className="font-bold text-slate-500 truncate block">{val}</span> },
         {
-            key: 'fecha_creacion', label: 'Fecha', width: 'w-32', render: (val) => {
+            key: 'fecha_creacion', label: 'Fecha', width: 'w-44', render: (val) => {
                 if (!val) return ''
                 const date = new Date(val)
                 return (
