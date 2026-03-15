@@ -59,7 +59,7 @@ const ReporteProductosView = () => {
     }, [filteredData, viewMode])
 
     const columns = [
-        { key: 'producto', label: 'Producto' },
+        { key: 'producto', label: 'Producto', width: 'w-1/3', wrap: true },
         {
             key: 'periodo_inicio',
             label: 'Periodo',
@@ -83,7 +83,7 @@ const ReporteProductosView = () => {
     ]
 
     const predictionColumns = [
-        { key: 'producto', label: 'Producto' },
+        { key: 'producto', label: 'Producto', width: 'w-1/3', wrap: true },
         { key: 'stock_actual', label: 'Stock Actual', render: (val) => <span className="font-bold text-slate-300">{val}</span> },
         { key: 'ventas_promedio_dia', label: 'Ritmo Venta (Día)', render: (val) => (val || 0).toFixed(2) },
         { 

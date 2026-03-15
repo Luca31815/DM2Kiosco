@@ -211,8 +211,8 @@ const SystemView = () => {
     ]
 
     const auditColumns = [
-        { key: 'fecha', label: 'Fecha/Hora', render: (val) => formatDate(val, true) },
-        { key: 'nombre_tabla', label: 'Tabla', render: (val) => <span className="px-2 py-1 rounded bg-white/5 text-xs font-mono uppercase tracking-tighter">{val}</span> },
+        { key: 'fecha', label: 'Fecha/Hora', width: 'w-40', render: (val) => formatDate(val, true) },
+        { key: 'nombre_tabla', label: 'Tabla', width: 'w-32', render: (val) => <span className="px-2 py-1 rounded bg-white/5 text-xs font-mono uppercase tracking-tighter">{val}</span> },
         {
             key: 'accion', label: 'Acción', render: (val) => (
                 <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest ${val === 'INSERT' ? 'bg-green-500/20 text-green-400' :
@@ -261,9 +261,9 @@ const SystemView = () => {
     ]
 
     const stockColumns = [
-        { key: 'nombre', label: 'Producto' },
-        { key: 'stock_actual', label: 'Stock', render: (val) => <span className={`font-bold ${val <= 0 ? 'text-red-400' : 'text-slate-300'}`}>{val}</span> },
-        { key: 'ventas_diarias_promedio', label: 'Ventas Diarias (30d)', render: (val) => <span className="text-slate-400">{val} u/día</span> },
+        { key: 'nombre', label: 'Producto', width: 'w-1/3', wrap: true },
+        { key: 'stock_actual', label: 'Stock', width: 'w-24', render: (val) => <span className={`font-bold ${val <= 0 ? 'text-red-400' : 'text-slate-300'}`}>{val}</span> },
+        { key: 'ventas_diarias_promedio', label: 'Ventas Diarias (30d)', width: 'w-32', render: (val) => <span className="text-slate-400">{val} u/día</span> },
         {
             key: 'dias_para_quiebre', label: 'Días Restantes', render: (val) => (
                 <div className="flex items-center gap-2">
@@ -283,9 +283,9 @@ const SystemView = () => {
     ]
 
     const n8nColumns = [
-        { key: 'fecha', label: 'Fecha', render: (val) => formatDate(val, true) },
-        { key: 'workflow_nombre', label: 'Workflow' },
-        { key: 'nodo_nombre', label: 'Nodo Fallido', render: (val) => <code className="text-purple-400 text-xs">{val}</code> },
+        { key: 'fecha', label: 'Fecha', width: 'w-40', render: (val) => formatDate(val, true) },
+        { key: 'workflow_nombre', label: 'Workflow', width: 'w-1/4', wrap: true },
+        { key: 'nodo_nombre', label: 'Nodo Fallido', width: 'w-1/4', wrap: true, render: (val) => <code className="text-purple-400 text-xs">{val}</code> },
         { key: 'mensaje_error', label: 'Error', render: (val) => <span className="text-red-400 text-xs line-clamp-1 truncate max-w-xs">{val}</span> }
     ]
 

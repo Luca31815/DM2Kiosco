@@ -234,6 +234,7 @@ const AnalisisHorariosView = () => {
                 {
                     key: 'dia',
                     label: 'Fecha',
+                    width: 'w-48',
                     render: (val) => {
                         if (!val) return ''
                         const [y, m, d] = val.split('-')
@@ -344,7 +345,7 @@ const AnalisisHorariosView = () => {
                         )
                     }
                 },
-                { key: 'total_ventas', label: 'Total', render: (val) => <span className="font-black text-blue-400 tabular-nums text-lg">{val}</span> },
+                { key: 'total_ventas', label: 'Total', width: 'w-24', render: (val) => <span className="font-black text-blue-400 tabular-nums text-lg">{val}</span> },
             ]
         }
 
@@ -358,7 +359,7 @@ const AnalisisHorariosView = () => {
         if (viewType === 'diario') {
             return [
                 {
-                    key: 'fecha', label: 'Fecha', render: (val) => {
+                    key: 'fecha', label: 'Fecha', width: 'w-40', render: (val) => {
                         if (!val) return ''
                         if (typeof val === 'string' && val.includes('-')) {
                             const [y, m, d] = val.split('T')[0].split('-')
@@ -373,7 +374,7 @@ const AnalisisHorariosView = () => {
         if (viewType === 'semanal') {
             return [
                 {
-                    key: 'semana_del', label: 'Semana Del', render: (val) => {
+                    key: 'semana_del', label: 'Semana Del', width: 'w-40', render: (val) => {
                         if (!val) return ''
                         if (typeof val === 'string' && val.includes('-')) {
                             const [y, m, d] = val.split('T')[0].split('-')
@@ -387,8 +388,8 @@ const AnalisisHorariosView = () => {
         }
         if (viewType === 'mensual') {
             return [
-                { key: 'anio', label: 'Año', render: (val) => <span className="font-black text-slate-500">{val}</span> },
-                { key: 'mes', label: 'Mes', render: (val) => <span className="font-bold text-slate-300 uppercase tracking-widest text-xs">{val}</span> },
+                { key: 'anio', label: 'Año', width: 'w-20', render: (val) => <span className="font-black text-slate-500">{val}</span> },
+                { key: 'mes', label: 'Mes', width: 'w-24', render: (val) => <span className="font-bold text-slate-300 uppercase tracking-widest text-xs">{val}</span> },
                 ...commonColumns
             ]
         }
