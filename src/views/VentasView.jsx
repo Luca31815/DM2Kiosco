@@ -219,11 +219,11 @@ const VentasView = () => {
     ]
 
     const columns = [
-        { key: 'venta_id', label: 'ID', render: (val) => <span className="font-black text-slate-500">#{val}</span> },
-        { key: 'fecha', label: 'Fecha', render: (val) => <span className="font-semibold text-slate-400">{new Date(val).toLocaleString()}</span> },
-        { key: 'cliente', label: 'Cliente', render: (val) => <span className="font-bold text-slate-200">{val}</span> },
-        { key: 'total_venta', label: 'Total', render: (val) => <span className="font-black text-blue-400 text-lg tabular-nums">${val.toLocaleString()}</span> },
-        { key: 'notas', label: 'Notas', render: (val) => <span className="text-xs italic text-slate-500">{val}</span> },
+        { key: 'venta_id', label: 'ID', width: 'w-16', render: (val) => <span className="font-black text-slate-500">#{val}</span> },
+        { key: 'fecha', label: 'Fecha', width: 'w-48', render: (val) => <span className="font-semibold text-slate-400">{new Date(val).toLocaleString()}</span> },
+        { key: 'cliente', label: 'Cliente', width: 'w-1/4', wrap: true, render: (val) => <span className="font-bold text-slate-200">{val}</span> },
+        { key: 'total_venta', label: 'Total', width: 'w-32', render: (val) => <span className="font-black text-blue-400 text-lg tabular-nums">${val.toLocaleString()}</span> },
+        { key: 'notas', label: 'Notas', width: 'w-1/3', wrap: true, render: (val) => <span className="text-xs italic text-slate-500">{val}</span> },
     ]
 
     const handleSort = (column) => {

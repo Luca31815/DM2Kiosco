@@ -233,9 +233,9 @@ const ReservasView = () => {
     ]
 
     const columns = [
-        { key: 'reserva_id', label: 'ID', render: (val) => <span className="font-bold text-slate-500">{val}</span> },
+        { key: 'reserva_id', label: 'ID', width: 'w-16', render: (val) => <span className="font-bold text-slate-500">{val}</span> },
         {
-            key: 'fecha_creacion', label: 'Fecha', render: (val) => {
+            key: 'fecha_creacion', label: 'Fecha', width: 'w-32', render: (val) => {
                 if (!val) return ''
                 const date = new Date(val)
                 return (
@@ -249,6 +249,8 @@ const ReservasView = () => {
         {
             key: 'cliente',
             label: 'Cliente',
+            width: 'w-1/4',
+            wrap: true,
             render: (val, row) => (
                 <div className="flex items-center gap-2">
                     <div className="h-8 w-8 rounded-full bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
@@ -258,11 +260,11 @@ const ReservasView = () => {
                 </div>
             )
         },
-        { key: 'total_reserva', label: 'Total', render: (val) => <span className="font-black text-slate-400 tabular-nums">${val}</span> },
-        { key: 'total_pagado', label: 'Pagado', render: (val) => <span className="font-black text-emerald-400 tabular-nums">${val || 0}</span> },
-        { key: 'saldo_pendiente', label: 'Saldo', render: (val) => <span className={`font-black tabular-nums ${val > 0 ? 'text-rose-400' : 'text-slate-500'}`}>${val}</span> },
+        { key: 'total_reserva', label: 'Total', width: 'w-24', render: (val) => <span className="font-black text-slate-400 tabular-nums">${val}</span> },
+        { key: 'total_pagado', label: 'Pagado', width: 'w-24', render: (val) => <span className="font-black text-emerald-400 tabular-nums">${val || 0}</span> },
+        { key: 'saldo_pendiente', label: 'Saldo', width: 'w-24', render: (val) => <span className={`font-black tabular-nums ${val > 0 ? 'text-rose-400' : 'text-slate-500'}`}>${val}</span> },
         {
-            key: 'estado_pago', label: 'Estado Pago', render: (val) => (
+            key: 'estado_pago', label: 'Status', width: 'w-28', render: (val) => (
                 <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider ${val === 'Pagado' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
                     }`}>
                     {val}
@@ -270,7 +272,7 @@ const ReservasView = () => {
             )
         },
         {
-            key: 'estado_entrega', label: 'Entrega', render: (val) => (
+            key: 'estado_entrega', label: 'Entrega', width: 'w-28', render: (val) => (
                 <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider ${val === 'Entregado' ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' : 'bg-slate-500/10 text-slate-500 border border-slate-500/20'
                     }`}>
                     {val}

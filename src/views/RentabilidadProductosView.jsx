@@ -36,22 +36,23 @@ const RentabilidadProductosView = () => {
     }, [fetchedData, sortColumn, sortOrder])
 
     const columns = [
-        { key: 'producto', label: 'Producto', render: (val) => <span className="font-bold text-slate-200">{val}</span> },
-        { key: 'unidades_vendidas', label: 'U. Vendidas', render: (val) => <span className="tabular-nums font-semibold">{(val || 0).toLocaleString()}</span> },
-        { key: 'ingresos_totales', label: 'Ingresos', render: (val) => <span className="tabular-nums text-blue-400 font-bold">${(val || 0).toLocaleString()}</span> },
-        { key: 'unidades_compradas', label: 'U. Compradas', render: (val) => <span className="tabular-nums text-slate-400">{(val || 0).toLocaleString()}</span> },
-        { key: 'costo_total_compras', label: 'Costo Total', render: (val) => <span className="tabular-nums text-slate-400">${(val || 0).toLocaleString()}</span> },
-        { key: 'ppp_costo_unitario', label: 'Costo Unit.', render: (val) => <span className="tabular-nums text-slate-500">${val || 0}</span> },
-        { key: 'costo_mercaderia_vendida', label: 'CMV', render: (val) => <span className="tabular-nums text-slate-500">${(val || 0).toLocaleString()}</span> },
-        { key: 'ganancia_neta', label: 'Ganancia', render: (val) => <span className={`font-black tracking-tight tabular-nums text-lg ${(val || 0) >= 0 ? 'text-green-400' : 'text-red-400'}`}>${(val || 0).toLocaleString()}</span> },
+        { key: 'producto', label: 'Producto', width: 'w-1/4', wrap: true, render: (val) => <span className="font-bold text-slate-200">{val}</span> },
+        { key: 'unidades_vendidas', label: 'U. Vend.', width: 'w-20', render: (val) => <span className="tabular-nums font-semibold">{(val || 0).toLocaleString()}</span> },
+        { key: 'ingresos_totales', label: 'Ingresos', width: 'w-24', render: (val) => <span className="tabular-nums text-blue-400 font-bold">${(val || 0).toLocaleString()}</span> },
+        { key: 'unidades_compradas', label: 'U. Comp.', width: 'w-20', render: (val) => <span className="tabular-nums text-slate-400">{(val || 0).toLocaleString()}</span> },
+        { key: 'costo_total_compras', label: 'Costo Tot.', width: 'w-24', render: (val) => <span className="tabular-nums text-slate-400">${(val || 0).toLocaleString()}</span> },
+        { key: 'ppp_costo_unitario', label: 'Costo Un.', width: 'w-20', render: (val) => <span className="tabular-nums text-slate-500">${val || 0}</span> },
+        { key: 'costo_mercaderia_vendida', label: 'CMV', width: 'w-20', render: (val) => <span className="tabular-nums text-slate-500">${(val || 0).toLocaleString()}</span> },
+        { key: 'ganancia_neta', label: 'Ganancia', width: 'w-28', render: (val) => <span className={`font-black tracking-tight tabular-nums text-lg ${(val || 0) >= 0 ? 'text-green-400' : 'text-red-400'}`}>${(val || 0).toLocaleString()}</span> },
         {
             key: 'estado_del_dato',
             label: 'Estado',
+            width: 'w-28',
             render: (val) => {
                 const status = val || ''
-                if (status === 'OK') return <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-500/10 text-green-400 text-xs font-black uppercase tracking-tighter border border-green-500/20"><CheckCircle className="h-3 w-3" /> OK</span>
-                if (status.includes('PÉRDIDA')) return <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-500/10 text-red-400 text-xs font-black uppercase tracking-tighter border border-red-500/20"><AlertTriangle className="h-3 w-3" /> Pérdida</span>
-                if (status.includes('FALTA COSTO')) return <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-yellow-500/10 text-yellow-400 text-xs font-black uppercase tracking-tighter border border-yellow-500/20"><Ban className="h-3 w-3" /> Sin Costo</span>
+                if (status === 'OK') return <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-500/10 text-green-400 text-[10px] font-black uppercase tracking-tighter border border-green-500/20"><CheckCircle className="h-3 w-3" /> OK</span>
+                if (status.includes('PÉRDIDA')) return <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-500/10 text-red-400 text-[10px] font-black uppercase tracking-tighter border border-red-500/20"><AlertTriangle className="h-3 w-3" /> Pérdida</span>
+                if (status.includes('FALTA COSTO')) return <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-yellow-500/10 text-yellow-400 text-[10px] font-black uppercase tracking-tighter border border-yellow-500/20"><Ban className="h-3 w-3" /> Sin Costo</span>
                 return status
             }
         },

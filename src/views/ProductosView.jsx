@@ -105,6 +105,8 @@ const ProductosView = () => {
         {
             key: 'nombre',
             label: 'Producto',
+            wrap: true,
+            width: 'w-[45%]',
             render: (val, row) => (
                 <div className="flex flex-col">
                     {editingId === row.producto_id ? (
@@ -124,6 +126,7 @@ const ProductosView = () => {
         {
             key: 'ultimo_precio_venta',
             label: 'Precio Venta',
+            width: 'w-28',
             render: (val) => (
                 <div className="flex items-center gap-1.5 font-black text-emerald-400 tabular-nums">
                     <TrendingUp className="h-3 w-3 opacity-50" />
@@ -134,6 +137,7 @@ const ProductosView = () => {
         {
             key: 'ultimo_costo_compra',
             label: 'Precio Compra',
+            width: 'w-28',
             render: (val) => (
                 <div className="flex items-center gap-1.5 font-black text-slate-400 tabular-nums opacity-80">
                     <TrendingDown className="h-3 w-3 opacity-50" />
@@ -144,6 +148,7 @@ const ProductosView = () => {
         {
             key: 'stock_actual',
             label: 'Stock',
+            width: 'w-36',
             render: (val, row) => editingId === row.producto_id ? (
                 <input
                     type="number"
@@ -169,6 +174,7 @@ const ProductosView = () => {
         {
             key: 'dias_para_quiebre',
             label: 'Predicción',
+            width: 'w-28',
             render: (val) => (
                 <div className="flex flex-col gap-1">
                     {val !== null ? (
@@ -189,7 +195,8 @@ const ProductosView = () => {
         },
         {
             key: 'fecha_actualizacion',
-            label: 'Actualización',
+            label: 'Update',
+            width: 'w-28',
             render: (val) => val ? (
                 <div className="flex items-center gap-1.5 text-slate-500 text-xs font-medium">
                     <Clock className="h-3 w-3" />
@@ -200,6 +207,7 @@ const ProductosView = () => {
         {
             key: 'acciones',
             label: 'Acciones',
+            width: 'w-24',
             render: (_, row) => (
                 <div className="flex justify-center gap-1">
                     {editingId === row.producto_id ? (

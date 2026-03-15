@@ -24,10 +24,11 @@ const RetirosView = () => {
     })
 
     const columns = [
-        { key: 'retiro_id', label: 'ID', render: (val) => <span className="font-bold text-slate-500">#{val.split('_')[1] || val}</span> },
+        { key: 'retiro_id', label: 'ID', width: 'w-24', render: (val) => <span className="font-bold text-slate-500">#{val.split('_')[1] || val}</span> },
         { 
             key: 'fecha', 
             label: 'Fecha', 
+            width: 'w-40',
             render: (val) => (
                 <div className="flex flex-col">
                     <span className="font-bold text-slate-300">{new Date(val).toLocaleDateString()}</span>
@@ -35,8 +36,8 @@ const RetirosView = () => {
                 </div>
             )
         },
-        { key: 'motivo', label: 'Motivo', render: (val) => <span className="font-semibold text-slate-200">{val}</span> },
-        { key: 'monto', label: 'Monto', render: (val) => <span className="font-black text-rose-400 text-lg tabular-nums">-${Number(val).toLocaleString()}</span> },
+        { key: 'motivo', label: 'Motivo', width: 'w-1/2', wrap: true, render: (val) => <span className="font-semibold text-slate-200">{val}</span> },
+        { key: 'monto', label: 'Monto', width: 'w-32', render: (val) => <span className="font-black text-rose-400 text-lg tabular-nums">-${Number(val).toLocaleString()}</span> },
     ]
 
     const handleSort = (column) => {

@@ -35,11 +35,11 @@ BEGIN
     v_nombre_norm := public.normalizar_texto(p_nuevo_nombre);
 
     -- ==============================================================================
-    -- MODO SILENCIOSO: BYPASS DE TRIGGERS (Usando session_replication_role)
+    -- MODO SILENCIOSO: BYPASS DE TRIGGERS (Usando app.bypass_triggers variable)
     -- ==============================================================================
     -- 'replica' desactiva todos los triggers normales para la sesión actual.
     -- Esto requiere menos permisos que ALTER TABLE y es más seguro.
-    SET session_replication_role = 'replica';
+    PERFORM set_config('app.bypass_triggers', 'true', true);
 
     -- 2. Manejo de cambio de nombre (Renombrado o Fusión)
     IF v_nombre_viejo <> v_nombre_norm THEN
@@ -53,13 +53,38 @@ BEGIN
             UPDATE public.ventas_detalles SET producto = v_nombre_norm WHERE producto = v_nombre_viejo;
             UPDATE public.compras_detalles SET producto = v_nombre_norm WHERE producto = v_nombre_viejo;
             UPDATE public.reservas_detalles SET producto = v_nombre_norm WHERE producto = v_nombre_viejo;
+            
+            -- Resolver conflictos de stock_movimientos antes de renombrar
+            -- 1. Sumar cantidades donde ya exista el producto destino para esa misma referencia
+            UPDATE public.stock_movimientos s
+            SET cantidad = s.cantidad + a.cantidad
+            FROM (
+                SELECT referencia_tipo, referencia_id, cantidad 
+                FROM public.stock_movimientos 
+                WHERE producto = v_nombre_viejo
+            ) a
+            WHERE s.referencia_tipo = a.referencia_tipo 
+              AND s.referencia_id = a.referencia_id 
+              AND s.producto = v_nombre_norm;
+
+            -- 2. Eliminar el viejo en los casos donde hubo conflicto (porque ya sumamos la cantidad)
+            DELETE FROM public.stock_movimientos s
+            WHERE producto = v_nombre_viejo 
+              AND EXISTS (
+                  SELECT 1 FROM public.stock_movimientos s2 
+                  WHERE s2.referencia_tipo = s.referencia_tipo 
+                    AND s2.referencia_id = s.referencia_id 
+                    AND s2.producto = v_nombre_norm
+              );
+
+            -- 3. Renombrar los que no tuvieron conflicto
             UPDATE public.stock_movimientos SET producto = v_nombre_norm WHERE producto = v_nombre_viejo;
             
             -- Eliminar el producto viejo (los movimientos ya pasaron al nuevo)
             DELETE FROM public.productos_base WHERE producto_id = p_id;
             
             -- REENCENDER TRIGGERS
-            SET session_replication_role = 'origin';
+            PERFORM set_config('app.bypass_triggers', 'false', true);
 
             -- Retornar indicando la fusión
             RETURN jsonb_build_object(
@@ -94,6 +119,28 @@ BEGIN
         UPDATE public.ventas_detalles SET producto = v_nombre_norm WHERE producto = v_nombre_viejo;
         UPDATE public.compras_detalles SET producto = v_nombre_norm WHERE producto = v_nombre_viejo;
         UPDATE public.reservas_detalles SET producto = v_nombre_norm WHERE producto = v_nombre_viejo;
+        
+        -- Misma logica de conflictos para renombramiento simple 
+        UPDATE public.stock_movimientos s
+        SET cantidad = s.cantidad + a.cantidad
+        FROM (
+            SELECT referencia_tipo, referencia_id, cantidad 
+            FROM public.stock_movimientos 
+            WHERE producto = v_nombre_viejo
+        ) a
+        WHERE s.referencia_tipo = a.referencia_tipo 
+          AND s.referencia_id = a.referencia_id 
+          AND s.producto = v_nombre_norm;
+
+        DELETE FROM public.stock_movimientos s
+        WHERE producto = v_nombre_viejo 
+          AND EXISTS (
+              SELECT 1 FROM public.stock_movimientos s2 
+              WHERE s2.referencia_tipo = s.referencia_tipo 
+                AND s2.referencia_id = s.referencia_id 
+                AND s2.producto = v_nombre_norm
+          );
+
         UPDATE public.stock_movimientos SET producto = v_nombre_norm WHERE producto = v_nombre_viejo;
     END IF;
 
@@ -107,13 +154,13 @@ BEGIN
             v_nombre_norm,
             v_diferencia_stock,
             'RECUENTO',
-            'PROD_' || p_id,
+            'REC_' || p_id || '_' || floor(extract(epoch from now()) * 1000)::text,
             'Ajuste manual desde Dashboard'
         );
     END IF;
 
     -- REENCENDER TRIGGERS
-    SET session_replication_role = 'origin';
+    PERFORM set_config('app.bypass_triggers', 'false', true);
 
     RETURN jsonb_build_object(
         'success', true, 
@@ -125,7 +172,7 @@ BEGIN
 
 EXCEPTION WHEN OTHERS THEN
     -- ASEGURAR QUE LOS TRIGGERS SE REENCIENDAN EN CASO DE ERROR
-    SET session_replication_role = 'origin';
+    PERFORM set_config('app.bypass_triggers', 'false', true);
     RETURN jsonb_build_object('success', false, 'error', SQLERRM);
 END;
 $function$;

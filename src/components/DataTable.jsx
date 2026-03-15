@@ -1,5 +1,5 @@
-import React, { useState } from 'react'
-import { ChevronDown, ChevronUp, Search, Loader2, Download } from 'lucide-react'
+import React, { useState, useEffect } from 'react'
+import { ChevronDown, ChevronUp, Search, Loader2, Download, ChevronLeft, ChevronRight } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 const DataTable = ({
@@ -20,6 +20,16 @@ const DataTable = ({
 }) => {
     const [filterValue, setFilterValue] = useState('')
     const [expandedRow, setExpandedRow] = useState(null)
+    const [currentPage, setCurrentPage] = useState(1)
+    const itemsPerPage = 20
+
+    // Reset pagination when data changes (e.g., search/filter)
+    useEffect(() => {
+        setCurrentPage(1)
+    }, [data.length])
+
+    const totalPages = Math.ceil(data.length / itemsPerPage)
+    const paginatedData = data.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
 
     const handleFilterChange = (val) => {
         setFilterValue(val)
@@ -55,9 +65,9 @@ const DataTable = ({
     }
 
     return (
-        <div className="w-full glass-panel rounded-2xl overflow-visible">
+        <div className="w-full glass-panel rounded-2xl overflow-hidden flex flex-col max-h-[calc(100vh-220px)]">
             {/* Header / Filter */}
-            <div className="p-6 flex flex-col sm:flex-row justify-between items-center gap-6 bg-white/5 overflow-visible">
+            <div className="p-6 flex flex-col sm:flex-row justify-between items-center gap-6 bg-white/5 shrink-0">
                 <div className="relative flex items-center gap-4 w-full sm:w-auto">
                     {searchColumns && searchColumns.length > 0 && (
                         <select
@@ -104,14 +114,14 @@ const DataTable = ({
             </div>
 
             {/* Table */}
-            <div className="overflow-x-auto overflow-y-visible custom-scrollbar">
-                <table className="w-full text-left text-sm border-collapse">
-                    <thead className="bg-white/5 text-slate-400 uppercase text-[11px] font-black tracking-widest border-y border-white/5">
+            <div className="overflow-auto custom-scrollbar flex-1">
+                <table className="w-full text-left text-sm border-collapse table-fixed">
+                    <thead className="bg-white/5 text-slate-400 uppercase text-[11px] font-black tracking-widest border-y border-white/5 sticky top-0 z-20 backdrop-blur-md">
                         <tr>
                             {columns.map((col) => (
                                 <th
                                     key={col.key}
-                                    className={`${compact ? 'px-4 py-3' : 'px-6 py-4'} cursor-pointer hover:bg-white/5 hover:text-white transition-all select-none`}
+                                    className={`${compact ? 'px-4 py-3' : 'px-6 py-4'} cursor-pointer hover:bg-white/5 hover:text-white transition-all select-none ${col.width ? col.width : ''}`}
                                     onClick={() => onSort(col.key)}
                                 >
                                     <div className="flex items-center gap-2">
@@ -144,17 +154,17 @@ const DataTable = ({
                                     </td>
                                 </motion.tr>
                             ) : (
-                                data.map((row, rowIndex) => (
+                                paginatedData.map((row, rowIndex) => (
                                     <React.Fragment key={row[rowKey] || rowIndex}>
                                         <motion.tr
                                             initial={{ opacity: 0, y: 10 }}
                                             animate={{ opacity: 1, y: 0 }}
-                                            transition={{ delay: rowIndex * 0.03 }}
+                                            transition={{ delay: rowIndex * 0.01 }}
                                             onClick={() => toggleRow(row[rowKey] !== undefined ? row[rowKey] : rowIndex)}
                                             className={`hover:bg-white/10 transition-all group ${renderExpandedRow ? 'cursor-pointer' : ''} ${expandedRow === (row[rowKey] !== undefined ? row[rowKey] : rowIndex) ? 'bg-white/10' : ''}`}
                                         >
                                             {columns.map((col) => (
-                                                <td key={`${rowIndex}-${col.key}`} className={`whitespace-nowrap text-slate-300 group-hover:text-white transition-colors font-medium ${compact ? 'px-4 py-2 text-[11px]' : 'px-6 py-3.5'}`}>
+                                                <td key={`${rowIndex}-${col.key}`} className={`text-slate-300 group-hover:text-white transition-colors font-medium ${compact ? 'px-4 py-2 text-[11px]' : 'px-6 py-3.5'} ${col.wrap ? 'whitespace-normal break-words' : 'whitespace-nowrap'}`}>
                                                     {col.render ? col.render(row[col.key], row) : row[col.key]}
                                                 </td>
                                             ))}
@@ -166,7 +176,7 @@ const DataTable = ({
                                                 exit={{ opacity: 0, height: 0 }}
                                                 className="bg-blue-600/5"
                                             >
-                                                <td colSpan={columns.length} className="px-6 py-6 border-l-2 border-blue-500 shadow-inner">
+                                                <td colSpan={columns.length} className="px-6 py-6 border-l-2 border-blue-500 shadow-inner overflow-hidden">
                                                     {renderExpandedRow(row)}
                                                 </td>
                                             </motion.tr>
@@ -178,6 +188,62 @@ const DataTable = ({
                     </tbody>
                 </table>
             </div>
+
+            {/* Pagination Controls */}
+            {!isLoading && data.length > itemsPerPage && (
+                <div className="p-4 flex flex-col sm:flex-row justify-between items-center gap-4 bg-white/5 border-t border-white/5 shrink-0">
+                    <span className="text-xs text-slate-500 font-bold uppercase tracking-widest">
+                        Mostrando <span className="text-slate-200">{(currentPage - 1) * itemsPerPage + 1}</span> - <span className="text-slate-200">{Math.min(currentPage * itemsPerPage, data.length)}</span> de <span className="text-slate-200">{data.length}</span>
+                    </span>
+                    
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                            disabled={currentPage === 1}
+                            className="p-2 bg-white/5 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed border border-white/10 rounded-xl text-slate-400 hover:text-white transition-all active:scale-95"
+                        >
+                            <ChevronLeft size={16} />
+                        </button>
+                        
+                        <div className="flex items-center gap-1">
+                            {[...Array(totalPages)].map((_, i) => {
+                                const page = i + 1;
+                                // Mostrar solo algunas páginas si hay muchas
+                                if (
+                                    totalPages <= 7 ||
+                                    page === 1 ||
+                                    page === totalPages ||
+                                    (page >= currentPage - 1 && page <= currentPage + 1)
+                                ) {
+                                    return (
+                                        <button
+                                            key={page}
+                                            onClick={() => setCurrentPage(page)}
+                                            className={`w-8 h-8 rounded-lg text-xs font-black transition-all ${currentPage === page ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'bg-white/5 text-slate-500 hover:bg-white/10 hover:text-slate-300'}`}
+                                        >
+                                            {page}
+                                        </button>
+                                    );
+                                } else if (
+                                    (page === 2 && currentPage > 3) ||
+                                    (page === totalPages - 1 && currentPage < totalPages - 2)
+                                ) {
+                                    return <span key={page} className="text-slate-700 px-1 text-xs">...</span>;
+                                }
+                                return null;
+                            })}
+                        </div>
+
+                        <button
+                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                            disabled={currentPage === totalPages}
+                            className="p-2 bg-white/5 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed border border-white/10 rounded-xl text-slate-400 hover:text-white transition-all active:scale-95"
+                        >
+                            <ChevronRight size={16} />
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

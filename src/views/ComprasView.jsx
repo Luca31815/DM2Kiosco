@@ -230,9 +230,9 @@ const ComprasView = () => {
     ]
 
     const columns = [
-        { key: 'compra_id', label: 'ID', render: (val) => <span className="font-bold text-slate-500">{val}</span> },
+        { key: 'compra_id', label: 'ID', width: 'w-16', render: (val) => <span className="font-bold text-slate-500">{val}</span> },
         {
-            key: 'fecha', label: 'Fecha', render: (val) => {
+            key: 'fecha', label: 'Fecha', width: 'w-32', render: (val) => {
                 if (!val) return ''
                 const date = new Date(val)
                 return (
@@ -243,9 +243,9 @@ const ComprasView = () => {
                 )
             }
         },
-        { key: 'proveedor', label: 'Proveedor', render: (val) => <span className="font-bold text-blue-400">{val}</span> },
-        { key: 'total_compra', label: 'Total', render: (val) => <span className="font-black text-emerald-400 tabular-nums">${val}</span> },
-        { key: 'notas', label: 'Notas', render: (val) => <span className="text-slate-400 italic text-xs">{val || '-'}</span> },
+        { key: 'proveedor', label: 'Proveedor', width: 'w-1/4', wrap: true, render: (val) => <span className="font-bold text-blue-400">{val}</span> },
+        { key: 'total_compra', label: 'Total', width: 'w-24', render: (val) => <span className="font-black text-emerald-400 tabular-nums">${val}</span> },
+        { key: 'notas', label: 'Notas', width: 'w-1/3', wrap: true, render: (val) => <span className="text-slate-400 italic text-xs">{val || '-'}</span> },
     ]
 
     const handleSort = (column) => {
