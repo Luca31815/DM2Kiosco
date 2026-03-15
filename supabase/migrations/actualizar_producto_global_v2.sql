@@ -3,7 +3,7 @@
 -- 1. Se trabaje sobre productos_base directamente.
 -- 2. El stock se ajuste mediante movimientos reales.
 -- 3. Los cambios de nombre se propaguen a TODO el historial.
--- 4. Se soporte la normalización automática.
+-- 4. Se soporte la normalización automática y se suspendan triggers conflictivos.
 
 CREATE OR REPLACE FUNCTION public.actualizar_producto_global_v2(
     p_id bigint, 
@@ -31,8 +31,15 @@ BEGIN
         RETURN jsonb_build_object('success', false, 'error', 'Producto no encontrado en productos_base');
     END IF;
 
-    -- Normalizar nombre nuevo
-    v_nombre_norm := TRIM(UPPER(p_nuevo_nombre));
+    -- Normalizar nombre nuevo usando la función global
+    v_nombre_norm := public.normalizar_texto(p_nuevo_nombre);
+
+    -- ==============================================================================
+    -- MODO SILENCIOSO: APAGAR TRIGGERS PARA EVITAR RECURSIONES
+    -- ==============================================================================
+    ALTER TABLE public.ventas_detalles DISABLE TRIGGER trg_auto_learning_ventas;
+    ALTER TABLE public.compras_detalles DISABLE TRIGGER trg_auto_learning_compras;
+    ALTER TABLE public.stock_movimientos DISABLE TRIGGER trg_auto_stock_movimientos;
 
     -- 2. Manejo de cambio de nombre (Renombrado o Fusión)
     IF v_nombre_viejo <> v_nombre_norm THEN
@@ -51,6 +58,11 @@ BEGIN
             -- Eliminar el producto viejo (los movimientos ya pasaron al nuevo)
             DELETE FROM public.productos_base WHERE producto_id = p_id;
             
+            -- REENCENDER TRIGGERS
+            ALTER TABLE public.ventas_detalles ENABLE TRIGGER trg_auto_learning_ventas;
+            ALTER TABLE public.compras_detalles ENABLE TRIGGER trg_auto_learning_compras;
+            ALTER TABLE public.stock_movimientos ENABLE TRIGGER trg_auto_stock_movimientos;
+
             -- Retornar indicando la fusión
             RETURN jsonb_build_object(
                 'success', true, 
@@ -102,6 +114,11 @@ BEGIN
         );
     END IF;
 
+    -- REENCENDER TRIGGERS
+    ALTER TABLE public.ventas_detalles ENABLE TRIGGER trg_auto_learning_ventas;
+    ALTER TABLE public.compras_detalles ENABLE TRIGGER trg_auto_learning_compras;
+    ALTER TABLE public.stock_movimientos ENABLE TRIGGER trg_auto_stock_movimientos;
+
     RETURN jsonb_build_object(
         'success', true, 
         'mensaje', 'Producto actualizado correctamente.',
@@ -111,6 +128,10 @@ BEGIN
     );
 
 EXCEPTION WHEN OTHERS THEN
+    -- ASEGURAR QUE LOS TRIGGERS SE REENCIENDAN EN CASO DE ERROR
+    ALTER TABLE public.ventas_detalles ENABLE TRIGGER trg_auto_learning_ventas;
+    ALTER TABLE public.compras_detalles ENABLE TRIGGER trg_auto_learning_compras;
+    ALTER TABLE public.stock_movimientos ENABLE TRIGGER trg_auto_stock_movimientos;
     RETURN jsonb_build_object('success', false, 'error', SQLERRM);
 END;
 $function$;
