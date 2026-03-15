@@ -35,11 +35,11 @@ BEGIN
     v_nombre_norm := public.normalizar_texto(p_nuevo_nombre);
 
     -- ==============================================================================
-    -- MODO SILENCIOSO: APAGAR TRIGGERS PARA EVITAR RECURSIONES
+    -- MODO SILENCIOSO: BYPASS DE TRIGGERS (Usando session_replication_role)
     -- ==============================================================================
-    ALTER TABLE public.ventas_detalles DISABLE TRIGGER trg_auto_learning_ventas;
-    ALTER TABLE public.compras_detalles DISABLE TRIGGER trg_auto_learning_compras;
-    ALTER TABLE public.stock_movimientos DISABLE TRIGGER trg_auto_stock_movimientos;
+    -- 'replica' desactiva todos los triggers normales para la sesión actual.
+    -- Esto requiere menos permisos que ALTER TABLE y es más seguro.
+    SET session_replication_role = 'replica';
 
     -- 2. Manejo de cambio de nombre (Renombrado o Fusión)
     IF v_nombre_viejo <> v_nombre_norm THEN
@@ -59,9 +59,7 @@ BEGIN
             DELETE FROM public.productos_base WHERE producto_id = p_id;
             
             -- REENCENDER TRIGGERS
-            ALTER TABLE public.ventas_detalles ENABLE TRIGGER trg_auto_learning_ventas;
-            ALTER TABLE public.compras_detalles ENABLE TRIGGER trg_auto_learning_compras;
-            ALTER TABLE public.stock_movimientos ENABLE TRIGGER trg_auto_stock_movimientos;
+            SET session_replication_role = 'origin';
 
             -- Retornar indicando la fusión
             RETURN jsonb_build_object(
@@ -115,9 +113,7 @@ BEGIN
     END IF;
 
     -- REENCENDER TRIGGERS
-    ALTER TABLE public.ventas_detalles ENABLE TRIGGER trg_auto_learning_ventas;
-    ALTER TABLE public.compras_detalles ENABLE TRIGGER trg_auto_learning_compras;
-    ALTER TABLE public.stock_movimientos ENABLE TRIGGER trg_auto_stock_movimientos;
+    SET session_replication_role = 'origin';
 
     RETURN jsonb_build_object(
         'success', true, 
@@ -129,9 +125,7 @@ BEGIN
 
 EXCEPTION WHEN OTHERS THEN
     -- ASEGURAR QUE LOS TRIGGERS SE REENCIENDAN EN CASO DE ERROR
-    ALTER TABLE public.ventas_detalles ENABLE TRIGGER trg_auto_learning_ventas;
-    ALTER TABLE public.compras_detalles ENABLE TRIGGER trg_auto_learning_compras;
-    ALTER TABLE public.stock_movimientos ENABLE TRIGGER trg_auto_stock_movimientos;
+    SET session_replication_role = 'origin';
     RETURN jsonb_build_object('success', false, 'error', SQLERRM);
 END;
 $function$;
