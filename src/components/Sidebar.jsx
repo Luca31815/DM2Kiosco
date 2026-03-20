@@ -36,7 +36,7 @@ const Sidebar = ({ isOpen, onClose }) => {
             </AnimatePresence>
 
             {/* Sidebar Drawer */}
-            <div className={`fixed top-0 left-0 h-full w-72 glass-panel z-50 transform transition-transform duration-500 ease-in-out ${isOpen ? 'translate-x-0 shadow-blue-500/10' : '-translate-x-full'}`}>
+            <div className={`fixed top-0 left-0 h-full w-72 glass-panel z-50 flex flex-col transform transition-transform duration-500 ease-in-out ${isOpen ? 'translate-x-0 shadow-blue-500/10' : '-translate-x-full'}`}>
                 <div className="p-8 border-b border-white/5 flex justify-between items-center bg-white/5">
                     <h1 className="text-2xl font-black tracking-tight text-white flex items-center gap-3">
                         <div className="p-2 bg-blue-600 rounded-xl shadow-lg shadow-blue-600/30">
