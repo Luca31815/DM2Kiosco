@@ -1,5 +1,5 @@
 {
-  "name": "dashboard-ventas",
+  "name": "kiosco-management-portal",
   "private": true,
   "version": "0.0.1",
   "type": "module",
@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.95.3",
+    "@vercel/speed-insights": "^2.0.0",
     "framer-motion": "^12.34.3",
     "lucide-react": "^0.564.0",
     "pg": "^8.19.0",

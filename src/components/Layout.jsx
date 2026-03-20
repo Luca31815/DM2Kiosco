@@ -38,7 +38,7 @@ const Layout = ({ children }) => {
 
             <main className="flex-1 flex flex-col min-w-0 transition-all duration-300 relative z-10">
                 {/* Top Bar for Toggle */}
-                <div className="p-4 border-b border-white/5 flex items-center justify-between bg-slate-950/40 backdrop-blur-md sticky top-0 z-30">
+                <div className="p-4 border-b border-white/5 flex items-center justify-between bg-slate-950/40 backdrop-blur-md fixed top-0 left-0 right-0 z-30">
                     <div className="flex items-center">
                         <button
                             onClick={() => setIsSidebarOpen(true)}
@@ -61,7 +61,7 @@ const Layout = ({ children }) => {
                     </button>
                 </div>
 
-                <div className="p-4 md:p-8 overflow-y-auto overflow-x-hidden custom-scrollbar">
+                <div className="p-4 md:p-8 pt-20 md:pt-24 overflow-y-auto overflow-x-hidden custom-scrollbar">
                     <div className="max-w-7xl mx-auto pb-16">
                         {children}
                     </div>
