@@ -27,38 +27,51 @@ const DuplicadosView = () => {
         if (!allProducts || allProducts.length === 0) return toast.error('El catálogo aún no cargó');
         
         setIsAiScanning(true);
-        const loadingToast = toast.loading('Analizando el catálogo completo con la Inteligencia Artificial (Gemini Vision)...');
+        const loadingToast = toast.loading('Analizando el catálogo completo con la Inteligencia Artificial (Groq Llama-3.3)...');
         
         try {
             // Preparamos los datos
             const catalogList = allProducts.map(p => `ID: ${p.producto_id || p.id} | Nombre: ${p.nombre} | Precio: ${p.ultimo_precio_venta || p.precio_venta}`).join('\n');
             const prompt = `Actúa como un analista de inventario avanzado. Abajo tienes un catálogo completo de un kiosco. 
-Encuentra productos que sean evidentemente el mismo ítem y que no hayan sido agrupados, permitiendo diferencias semánticas como ("Gaseosa Cola" y "Coca Cola", o "Marlboro Rojo" y "Phillips Morris", etc). Devuelve ÚNICAMENTE un array JSON válido con tus descubrimientos, sin ningún bloque de texto \`\`\`json ni nada extra. Usa este formato exacto:
-[
-  { "idKeep": "ID_DEL_MEJOR_NOMBRE", "idDelete": "ID_DEL_QUE_SE_DEBE_ELIMINAR", "reason": "Motivo corto semántico de IA" }
-]
-Incluso si no encuentras, devuelve []. No superes las 15 sugerencias de mayor relevancia.
+Encuentra productos que sean evidentemente el mismo ítem y que no hayan sido agrupados, permitiendo diferencias semánticas como ("Gaseosa Cola" y "Coca Cola", o "Marlboro Rojo" y "Phillips Morris", etc). 
+IMPORTANTE: Devuelve ÚNICAMENTE un objeto JSON válido con la propiedad "duplicates" que contenga un array de tus descubrimientos. Usa este formato exacto:
+{
+  "duplicates": [
+    { "idKeep": "ID_DEL_MEJOR_NOMBRE", "idDelete": "ID_DEL_QUE_SE_DEBE_ELIMINAR", "reason": "Motivo corto semántico de IA" }
+  ]
+}
+Incluso si no encuentras, devuelve {"duplicates": []}. No superes las 15 sugerencias de mayor relevancia.
 Catálogo:
 ${catalogList}`;
 
-            // Llamada POST a Vertex AI / Google Gemini
-            const GEMINI_KEY = 'AIzaSyBYjpdDENiNKEd52lu2wrEJqI1BcYGvbAI';
-            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`, {
+            // Llamada POST a Groq
+            const GROQ_KEY = import.meta.env.VITE_GROQ_API_KEY;
+            
+            if (!GROQ_KEY) {
+                throw new Error("No se encontró la API Key de Groq (VITE_GROQ_API_KEY) en las variables de entorno.");
+            }
+
+            const response = await fetch(`https://api.groq.com/openai/v1/chat/completions`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${GROQ_KEY}`
+                },
                 body: JSON.stringify({
-                    contents: [{ parts: [{ text: prompt }] }],
-                    generationConfig: {
-                        temperature: 0.1,
-                        responseMimeType: 'application/json'
-                    }
+                    model: 'llama-3.3-70b-versatile',
+                    messages: [{ role: 'user', content: prompt }],
+                    temperature: 0.1,
+                    response_format: { type: "json_object" }
                 })
             });
 
             const jsonResponse = await response.json();
-            const textResult = jsonResponse.candidates[0].content.parts[0].text;
+            if (jsonResponse.error) throw new Error(jsonResponse.error.message);
+
+            const textResult = jsonResponse.choices[0].message.content;
             let aiParsed = JSON.parse(textResult);
 
+            if (aiParsed.duplicates) aiParsed = aiParsed.duplicates;
             if (!Array.isArray(aiParsed)) aiParsed = [];
 
             // Convertir la respuesta de IA al formato que usa nuestro frontend: { p1: {}, p2: {}, reason: string }
