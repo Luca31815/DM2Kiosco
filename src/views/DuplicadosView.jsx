@@ -13,27 +13,37 @@ const DuplicadosView = () => {
     const { data: duplicados, loading, ignoreDuplicate } = useProductosDuplicados()
     const [searchTerm, setSearchTerm] = useState('')
     const [mergingId, setMergingId] = useState(null)
+    const [selections, setSelections] = useState({}) // { pairIndex: 'p1' o 'p2' }
 
-    const handleMerge = async (keepProduct, deleteProduct) => {
-        if (!confirm(`¿Estás seguro de que deseas conservar "${keepProduct.nombre}" y ELIMINAR/ABSORBER el producto duplicado? Esta acción transferirá histórico de ventas y unificará stock, es IRREVERSIBLE.`)) {
+    const handleMergeSelection = async (index, d) => {
+        const selectedKey = selections[index]
+        if (!selectedKey) {
+            toast.error('Por favor, selecciona cuál de los dos nombres querés dejar como principal.');
+            return;
+        }
+
+        const keepProduct = selectedKey === 'p1' ? d.p1 : d.p2;
+        const deleteProduct = selectedKey === 'p1' ? d.p2 : d.p1;
+
+        if (!confirm(`¿Confirmás que querés que el producto duplicado pase a llamarse "${keepProduct.nombre}"? Esto hará exactamente la misma fusión que la pantalla de inventario.`)) {
             return;
         }
 
         const dataToSend = {
             producto_id: deleteProduct.producto_id || deleteProduct.id,
             nombre: keepProduct.nombre?.trim().toUpperCase(),
-            ultimo_precio_venta: parseFloat(keepProduct.ultimo_precio_venta || deleteProduct.ultimo_precio_venta || 0),
-            ultimo_costo_compra: parseFloat(keepProduct.ultimo_costo_compra || deleteProduct.ultimo_costo_compra || 0),
+            ultimo_precio_venta: parseFloat(deleteProduct.ultimo_precio_venta || 0),
+            ultimo_costo_compra: parseFloat(deleteProduct.ultimo_costo_compra || 0),
             stock_actual: parseInt(deleteProduct.stock_actual || 0)
         }
 
-        const loadingToast = toast.loading(`Fusionando con "${keepProduct.nombre}"...`)
+        const loadingToast = toast.loading(`Renombrando para fusionar con "${keepProduct.nombre}"...`)
         setMergingId(deleteProduct.producto_id || deleteProduct.id)
         
         try {
             const result = await api.actualizarProducto(dataToSend)
             if (result.success) {
-                toast.success('¡Unificación exitosa! El catálogo se ha limpiado.', { id: loadingToast, duration: 4000 })
+                toast.success('¡Listo! Al tener el mismo nombre se han fusionado correctamente.', { id: loadingToast, duration: 4000 })
                 mutate(key => Array.isArray(key) && key[0] === 'productos')
                 mutate('ventas')
                 mutate('compras')
@@ -131,63 +141,57 @@ const DuplicadosView = () => {
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         {/* Producto 1 */}
-                                        <div className="p-4 rounded-xl bg-white/5 border border-white/5">
+                                        <div 
+                                            onClick={() => setSelections(prev => ({ ...prev, [index]: 'p1' }))}
+                                            className={`p-4 rounded-xl border transition-all cursor-pointer ${selections[index] === 'p1' ? 'bg-blue-600/20 border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.2)]' : 'bg-white/5 border-white/5 hover:border-white/10'}`}
+                                        >
                                             <div className="flex items-start justify-between">
                                                 <div className="flex items-center gap-3 mb-2">
-                                                    <div className="p-2 rounded-lg bg-white/5">
-                                                        <Package className="h-4 w-4 text-slate-300" />
+                                                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors ${selections[index] === 'p1' ? 'border-blue-500' : 'border-slate-500'}`}>
+                                                        {selections[index] === 'p1' && <div className="w-2 h-2 rounded-full bg-blue-500" />}
                                                     </div>
-                                                    <span className="text-[10px] uppercase font-black tracking-widest text-slate-500">Producto A</span>
+                                                    <span className={`text-[10px] uppercase font-black tracking-widest ${selections[index] === 'p1' ? 'text-blue-400' : 'text-slate-500'}`}>Producto A</span>
                                                 </div>
-                                                <button 
-                                                    onClick={() => handleMerge(d.p1, d.p2)}
-                                                    disabled={mergingId !== null}
-                                                    className="px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 text-[10px] font-black uppercase tracking-widest transition-colors flex items-center gap-1.5 border border-emerald-500/20"
-                                                >
-                                                    {mergingId === (d.p2.producto_id || d.p2.id) ? <Loader2 className="h-3 w-3 animate-spin"/> : <CheckCircle2 className="h-3 w-3"/>} Conservar A
-                                                </button>
                                             </div>
                                             <p className="text-lg font-bold text-white leading-tight mt-2">{d.p1.nombre}</p>
                                             <span className="text-[10px] font-black tabular-nums text-slate-500 mt-1 block">ID: {String(d.p1.producto_id || d.p1.id || '').split('-')[0]} | Stock: {d.p1.stock_actual || 0}</span>
                                         </div>
 
                                         {/* Producto 2 */}
-                                        <div className="p-4 rounded-xl bg-white/5 border border-white/5">
+                                        <div 
+                                            onClick={() => setSelections(prev => ({ ...prev, [index]: 'p2' }))}
+                                            className={`p-4 rounded-xl border transition-all cursor-pointer ${selections[index] === 'p2' ? 'bg-blue-600/20 border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.2)]' : 'bg-white/5 border-white/5 hover:border-white/10'}`}
+                                        >
                                             <div className="flex items-start justify-between">
                                                 <div className="flex items-center gap-3 mb-2">
-                                                    <div className="p-2 rounded-lg bg-white/5">
-                                                        <Package className="h-4 w-4 text-slate-300" />
+                                                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors ${selections[index] === 'p2' ? 'border-blue-500' : 'border-slate-500'}`}>
+                                                        {selections[index] === 'p2' && <div className="w-2 h-2 rounded-full bg-blue-500" />}
                                                     </div>
-                                                    <span className="text-[10px] uppercase font-black tracking-widest text-slate-500">Producto B</span>
+                                                    <span className={`text-[10px] uppercase font-black tracking-widest ${selections[index] === 'p2' ? 'text-blue-400' : 'text-slate-500'}`}>Producto B</span>
                                                 </div>
-                                                <button 
-                                                    onClick={() => handleMerge(d.p2, d.p1)}
-                                                    disabled={mergingId !== null}
-                                                    className="px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 text-[10px] font-black uppercase tracking-widest transition-colors flex items-center gap-1.5 border border-emerald-500/20"
-                                                >
-                                                    {mergingId === (d.p1.producto_id || d.p1.id) ? <Loader2 className="h-3 w-3 animate-spin"/> : <CheckCircle2 className="h-3 w-3"/>} Conservar B
-                                                </button>
                                             </div>
-                                            <p className="text-lg font-bold text-slate-300 leading-tight mt-2">{d.p2.nombre}</p>
+                                            <p className="text-lg font-bold text-white leading-tight mt-2">{d.p2.nombre}</p>
                                             <span className="text-[10px] font-black tabular-nums text-slate-500 mt-1 block">ID: {String(d.p2.producto_id || d.p2.id || '').split('-')[0]} | Stock: {d.p2.stock_actual || 0}</span>
                                         </div>
                                     </div>
                                 </div>
 
                                 {/* Acciones */}
-                                <div className="flex flex-col md:flex-row gap-2 shrink-0 w-full md:w-auto self-stretch md:self-auto justify-end">
+                                <div className="flex flex-col gap-2 shrink-0 w-full md:w-48 self-stretch md:self-auto justify-end">
                                     <button 
-                                        onClick={() => ignoreDuplicate(d.p1.producto_id || d.p1.id, d.p2.producto_id || d.p2.id)}
-                                        className="w-full md:w-auto flex justify-center items-center gap-2 px-4 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-bold transition-transform active:scale-95 border border-white/5"
-                                        title="Ocultar esta alerta permanentemente"
+                                        onClick={() => handleMergeSelection(index, d)}
+                                        disabled={!selections[index] || mergingId !== null}
+                                        className="w-full flex justify-center items-center gap-2 px-4 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:hover:bg-blue-600 text-white text-sm font-bold transition-transform active:scale-95 shadow-lg shadow-blue-500/20"
+                                        title="El producto no seleccionado cambiará su nombre al seleccionado"
                                     >
-                                        Ignorar <EyeOff className="h-4 w-4" />
+                                        {(mergingId === d.p1.producto_id || mergingId === d.p2.producto_id) ? <Loader2 className="h-4 w-4 animate-spin"/> : <CheckCircle2 className="h-4 w-4"/>} Fusionar aquí
                                     </button>
                                     <button 
-                                        onClick={() => navigate('/productos', { state: { search: d.p1.nombre } })}
-                                        className="w-full md:w-auto flex justify-center items-center gap-2 px-5 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold transition-transform active:scale-95 shadow-lg shadow-blue-500/20"
+                                        onClick={() => ignoreDuplicate(d.p1.producto_id || d.p1.id, d.p2.producto_id || d.p2.id)}
+                                        className="w-full flex justify-center items-center gap-2 px-4 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-bold transition-transform active:scale-95 border border-white/5"
+                                        title="Ocultar esta alerta permanentemente"
                                     >
-                                        Ir al Catálogo <ArrowUpRight className="h-4 w-4" />
+                                        Ignorar alerta
                                     </button>
                                 </div>
                             </div>
