@@ -1,19 +1,91 @@
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
-import { AlertCircle, ArrowRight, Package, Tag, ArrowUpRight, Search, EyeOff, CheckCircle2, Loader2 } from 'lucide-react'
+import { AlertCircle, ArrowRight, Package, Tag, ArrowUpRight, Search, EyeOff, CheckCircle2, Loader2, Sparkles } from 'lucide-react'
 import { useSWRConfig } from 'swr'
 import { toast } from 'react-hot-toast'
 import * as api from '../services/api'
-import { useProductosDuplicados } from '../hooks/useData'
+import { useProductosDuplicados, useProductos } from '../hooks/useData'
 
 const DuplicadosView = () => {
     const navigate = useNavigate()
     const { mutate } = useSWRConfig()
-    const { data: duplicados, loading, ignoreDuplicate } = useProductosDuplicados()
+    const { data: duplicadosLocales, loading: localLoading, ignoreDuplicate } = useProductosDuplicados()
+    const { data: allProducts } = useProductos({ page: 1, pageSize: 3000, select: 'producto_id,nombre,ultimo_precio_venta,stock_actual' })
     const [searchTerm, setSearchTerm] = useState('')
     const [mergingId, setMergingId] = useState(null)
     const [selections, setSelections] = useState({}) // { pairIndex: 'p1' o 'p2' }
+    
+    // IA State
+    const [aiDuplicates, setAiDuplicates] = useState([])
+    const [isAiScanning, setIsAiScanning] = useState(false)
+
+    // Fusionar listas (Local + IA)
+    const duplicados = [...duplicadosLocales, ...aiDuplicates]
+
+    const handleAiScan = async () => {
+        if (!allProducts || allProducts.length === 0) return toast.error('El catálogo aún no cargó');
+        
+        setIsAiScanning(true);
+        const loadingToast = toast.loading('Analizando el catálogo completo con la Inteligencia Artificial (Gemini Vision)...');
+        
+        try {
+            // Preparamos los datos
+            const catalogList = allProducts.map(p => `ID: ${p.producto_id || p.id} | Nombre: ${p.nombre} | Precio: ${p.ultimo_precio_venta || p.precio_venta}`).join('\n');
+            const prompt = `Actúa como un analista de inventario avanzado. Abajo tienes un catálogo completo de un kiosco. 
+Encuentra productos que sean evidentemente el mismo ítem y que no hayan sido agrupados, permitiendo diferencias semánticas como ("Gaseosa Cola" y "Coca Cola", o "Marlboro Rojo" y "Phillips Morris", etc). Devuelve ÚNICAMENTE un array JSON válido con tus descubrimientos, sin ningún bloque de texto \`\`\`json ni nada extra. Usa este formato exacto:
+[
+  { "idKeep": "ID_DEL_MEJOR_NOMBRE", "idDelete": "ID_DEL_QUE_SE_DEBE_ELIMINAR", "reason": "Motivo corto semántico de IA" }
+]
+Incluso si no encuentras, devuelve []. No superes las 15 sugerencias de mayor relevancia.
+Catálogo:
+${catalogList}`;
+
+            // Llamada POST a Vertex AI / Google Gemini
+            const GEMINI_KEY = 'AIzaSyBYjpdDENiNKEd52lu2wrEJqI1BcYGvbAI';
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: prompt }] }],
+                    generationConfig: {
+                        temperature: 0.1,
+                        responseMimeType: 'application/json'
+                    }
+                })
+            });
+
+            const jsonResponse = await response.json();
+            const textResult = jsonResponse.candidates[0].content.parts[0].text;
+            let aiParsed = JSON.parse(textResult);
+
+            if (!Array.isArray(aiParsed)) aiParsed = [];
+
+            // Convertir la respuesta de IA al formato que usa nuestro frontend: { p1: {}, p2: {}, reason: string }
+            const mappedAiResults = aiParsed.map(res => {
+                const keepProduct = allProducts.find(p => (p.producto_id || p.id) == res.idKeep)
+                const deleteProduct = allProducts.find(p => (p.producto_id || p.id) == res.idDelete)
+                if (keepProduct && deleteProduct) {
+                    return { p1: keepProduct, p2: deleteProduct, reason: `[IA] ${res.reason || 'Detección Semántica'}` }
+                }
+                return null;
+            }).filter(Boolean);
+
+            setAiDuplicates(mappedAiResults);
+            
+            if (mappedAiResults.length > 0) {
+                toast.success(`La IA encontró ${mappedAiResults.length} duplicados ocultos usando contexto semántico.`, { id: loadingToast, duration: 6000 });
+            } else {
+                toast.success('La IA determinó que tu inventario está impecable. No hay más duplicados.', { id: loadingToast, duration: 5000 });
+            }
+
+        } catch (error) {
+            console.error(error);
+            toast.error('Error al conectarse a la API de IA.', { id: loadingToast });
+        } finally {
+            setIsAiScanning(false);
+        }
+    }
 
     const handleMergeSelection = async (index, d) => {
         const selectedKey = selections[index]
@@ -90,8 +162,20 @@ const DuplicadosView = () => {
                     </h2>
                     <p className="text-slate-400 font-medium mt-1">Análisis de posibles productos duplicados o redundantes.</p>
                 </div>
-                <div className="flex items-center gap-2 px-4 py-2 bg-red-500/10 border border-red-500/20 rounded-xl">
-                    <span className="text-xs font-black text-red-400 uppercase tracking-widest">{duplicados.length} Alertas Activas</span>
+                {/* Contadores y Botón IA */}
+                <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3">
+                    <button 
+                        onClick={handleAiScan}
+                        disabled={isAiScanning}
+                        className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white rounded-xl font-bold transition-all shadow-[0_0_20px_rgba(99,102,241,0.3)] hover:shadow-[0_0_25px_rgba(99,102,241,0.5)] active:scale-95 disabled:opacity-50"
+                    >
+                        {isAiScanning ? <Loader2 className="h-5 w-5 animate-spin" /> : <Sparkles className="h-5 w-5" />}
+                        <span className="hidden md:inline">Auditoría Extendida IA</span>
+                        <span className="md:hidden">IA</span>
+                    </button>
+                    <div className="flex items-center gap-2 px-4 py-3 md:py-2 bg-red-500/10 border border-red-500/20 rounded-xl justify-center">
+                        <span className="text-xs font-black text-red-400 uppercase tracking-widest">{duplicados.length} Alertas Activas</span>
+                    </div>
                 </div>
             </div>
 
@@ -108,7 +192,7 @@ const DuplicadosView = () => {
             </div>
 
             {/* Lista Principal */}
-            {loading ? (
+            {localLoading && !isAiScanning ? (
                 <div className="py-20 flex justify-center items-center">
                     <div className="h-8 w-8 rounded-full border-4 border-slate-700 border-t-red-500 animate-spin" />
                 </div>

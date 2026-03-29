@@ -89,7 +89,7 @@ export function useProductosDuplicados() {
     const duplicados = useMemo(() => {
         if (!productos || productos.length === 0) return [];
         
-        // 1. Omitir caracteres especiales y transformar en array de palabras curadas
+        // Función ultra básica para quitar plurales en español
         const stemWord = (word) => {
             if (word.length > 3 && word.endsWith('S')) {
                 if (word.endsWith('ES') && !word.endsWith('RES') && !word.endsWith('TES')) return word.slice(0, -2);
@@ -98,23 +98,41 @@ export function useProductosDuplicados() {
             return word;
         };
 
+        // Algoritmo Fonético Simplificado Español
+        const phonetic = (word) => {
+            return word.toUpperCase()
+                .replace(/H/g, '')
+                .replace(/[ZV]/g, 'B')
+                .replace(/[CSZ]/g, 'S')
+                .replace(/LL/g, 'Y')
+                .replace(/QU/g, 'K')
+                .replace(/C[EI]/g, 'S')
+                .replace(/C/g, 'K')
+                .replace(/G[EI]/g, 'J')
+                .replace(/(.)\1+/g, '$1'); // Quitar letras dobles restantes
+        };
+
         const getWords = (name) => {
             if (!name) return [];
             const stopwords = new Set(['DE', 'LA', 'EL', 'LOS', 'LAS', 'CON', 'SIN', 'SABOR', 'UN', 'UNA', 'Y', 'O', 'PARA', 'AL', 'DEL']);
             
-            // Reemplazar unidades y limpiar caracteres
+            // Reemplazos de Diccionario Kiosco
             let cleaned = String(name).toUpperCase()
+                .replace(/\bCHOC\b/g, "CHOCOLATE")
+                .replace(/\bDLCE\b/g, "DULCE")
+                .replace(/\bC\/\b/g, "CON ")
+                .replace(/\bP\/\b/g, "PARA ")
+                .replace(/\bGFA\b/g, "GARRAFA")
+                // Reemplazar unidades y limpiar caracteres
                 .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, " ")
                 .replace(/(\d+)\s*(LTS|LT)\b/g, "$1L")
                 .replace(/(\d+)\s*(CM3|CC)\b/g, "$1ML")
                 .replace(/(\d+)\s*(GRS|GR|GRAMOS)\b/g, "$1G")
-                .replace(/\b1000\s*ML\b/g, "1L")
-                .replace(/\b1000\s*G\b/g, "1KG")
                 .trim();
 
             return cleaned.split(/\s+/)
                 .filter(w => w.length > 0 && !stopwords.has(w))
-                .map(stemWord);
+                .map(w => ({ raw: stemWord(w), sound: phonetic(stemWord(w)) }));
         };
 
         // Algoritmo de Distancia de Levenshtein
@@ -128,9 +146,9 @@ export function useProductosDuplicados() {
                 for (let i = 1; i <= a.length; i++) {
                     const indicator = a[i - 1] === b[j - 1] ? 0 : 1;
                     matrix[j][i] = Math.min(
-                        matrix[j][i - 1] + 1, // insertion
-                        matrix[j - 1][i] + 1, // deletion
-                        matrix[j - 1][i - 1] + indicator // substitution
+                        matrix[j][i - 1] + 1,
+                        matrix[j - 1][i] + 1,
+                        matrix[j - 1][i - 1] + indicator
                     );
                 }
             }
@@ -138,12 +156,15 @@ export function useProductosDuplicados() {
         };
 
         const isFuzzyMatch = (w1, w2) => {
-            if (w1 === w2) return true;
-            if (Math.abs(w1.length - w2.length) > 2) return false;
+            if (w1.raw === w2.raw) return true;
+            if (w1.sound === w2.sound) return true; // Match fonético ("Sanwich" == "Sandwich")
+            
+            // Typos matemáticos
+            if (Math.abs(w1.raw.length - w2.raw.length) > 2) return false;
             // Solo aplicar typos en palabras grandes para evitar falsos positivos
-            if (w1.length > 4 && w2.length > 4) {
-                const threshold = Math.max(w1.length, w2.length) > 7 ? 2 : 1;
-                return levenshtein(w1, w2) <= threshold;
+            if (w1.raw.length > 4 && w2.raw.length > 4) {
+                const threshold = Math.max(w1.raw.length, w2.raw.length) > 7 ? 2 : 1;
+                return levenshtein(w1.raw, w2.raw) <= threshold;
             }
             return false;
         };
@@ -152,58 +173,57 @@ export function useProductosDuplicados() {
             return shorter.every(w1 => longer.some(w2 => isFuzzyMatch(w1, w2)));
         };
 
-        // 2. Agrupar productos por precio para optimizar CPU
-        const productsByPrice = new Map();
+        const candidates = [];
+        
+        // Transformar todos los productos en objetos curados
+        const parsedProducts = [];
         for (const p of productos) {
             const price = parseFloat(p.ultimo_precio_venta || p.precio_venta || 0);
             if (isNaN(price)) continue;
-            
-            const id = String(p.producto_id || p.id);
-            if (!productsByPrice.has(price)) productsByPrice.set(price, []);
-            productsByPrice.get(price).push({ 
-                ...p, 
-                words: getWords(p.nombre || ''),
-                idStr: id
+            parsedProducts.push({
+                ...p,
+                price: price,
+                idStr: String(p.producto_id || p.id),
+                words: getWords(p.nombre || '')
             });
         }
 
-        const candidates = [];
-        
-        // 3. Cruzar solo productos del mismo balde de precio
-        for (const [price, bucketList] of productsByPrice.entries()) {
-            if (bucketList.length < 2) continue;
+        // Ordenar por precio ascendente para la "Ventana Deslizante"
+        parsedProducts.sort((a, b) => a.price - b.price);
 
-            for (let i = 0; i < bucketList.length; i++) {
-                for (let j = i + 1; j < bucketList.length; j++) {
-                    const p1 = bucketList[i];
-                    const p2 = bucketList[j];
+        // 3. Ventana de tolerancia de Precio (Diferencia máxima: 15%)
+        for (let i = 0; i < parsedProducts.length; i++) {
+            const p1 = parsedProducts[i];
+            
+            for (let j = i + 1; j < parsedProducts.length; j++) {
+                const p2 = parsedProducts[j];
+                
+                // Si p2 es más del 15% más caro que p1, romper ciclo j (lista ordenada, el resto será aún más caro)
+                if (p2.price > p1.price * 1.15) {
+                    break;
+                }
 
-                    if (ignoredPairs.includes([p1.idStr, p2.idStr].sort().join('|'))) continue;
+                if (ignoredPairs.includes([p1.idStr, p2.idStr].sort().join('|'))) continue;
 
-                    const words1 = p1.words;
-                    const words2 = p2.words;
-                    if (words1.length === 0 || words2.length === 0) continue;
+                const words1 = p1.words;
+                const words2 = p2.words;
+                if (words1.length === 0 || words2.length === 0) continue;
 
-                    const str1 = [...words1].sort().join(" ");
-                    const str2 = [...words2].sort().join(" ");
+                const str1 = words1.map(w => w.raw).sort().join(" ");
+                const str2 = words2.map(w => w.raw).sort().join(" ");
 
-                    if (str1 === str2) {
-                        candidates.push({ p1, p2, reason: 'Nombres similares' });
-                        continue;
-                    }
+                if (str1 === str2) {
+                    candidates.push({ p1, p2, reason: 'Nombres similares' });
+                    continue;
+                }
 
-                    const isW1Shorter = words1.length < words2.length;
-                    const shorter = isW1Shorter ? words1 : words2;
-                    const longer = isW1Shorter ? words2 : words1;
+                const isW1Shorter = words1.length < words2.length;
+                const shorter = isW1Shorter ? words1 : words2;
+                const longer = isW1Shorter ? words2 : words1;
 
-                    if (checkFuzzyInclude(shorter, longer)) {
-                        candidates.push({ p1, p2, reason: shorter.length === longer.length ? 'Error Ortográfico Mínimo' : 'Palabras incluidas' });
-                        continue;
-                    }
-
-                    if (str1.startsWith(str2 + " ") || str2.startsWith(str1 + " ")) {
-                        candidates.push({ p1, p2, reason: 'Sufijo/Prefijo' });
-                    }
+                if (checkFuzzyInclude(shorter, longer)) {
+                    candidates.push({ p1, p2, reason: shorter.length === longer.length ? 'Variación Ortográfica/Fonética' : 'Palabras incluidas' });
+                    continue;
                 }
             }
         }
