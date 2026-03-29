@@ -89,15 +89,10 @@ export function useProductosDuplicados() {
     const duplicados = useMemo(() => {
         if (!productos || productos.length === 0) return [];
         
-        // Función ultra básica para quitar plurales en español (terminaciones S y ES en palabras largas)
+        // 1. Omitir caracteres especiales y transformar en array de palabras curadas
         const stemWord = (word) => {
             if (word.length > 3 && word.endsWith('S')) {
-                if (word.endsWith('ES') && !word.endsWith('RES') && !word.endsWith('TES')) {
-                     // Excepciones rápidas: alfajores, chocolates, pero cuidado con 'TRES', etc.
-                     // Mejoramos un poco:
-                     return word.slice(0, -2);
-                }
-                // Si solo termina en S (ej: CARAMELOS, PAPAS, GOMITAS)
+                if (word.endsWith('ES') && !word.endsWith('RES') && !word.endsWith('TES')) return word.slice(0, -2);
                 return word.slice(0, -1);
             }
             return word;
@@ -105,63 +100,110 @@ export function useProductosDuplicados() {
 
         const getWords = (name) => {
             if (!name) return [];
-            return String(name).toUpperCase()
-                .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "")
-                .trim()
-                .split(/\s+/)
-                .filter(Boolean)
+            const stopwords = new Set(['DE', 'LA', 'EL', 'LOS', 'LAS', 'CON', 'SIN', 'SABOR', 'UN', 'UNA', 'Y', 'O', 'PARA', 'AL', 'DEL']);
+            
+            // Reemplazar unidades y limpiar caracteres
+            let cleaned = String(name).toUpperCase()
+                .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, " ")
+                .replace(/(\d+)\s*(LTS|LT)\b/g, "$1L")
+                .replace(/(\d+)\s*(CM3|CC)\b/g, "$1ML")
+                .replace(/(\d+)\s*(GRS|GR|GRAMOS)\b/g, "$1G")
+                .replace(/\b1000\s*ML\b/g, "1L")
+                .replace(/\b1000\s*G\b/g, "1KG")
+                .trim();
+
+            return cleaned.split(/\s+/)
+                .filter(w => w.length > 0 && !stopwords.has(w))
                 .map(stemWord);
         };
 
+        // Algoritmo de Distancia de Levenshtein
+        const levenshtein = (a, b) => {
+            if (a.length === 0) return b.length;
+            if (b.length === 0) return a.length;
+            let matrix = Array(b.length + 1).fill(null).map(() => Array(a.length + 1).fill(null));
+            for (let i = 0; i <= a.length; i++) matrix[0][i] = i;
+            for (let j = 0; j <= b.length; j++) matrix[j][0] = j;
+            for (let j = 1; j <= b.length; j++) {
+                for (let i = 1; i <= a.length; i++) {
+                    const indicator = a[i - 1] === b[j - 1] ? 0 : 1;
+                    matrix[j][i] = Math.min(
+                        matrix[j][i - 1] + 1, // insertion
+                        matrix[j - 1][i] + 1, // deletion
+                        matrix[j - 1][i - 1] + indicator // substitution
+                    );
+                }
+            }
+            return matrix[b.length][a.length];
+        };
+
+        const isFuzzyMatch = (w1, w2) => {
+            if (w1 === w2) return true;
+            if (Math.abs(w1.length - w2.length) > 2) return false;
+            // Solo aplicar typos en palabras grandes para evitar falsos positivos
+            if (w1.length > 4 && w2.length > 4) {
+                const threshold = Math.max(w1.length, w2.length) > 7 ? 2 : 1;
+                return levenshtein(w1, w2) <= threshold;
+            }
+            return false;
+        };
+
+        const checkFuzzyInclude = (shorter, longer) => {
+            return shorter.every(w1 => longer.some(w2 => isFuzzyMatch(w1, w2)));
+        };
+
+        // 2. Agrupar productos por precio para optimizar CPU
+        const productsByPrice = new Map();
+        for (const p of productos) {
+            const price = parseFloat(p.ultimo_precio_venta || p.precio_venta || 0);
+            if (isNaN(price)) continue;
+            
+            const id = String(p.producto_id || p.id);
+            if (!productsByPrice.has(price)) productsByPrice.set(price, []);
+            productsByPrice.get(price).push({ 
+                ...p, 
+                words: getWords(p.nombre || ''),
+                idStr: id
+            });
+        }
+
         const candidates = [];
         
-        for (let i = 0; i < productos.length; i++) {
-            for (let j = i + 1; j < productos.length; j++) {
-                const p1 = productos[i];
-                const p2 = productos[j];
+        // 3. Cruzar solo productos del mismo balde de precio
+        for (const [price, bucketList] of productsByPrice.entries()) {
+            if (bucketList.length < 2) continue;
 
-                // Ver si ya fue descartado por el usuario
-                const id1 = String(p1.producto_id || p1.id);
-                const id2 = String(p2.producto_id || p2.id);
-                if (ignoredPairs.includes([id1, id2].sort().join('|'))) continue;
+            for (let i = 0; i < bucketList.length; i++) {
+                for (let j = i + 1; j < bucketList.length; j++) {
+                    const p1 = bucketList[i];
+                    const p2 = bucketList[j];
 
-                // REGLA 1: Solo comparar si tienen el mismo precio (asumiendo numerico)
-                const precio1 = parseFloat(p1.ultimo_precio_venta || p1.precio_venta);
-                const precio2 = parseFloat(p2.ultimo_precio_venta || p2.precio_venta);
-                if (isNaN(precio1) || isNaN(precio2) || precio1 !== precio2) continue;
+                    if (ignoredPairs.includes([p1.idStr, p2.idStr].sort().join('|'))) continue;
 
-                const nombre1 = p1.nombre || '';
-                const nombre2 = p2.nombre || '';
-                
-                const words1 = getWords(nombre1);
-                const words2 = getWords(nombre2);
-                
-                if (words1.length === 0 || words2.length === 0) continue;
+                    const words1 = p1.words;
+                    const words2 = p2.words;
+                    if (words1.length === 0 || words2.length === 0) continue;
 
-                const str1 = [...words1].sort().join(" ");
-                const str2 = [...words2].sort().join(" ");
+                    const str1 = [...words1].sort().join(" ");
+                    const str2 = [...words2].sort().join(" ");
 
-                // REGLA 2: Son exactamente lo mismo normalizados
-                if (str1 === str2) {
-                    candidates.push({ p1, p2, reason: 'Nombres similares' });
-                    continue;
-                }
+                    if (str1 === str2) {
+                        candidates.push({ p1, p2, reason: 'Nombres similares' });
+                        continue;
+                    }
 
-                // REGLA 3: Todas las palabras de uno (el más corto) están en el otro (el más largo)
-                const isW1Shorter = words1.length < words2.length;
-                const shorter = isW1Shorter ? words1 : words2;
-                const longer = isW1Shorter ? words2 : words1;
+                    const isW1Shorter = words1.length < words2.length;
+                    const shorter = isW1Shorter ? words1 : words2;
+                    const longer = isW1Shorter ? words2 : words1;
 
-                // Chequeamos si cada palabra del producto más corto existe en el más largo
-                const containsAllWords = shorter.every(w => longer.includes(w));
-                if (containsAllWords) {
-                    candidates.push({ p1, p2, reason: 'Palabras incluidas' });
-                    continue;
-                }
+                    if (checkFuzzyInclude(shorter, longer)) {
+                        candidates.push({ p1, p2, reason: shorter.length === longer.length ? 'Error Ortográfico Mínimo' : 'Palabras incluidas' });
+                        continue;
+                    }
 
-                // REGLA 4: Sufijos y Prefijos clásicos (como respaldo)
-                if (str1.startsWith(str2 + " ") || str2.startsWith(str1 + " ")) {
-                    candidates.push({ p1, p2, reason: 'Sufijo/Prefijo' });
+                    if (str1.startsWith(str2 + " ") || str2.startsWith(str1 + " ")) {
+                        candidates.push({ p1, p2, reason: 'Sufijo/Prefijo' });
+                    }
                 }
             }
         }
