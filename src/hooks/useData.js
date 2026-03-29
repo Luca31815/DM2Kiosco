@@ -125,9 +125,10 @@ export function useProductosDuplicados() {
                 .replace(/\bGFA\b/g, "GARRAFA")
                 // Reemplazar unidades y limpiar caracteres
                 .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, " ")
-                .replace(/(\d+)\s*(LTS|LT)\b/g, "$1L")
-                .replace(/(\d+)\s*(CM3|CC)\b/g, "$1ML")
-                .replace(/(\d+)\s*(GRS|GR|GRAMOS)\b/g, "$1G")
+                .replace(/(\d+)\s*(LTS|LT|L)\b/g, "$1L")
+                .replace(/(\d+)\s*(CM3|CC|ML)\b/g, "$1ML")
+                .replace(/(\d+)\s*(GRS|GR|GRAMOS|G)\b/g, "$1G")
+                .replace(/(\d+)\s*(KILOS|KG|K)\b/g, "$1KG")
                 .trim();
 
             return cleaned.split(/\s+/)

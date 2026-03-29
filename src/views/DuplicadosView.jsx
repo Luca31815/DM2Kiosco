@@ -93,8 +93,8 @@ ${catalogList}`;
             }
 
         } catch (error) {
-            console.error(error);
-            toast.error('Error al conectarse a la API de IA.', { id: loadingToast });
+            console.error("Detalle completo del error IA:", error);
+            toast.error(`Fallo IA: ${error.message}`, { id: loadingToast, duration: 8000 });
         } finally {
             setIsAiScanning(false);
         }
