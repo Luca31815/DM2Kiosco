@@ -26,7 +26,7 @@ import {
     Area
 } from 'recharts'
 import { motion } from 'framer-motion'
-import { useReporte, useReservas, useProductos, useUnifiedFeed, usePredictiveStock } from '../hooks/useData'
+import { useReporte, useReservas, useProductos, useUnifiedFeed, usePredictiveStock, useProductosDuplicados } from '../hooks/useData'
 
 const StatCard = ({ title, value, icon: Icon, trend, trendValue, color, index }) => (
     <motion.div
@@ -99,6 +99,7 @@ const HomeView = () => {
     const { data: productos, loading: loadingProductos } = useProductos({ pageSize: 5, sortColumn: 'stock_actual', sortOrder: 'asc' })
     const { data: unifiedFeed, loading: loadingFeed } = useUnifiedFeed(10)
     const { data: topAgotados, loading: loadingPred } = usePredictiveStock({ pageSize: 3, sortColumn: 'dias_restantes', sortOrder: 'asc' })
+    const { data: duplicados, loading: loadingDuplicados } = useProductosDuplicados()
 
     // Calcular KPIs
     const stats = useMemo(() => {
@@ -288,6 +289,52 @@ const HomeView = () => {
                 </motion.div>
 
                 <div className="space-y-8">
+                    {/* Alertas de Catálogo (Duplicados) */}
+                    <motion.div variants={itemVariants} className="glass-panel p-6 rounded-2xl border border-red-500/10 relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none" />
+                        <div className="flex items-center justify-between mb-6 relative z-10">
+                            <h3 className="text-lg font-black text-white tracking-tight">Cruce de Catálogo</h3>
+                            <BrainCircuit className="h-5 w-5 text-red-400" />
+                        </div>
+                        <div className="space-y-4 relative z-10">
+                            {loadingDuplicados ? (
+                                <div className="py-8 text-center text-slate-500 animate-pulse text-sm font-semibold">Analizando similitudes...</div>
+                            ) : duplicados.length === 0 ? (
+                                <div className="py-8 flex flex-col items-center justify-center text-center">
+                                    <div className="h-10 w-10 rounded-full bg-emerald-500/10 flex items-center justify-center mb-3">
+                                        <div className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.5)]"></div>
+                                    </div>
+                                    <span className="text-sm font-bold text-slate-300">Catálogo Optimizado</span>
+                                    <span className="text-[10px] uppercase font-black tracking-widest text-slate-500 mt-1">Sin productos duplicados</span>
+                                </div>
+                            ) : (
+                                duplicados.slice(0, 3).map((d, i) => (
+                                    <div key={i} className="p-3 rounded-xl bg-red-500/5 hover:bg-red-500/10 border border-transparent hover:border-red-500/20 transition-all group cursor-pointer" onClick={() => navigate('/productos')}>
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <AlertCircle className="h-3 w-3 text-red-500 drop-shadow-[0_0_5px_rgba(239,68,68,0.5)]" />
+                                            <span className="text-[10px] font-black uppercase tracking-widest text-red-400 shadow-none">{d.reason}</span>
+                                        </div>
+                                        <div className="flex flex-col gap-1.5 pl-5">
+                                            <div className="flex items-center gap-2">
+                                                <div className="h-1 w-1 rounded-full bg-slate-500 shrink-0" />
+                                                <span className="text-[11px] font-bold text-slate-300 truncate" title={d.p1.nombre}>{d.p1.nombre}</span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <div className="h-1 w-1 rounded-full bg-slate-500 shrink-0" />
+                                                <span className="text-[11px] font-bold text-slate-300 truncate" title={d.p2.nombre}>{d.p2.nombre}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                        {duplicados.length > 3 && (
+                            <button onClick={() => navigate('/productos')} className="w-full mt-4 py-2 text-[10px] font-black uppercase tracking-widest text-red-400 hover:text-red-300 transition-colors cursor-pointer bg-red-500/5 hover:bg-red-500/10 rounded-lg relative z-10 border border-transparent hover:border-red-500/20">
+                                Explorar {duplicados.length} incidencias
+                            </button>
+                        )}
+                    </motion.div>
+
                     {/* Reservas Pendientes */}
                     <motion.div variants={itemVariants} className="glass-panel p-6 rounded-2xl">
                         <div className="flex items-center justify-between mb-6">

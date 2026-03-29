@@ -63,6 +63,87 @@ export function useProductos(options = {}) {
     }
 }
 
+export function useProductosDuplicados() {
+    const { data: productos, loading, error } = useProductos({ pageSize: 3000, select: 'producto_id,nombre,ultimo_precio_venta' });
+
+    const duplicados = useMemo(() => {
+        if (!productos || productos.length === 0) return [];
+        
+        // Función ultra básica para quitar plurales en español (terminaciones S y ES en palabras largas)
+        const stemWord = (word) => {
+            if (word.length > 3 && word.endsWith('S')) {
+                if (word.endsWith('ES') && !word.endsWith('RES') && !word.endsWith('TES')) {
+                     // Excepciones rápidas: alfajores, chocolates, pero cuidado con 'TRES', etc.
+                     // Mejoramos un poco:
+                     return word.slice(0, -2);
+                }
+                // Si solo termina en S (ej: CARAMELOS, PAPAS, GOMITAS)
+                return word.slice(0, -1);
+            }
+            return word;
+        };
+
+        const getWords = (name) => {
+            if (!name) return [];
+            return String(name).toUpperCase()
+                .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "")
+                .trim()
+                .split(/\s+/)
+                .filter(Boolean)
+                .map(stemWord);
+        };
+
+        const candidates = [];
+        
+        for (let i = 0; i < productos.length; i++) {
+            for (let j = i + 1; j < productos.length; j++) {
+                const p1 = productos[i];
+                const p2 = productos[j];
+
+                // REGLA 1: Solo comparar si tienen el mismo precio (asumiendo numerico)
+                const precio1 = parseFloat(p1.ultimo_precio_venta);
+                const precio2 = parseFloat(p2.ultimo_precio_venta);
+                if (isNaN(precio1) || isNaN(precio2) || precio1 !== precio2) continue;
+
+                const words1 = getWords(p1.nombre);
+                const words2 = getWords(p2.nombre);
+                
+                if (words1.length === 0 || words2.length === 0) continue;
+
+                const str1 = [...words1].sort().join(" ");
+                const str2 = [...words2].sort().join(" ");
+
+                // REGLA 2: Son exactamente lo mismo normalizados
+                if (str1 === str2) {
+                    candidates.push({ p1, p2, reason: 'Nombres similares' });
+                    continue;
+                }
+
+                // REGLA 3: Todas las palabras de uno (el más corto) están en el otro (el más largo)
+                const isW1Shorter = words1.length < words2.length;
+                const shorter = isW1Shorter ? words1 : words2;
+                const longer = isW1Shorter ? words2 : words1;
+
+                // Chequeamos si cada palabra del producto más corto existe en el más largo
+                const containsAllWords = shorter.every(w => longer.includes(w));
+                if (containsAllWords) {
+                    candidates.push({ p1, p2, reason: 'Palabras incluidas' });
+                    continue;
+                }
+
+                // REGLA 4: Sufijos y Prefijos clásicos (como respaldo)
+                if (str1.startsWith(str2 + " ") || str2.startsWith(str1 + " ")) {
+                    candidates.push({ p1, p2, reason: 'Sufijo/Prefijo' });
+                }
+            }
+        }
+        
+        return candidates;
+    }, [productos]);
+
+    return { data: duplicados, loading, error, count: duplicados.length };
+}
+
 export function useCompras(options = {}) {
     const { isDemoMode } = useAuth()
     const { data, error, isLoading } = useSWR(
