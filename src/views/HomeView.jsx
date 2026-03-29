@@ -309,7 +309,7 @@ const HomeView = () => {
                                 </div>
                             ) : (
                                 duplicados.slice(0, 3).map((d, i) => (
-                                    <div key={i} className="p-3 rounded-xl bg-red-500/5 hover:bg-red-500/10 border border-transparent hover:border-red-500/20 transition-all group cursor-pointer" onClick={() => navigate('/productos')}>
+                                    <div key={i} className="p-3 rounded-xl bg-red-500/5 hover:bg-red-500/10 border border-transparent hover:border-red-500/20 transition-all group cursor-pointer" onClick={() => navigate('/duplicados')}>
                                         <div className="flex items-center gap-2 mb-2">
                                             <AlertCircle className="h-3 w-3 text-red-500 drop-shadow-[0_0_5px_rgba(239,68,68,0.5)]" />
                                             <span className="text-[10px] font-black uppercase tracking-widest text-red-400 shadow-none">{d.reason}</span>
@@ -329,7 +329,7 @@ const HomeView = () => {
                             )}
                         </div>
                         {duplicados.length > 3 && (
-                            <button onClick={() => navigate('/productos')} className="w-full mt-4 py-2 text-[10px] font-black uppercase tracking-widest text-red-400 hover:text-red-300 transition-colors cursor-pointer bg-red-500/5 hover:bg-red-500/10 rounded-lg relative z-10 border border-transparent hover:border-red-500/20">
+                            <button onClick={() => navigate('/duplicados')} className="w-full mt-4 py-2 text-[10px] font-black uppercase tracking-widest text-red-400 hover:text-red-300 transition-colors cursor-pointer bg-red-500/5 hover:bg-red-500/10 rounded-lg relative z-10 border border-transparent hover:border-red-500/20">
                                 Explorar {duplicados.length} incidencias
                             </button>
                         )}

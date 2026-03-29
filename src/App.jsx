@@ -15,6 +15,7 @@ import RetirosView from './views/RetirosView'
 
 import RentabilidadProductosView from './views/RentabilidadProductosView'
 import AnalisisHorariosView from './views/AnalisisHorariosView'
+import DuplicadosView from './views/DuplicadosView'
 
 function App() {
   return (
@@ -33,6 +34,7 @@ function App() {
           <Route path="/historial" element={<HistorialView />} />
           <Route path="/sistema" element={<SystemView />} />
           <Route path="/retiros" element={<RetirosView />} />
+          <Route path="/duplicados" element={<DuplicadosView />} />
         </Routes>
       </Layout>
       <SpeedInsights />
