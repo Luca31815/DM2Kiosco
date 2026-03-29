@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import React, { useMemo, useState } from 'react'
 import useSWR from 'swr'
 import * as api from '../services/api'
 import { useAuth } from '../context/AuthContext'
@@ -66,7 +66,25 @@ export function useProductos(options = {}) {
 export function useProductosDuplicados() {
     const { data: productos, loading, error } = useProductos({ page: 1, pageSize: 3000, select: 'producto_id,nombre,ultimo_precio_venta' });
 
-    console.log('useProductosDuplicados fetch result:', { count: productos?.length, loading });
+    const [ignoredPairs, setIgnoredPairs] = useState(() => {
+        try {
+            const saved = localStorage.getItem('ignoredDuplicates');
+            return saved ? JSON.parse(saved) : [];
+        } catch (e) {
+            return [];
+        }
+    });
+
+    const ignoreDuplicate = (id1, id2) => {
+        if (!id1 || !id2) return;
+        const pair = [String(id1), String(id2)].sort().join('|');
+        setIgnoredPairs(prev => {
+            if (prev.includes(pair)) return prev;
+            const next = [...prev, pair];
+            localStorage.setItem('ignoredDuplicates', JSON.stringify(next));
+            return next;
+        });
+    };
 
     const duplicados = useMemo(() => {
         if (!productos || productos.length === 0) return [];
@@ -101,6 +119,11 @@ export function useProductosDuplicados() {
             for (let j = i + 1; j < productos.length; j++) {
                 const p1 = productos[i];
                 const p2 = productos[j];
+
+                // Ver si ya fue descartado por el usuario
+                const id1 = String(p1.producto_id || p1.id);
+                const id2 = String(p2.producto_id || p2.id);
+                if (ignoredPairs.includes([id1, id2].sort().join('|'))) continue;
 
                 // REGLA 1: Solo comparar si tienen el mismo precio (asumiendo numerico)
                 const precio1 = parseFloat(p1.ultimo_precio_venta || p1.precio_venta);
@@ -144,9 +167,9 @@ export function useProductosDuplicados() {
         }
         
         return candidates;
-    }, [productos]);
+    }, [productos, ignoredPairs]);
 
-    return { data: duplicados, loading, error, count: duplicados.length };
+    return { data: duplicados, loading, error, count: duplicados.length, ignoreDuplicate };
 }
 
 export function useCompras(options = {}) {

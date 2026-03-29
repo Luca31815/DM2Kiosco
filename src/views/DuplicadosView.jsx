@@ -1,12 +1,12 @@
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
-import { AlertCircle, ArrowRight, Package, Tag, ArrowUpRight, Search } from 'lucide-react'
+import { AlertCircle, ArrowRight, Package, Tag, ArrowUpRight, Search, EyeOff } from 'lucide-react'
 import { useProductosDuplicados } from '../hooks/useData'
 
 const DuplicadosView = () => {
     const navigate = useNavigate()
-    const { data: duplicados, loading } = useProductosDuplicados()
+    const { data: duplicados, loading, ignoreDuplicate } = useProductosDuplicados()
     const [searchTerm, setSearchTerm] = useState('')
 
     const filteredDuplicados = duplicados.filter(d => {
@@ -122,10 +122,17 @@ const DuplicadosView = () => {
                                 </div>
 
                                 {/* Acciones */}
-                                <div className="flex flex-col gap-2 shrink-0 w-full md:w-auto self-stretch md:self-auto justify-end">
+                                <div className="flex flex-col md:flex-row gap-2 shrink-0 w-full md:w-auto self-stretch md:self-auto justify-end">
+                                    <button 
+                                        onClick={() => ignoreDuplicate(d.p1.producto_id || d.p1.id, d.p2.producto_id || d.p2.id)}
+                                        className="w-full md:w-auto flex justify-center items-center gap-2 px-4 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-bold transition-transform active:scale-95 border border-white/5"
+                                        title="Ocultar esta alerta permanentemente"
+                                    >
+                                        Ignorar <EyeOff className="h-4 w-4" />
+                                    </button>
                                     <button 
                                         onClick={() => navigate('/productos', { state: { search: d.p1.nombre } })}
-                                        className="w-full flex justify-center items-center gap-2 px-5 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold transition-transform active:scale-95 shadow-lg shadow-blue-500/20"
+                                        className="w-full md:w-auto flex justify-center items-center gap-2 px-5 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold transition-transform active:scale-95 shadow-lg shadow-blue-500/20"
                                     >
                                         Ir al Catálogo <ArrowUpRight className="h-4 w-4" />
                                     </button>
