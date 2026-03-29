@@ -9,10 +9,12 @@ const DuplicadosView = () => {
     const { data: duplicados, loading } = useProductosDuplicados()
     const [searchTerm, setSearchTerm] = useState('')
 
-    const filteredDuplicados = duplicados.filter(d => 
-        d.p1.nombre.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        d.p2.nombre.toLowerCase().includes(searchTerm.toLowerCase())
-    )
+    const filteredDuplicados = duplicados.filter(d => {
+        const name1 = d.p1?.nombre || '';
+        const name2 = d.p2?.nombre || '';
+        return name1.toLowerCase().includes(searchTerm.toLowerCase()) || 
+               name2.toLowerCase().includes(searchTerm.toLowerCase())
+    })
 
     const containerVariants = {
         hidden: { opacity: 0 },
@@ -98,7 +100,7 @@ const DuplicadosView = () => {
                                                     </div>
                                                     <span className="text-[10px] uppercase font-black tracking-widest text-slate-500">Producto A</span>
                                                 </div>
-                                                <span className="text-[10px] font-black tabular-nums text-slate-500">ID: {d.p1.producto_id.split('-')[0]}</span>
+                                                <span className="text-[10px] font-black tabular-nums text-slate-500">ID: {String(d.p1.producto_id || d.p1.id || '').split('-')[0]}</span>
                                             </div>
                                             <p className="text-lg font-bold text-white leading-tight">{d.p1.nombre}</p>
                                         </div>
@@ -112,7 +114,7 @@ const DuplicadosView = () => {
                                                     </div>
                                                     <span className="text-[10px] uppercase font-black tracking-widest text-slate-500">Producto B</span>
                                                 </div>
-                                                <span className="text-[10px] font-black tabular-nums text-slate-500">ID: {d.p2.producto_id.split('-')[0]}</span>
+                                                <span className="text-[10px] font-black tabular-nums text-slate-500">ID: {String(d.p2.producto_id || d.p2.id || '').split('-')[0]}</span>
                                             </div>
                                             <p className="text-lg font-bold text-slate-300 leading-tight">{d.p2.nombre}</p>
                                         </div>

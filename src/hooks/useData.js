@@ -64,7 +64,9 @@ export function useProductos(options = {}) {
 }
 
 export function useProductosDuplicados() {
-    const { data: productos, loading, error } = useProductos({ pageSize: 3000, select: 'producto_id,nombre,ultimo_precio_venta' });
+    const { data: productos, loading, error } = useProductos({ page: 1, pageSize: 3000, select: 'producto_id,nombre,ultimo_precio_venta' });
+
+    console.log('useProductosDuplicados fetch result:', { count: productos?.length, loading });
 
     const duplicados = useMemo(() => {
         if (!productos || productos.length === 0) return [];
@@ -101,12 +103,15 @@ export function useProductosDuplicados() {
                 const p2 = productos[j];
 
                 // REGLA 1: Solo comparar si tienen el mismo precio (asumiendo numerico)
-                const precio1 = parseFloat(p1.ultimo_precio_venta);
-                const precio2 = parseFloat(p2.ultimo_precio_venta);
+                const precio1 = parseFloat(p1.ultimo_precio_venta || p1.precio_venta);
+                const precio2 = parseFloat(p2.ultimo_precio_venta || p2.precio_venta);
                 if (isNaN(precio1) || isNaN(precio2) || precio1 !== precio2) continue;
 
-                const words1 = getWords(p1.nombre);
-                const words2 = getWords(p2.nombre);
+                const nombre1 = p1.nombre || '';
+                const nombre2 = p2.nombre || '';
+                
+                const words1 = getWords(nombre1);
+                const words2 = getWords(nombre2);
                 
                 if (words1.length === 0 || words2.length === 0) continue;
 
