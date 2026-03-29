@@ -1,13 +1,52 @@
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
-import { AlertCircle, ArrowRight, Package, Tag, ArrowUpRight, Search, EyeOff } from 'lucide-react'
+import { AlertCircle, ArrowRight, Package, Tag, ArrowUpRight, Search, EyeOff, CheckCircle2, Loader2 } from 'lucide-react'
+import { useSWRConfig } from 'swr'
+import { toast } from 'react-hot-toast'
+import * as api from '../services/api'
 import { useProductosDuplicados } from '../hooks/useData'
 
 const DuplicadosView = () => {
     const navigate = useNavigate()
+    const { mutate } = useSWRConfig()
     const { data: duplicados, loading, ignoreDuplicate } = useProductosDuplicados()
     const [searchTerm, setSearchTerm] = useState('')
+    const [mergingId, setMergingId] = useState(null)
+
+    const handleMerge = async (keepProduct, deleteProduct) => {
+        if (!confirm(`¿Estás seguro de que deseas conservar "${keepProduct.nombre}" y ELIMINAR/ABSORBER el producto duplicado? Esta acción transferirá histórico de ventas y unificará stock, es IRREVERSIBLE.`)) {
+            return;
+        }
+
+        const dataToSend = {
+            producto_id: deleteProduct.producto_id || deleteProduct.id,
+            nombre: keepProduct.nombre?.trim().toUpperCase(),
+            ultimo_precio_venta: parseFloat(keepProduct.ultimo_precio_venta || deleteProduct.ultimo_precio_venta || 0),
+            ultimo_costo_compra: parseFloat(keepProduct.ultimo_costo_compra || deleteProduct.ultimo_costo_compra || 0),
+            stock_actual: parseInt(deleteProduct.stock_actual || 0)
+        }
+
+        const loadingToast = toast.loading(`Fusionando con "${keepProduct.nombre}"...`)
+        setMergingId(deleteProduct.producto_id || deleteProduct.id)
+        
+        try {
+            const result = await api.actualizarProducto(dataToSend)
+            if (result.success) {
+                toast.success('¡Unificación exitosa! El catálogo se ha limpiado.', { id: loadingToast, duration: 4000 })
+                mutate(key => Array.isArray(key) && key[0] === 'productos')
+                mutate('ventas')
+                mutate('compras')
+                mutate('reservas')
+            } else {
+                toast.error('Error: ' + result.error, { id: loadingToast })
+            }
+        } catch (error) {
+            toast.error('Error de red: ' + (error.message || 'Desconocido'), { id: loadingToast })
+        } finally {
+            setMergingId(null)
+        }
+    }
 
     const filteredDuplicados = duplicados.filter(d => {
         const name1 = d.p1?.nombre || '';
@@ -100,9 +139,16 @@ const DuplicadosView = () => {
                                                     </div>
                                                     <span className="text-[10px] uppercase font-black tracking-widest text-slate-500">Producto A</span>
                                                 </div>
-                                                <span className="text-[10px] font-black tabular-nums text-slate-500">ID: {String(d.p1.producto_id || d.p1.id || '').split('-')[0]}</span>
+                                                <button 
+                                                    onClick={() => handleMerge(d.p1, d.p2)}
+                                                    disabled={mergingId !== null}
+                                                    className="px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 text-[10px] font-black uppercase tracking-widest transition-colors flex items-center gap-1.5 border border-emerald-500/20"
+                                                >
+                                                    {mergingId === (d.p2.producto_id || d.p2.id) ? <Loader2 className="h-3 w-3 animate-spin"/> : <CheckCircle2 className="h-3 w-3"/>} Conservar A
+                                                </button>
                                             </div>
-                                            <p className="text-lg font-bold text-white leading-tight">{d.p1.nombre}</p>
+                                            <p className="text-lg font-bold text-white leading-tight mt-2">{d.p1.nombre}</p>
+                                            <span className="text-[10px] font-black tabular-nums text-slate-500 mt-1 block">ID: {String(d.p1.producto_id || d.p1.id || '').split('-')[0]} | Stock: {d.p1.stock_actual || 0}</span>
                                         </div>
 
                                         {/* Producto 2 */}
@@ -114,9 +160,16 @@ const DuplicadosView = () => {
                                                     </div>
                                                     <span className="text-[10px] uppercase font-black tracking-widest text-slate-500">Producto B</span>
                                                 </div>
-                                                <span className="text-[10px] font-black tabular-nums text-slate-500">ID: {String(d.p2.producto_id || d.p2.id || '').split('-')[0]}</span>
+                                                <button 
+                                                    onClick={() => handleMerge(d.p2, d.p1)}
+                                                    disabled={mergingId !== null}
+                                                    className="px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 text-[10px] font-black uppercase tracking-widest transition-colors flex items-center gap-1.5 border border-emerald-500/20"
+                                                >
+                                                    {mergingId === (d.p1.producto_id || d.p1.id) ? <Loader2 className="h-3 w-3 animate-spin"/> : <CheckCircle2 className="h-3 w-3"/>} Conservar B
+                                                </button>
                                             </div>
-                                            <p className="text-lg font-bold text-slate-300 leading-tight">{d.p2.nombre}</p>
+                                            <p className="text-lg font-bold text-slate-300 leading-tight mt-2">{d.p2.nombre}</p>
+                                            <span className="text-[10px] font-black tabular-nums text-slate-500 mt-1 block">ID: {String(d.p2.producto_id || d.p2.id || '').split('-')[0]} | Stock: {d.p2.stock_actual || 0}</span>
                                         </div>
                                     </div>
                                 </div>

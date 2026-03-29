@@ -64,7 +64,7 @@ export function useProductos(options = {}) {
 }
 
 export function useProductosDuplicados() {
-    const { data: productos, loading, error } = useProductos({ page: 1, pageSize: 3000, select: 'producto_id,nombre,ultimo_precio_venta' });
+    const { data: productos, loading, error } = useProductos({ page: 1, pageSize: 3000, select: 'producto_id,nombre,ultimo_precio_venta,stock_actual,ultimo_costo_compra' });
 
     const [ignoredPairs, setIgnoredPairs] = useState(() => {
         try {
