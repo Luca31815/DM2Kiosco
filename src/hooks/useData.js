@@ -176,16 +176,22 @@ export function useProductosDuplicados() {
 
         const candidates = [];
         
-        // Transformar todos los productos en objetos curados
         const parsedProducts = [];
         for (const p of productos) {
-            const price = parseFloat(p.ultimo_precio_venta || p.precio_venta || 0);
+            // Removimos el || 0. Si un producto no tiene precio asignado, no lo comparamos 
+            // para evitar que 2000 productos sin precio colisionen en el O(n^2) y tilden la memoria de la pestaña.
+            const price = parseFloat(p.ultimo_precio_venta || p.precio_venta);
             if (isNaN(price)) continue;
+            
+            const wordsMatch = getWords(p.nombre || '');
+            const rawStr = wordsMatch.map(w => w.raw).sort().join(" ");
+
             parsedProducts.push({
                 ...p,
                 price: price,
                 idStr: String(p.producto_id || p.id),
-                words: getWords(p.nombre || '')
+                words: wordsMatch,
+                str: rawStr
             });
         }
 
@@ -210,10 +216,7 @@ export function useProductosDuplicados() {
                 const words2 = p2.words;
                 if (words1.length === 0 || words2.length === 0) continue;
 
-                const str1 = words1.map(w => w.raw).sort().join(" ");
-                const str2 = words2.map(w => w.raw).sort().join(" ");
-
-                if (str1 === str2) {
+                if (p1.str === p2.str) {
                     candidates.push({ p1, p2, reason: 'Nombres similares' });
                     continue;
                 }
