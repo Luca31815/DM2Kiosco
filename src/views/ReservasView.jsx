@@ -44,6 +44,7 @@ const ExpandedRow = ({ row }) => {
             await api.corregirOperacion({
                 id_final: row.reserva_id,
                 items: [{
+                    id: originalDetail.id,
                     producto: originalDetail.producto,
                     nuevo_nombre: editForm.producto,
                     nueva_cantidad: editForm.cantidad,
