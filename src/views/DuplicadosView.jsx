@@ -30,18 +30,34 @@ const DuplicadosView = () => {
         const loadingToast = toast.loading('Analizando el catálogo completo con la Inteligencia Artificial (Groq Llama-3.3)...');
         
         try {
-            // Preparamos los datos
-            const catalogList = allProducts.map(p => `ID: ${p.producto_id || p.id} | Nombre: ${p.nombre} | Precio: ${p.ultimo_precio_venta || p.precio_venta}`).join('\n');
-            const prompt = `Actúa como un analista de inventario avanzado. Abajo tienes un catálogo completo de un kiosco. 
-Encuentra productos que sean evidentemente el mismo ítem y que no hayan sido agrupados, permitiendo diferencias semánticas como ("Gaseosa Cola" y "Coca Cola", o "Marlboro Rojo" y "Phillips Morris", etc). 
-IMPORTANTE: Devuelve ÚNICAMENTE un objeto JSON válido con la propiedad "duplicates" que contenga un array de tus descubrimientos. Usa este formato exacto:
+            // Preparamos los datos en formato ultra-condensado para la IA
+            const catalogList = allProducts.map(p => `[${p.producto_id || p.id}] ${p.nombre} ($${p.ultimo_precio_venta || p.precio_venta})`).join('\n');
+            const prompt = `Actúa como un experto en inventario de Kioscos Argentinos y Analista de Datos.
+Tu misión es encontrar productos DUPLICADOS en el catálogo para ser fusionados.
+
+REGLAS DE ORO PARA ENCONTRAR DUPLICADOS:
+1. UNIDADES: 1L = 1000ML = 1000CC = 1000CM3. 1KG = 1000G = 1000GRS. 10u = 12u (en paquetes).
+2. CIGARRILLOS: 
+   - "Mentolado" = "Convertible" = "On" son SINÓNIMOS (Mismo producto).
+   - "Box" y "Común" (o Soft) son DIFERENTES (No fusionar).
+   - "Origen" y "Original" son DIFERENTES (No fusionar).
+3. ALFAJORES:
+   - "Simple" vs "Triple" son DIFERENTES (No fusionar).
+   - "Chocolate" vs "Negro" son IGUALES (Se pueden fusionar).
+4. PRECIO COMO FILTRO: Si los nombres son similares pero el precio difiere en más de un 40%, PROBABLEMENTE NO son el mismo producto (pueden ser tamaños distintos omitidos en el nombre). NO los marques si el precio es muy distinto.
+5. GOLOSINAS/CARAMELOS: Diferenciar estrictamente por sabor (Menta, Miel, Chocolate, Café).
+6. ABREVIATURAS: PM=Philip Morris, CC=Coca Cola, GFA=Garrafa.
+
+FORMATO DE SALIDA (ESTRICTAMENTE JSON):
 {
   "duplicates": [
-    { "idKeep": "ID_DEL_MEJOR_NOMBRE", "idDelete": "ID_DEL_QUE_SE_DEBE_ELIMINAR", "reason": "Motivo corto semántico de IA" }
+    { "idKeep": "ID_CON_NOMBRE_MAS_COMPLETO", "idDelete": "ID_DEL_DUPLICADO", "reason": "Motivo breve" }
   ]
 }
-Incluso si no encuentras, devuelve {"duplicates": []}. No superes las 15 sugerencias de mayor relevancia.
-Catálogo:
+
+Si no hay duplicados razonables, devuelve {"duplicates": []}. Máximo 20 sugerencias de alta relevancia.
+
+CATÁLOGO A AUDITAR:
 ${catalogList}`;
 
             // Llamada POST a Groq (Fallback manual oculto para Vercel)
