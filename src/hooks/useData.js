@@ -178,10 +178,8 @@ export function useProductosDuplicados() {
         
         const parsedProducts = [];
         for (const p of productos) {
-            // Removimos el || 0. Si un producto no tiene precio asignado, no lo comparamos 
-            // para evitar que 2000 productos sin precio colisionen en el O(n^2) y tilden la memoria de la pestaña.
-            const price = parseFloat(p.ultimo_precio_venta || p.precio_venta);
-            if (isNaN(price)) continue;
+            // Incluir productos con precio 0 o null (precio nulo = 0 para la comparación)
+            const price = parseFloat(p.ultimo_precio_venta || p.precio_venta || 0);
             
             const wordsMatch = getWords(p.nombre || '');
             const rawStr = wordsMatch.map(w => w.raw).sort().join(" ");
@@ -205,8 +203,11 @@ export function useProductosDuplicados() {
             for (let j = i + 1; j < parsedProducts.length; j++) {
                 const p2 = parsedProducts[j];
                 
-                // Si p2 es más del 15% más caro que p1, romper ciclo j (lista ordenada, el resto será aún más caro)
-                if (p2.price > p1.price * 1.15) {
+                // Si p2 es más del 35% más caro que p1, romper ciclo j (lista ordenada, el resto será aún más caro)
+                // Excepción: si ambos tienen precio 0, sí los comparamos
+                if (p1.price === 0 && p2.price === 0) {
+                    // continuar comparando
+                } else if (p2.price > p1.price * 1.35) {
                     break;
                 }
 
