@@ -199,10 +199,10 @@ const DataTable = ({
             </div>
 
             {/* Pagination Controls */}
-            {!isLoading && data.length > itemsPerPage && (
+            {!isLoading && totalRows > itemsPerPage && (
                 <div className="p-4 flex flex-col sm:flex-row justify-between items-center gap-4 bg-white/5 border-t border-white/5 shrink-0">
                     <span className="text-xs text-slate-500 font-bold uppercase tracking-widest">
-                        Mostrando <span className="text-slate-200">{(currentPage - 1) * itemsPerPage + 1}</span> - <span className="text-slate-200">{Math.min(currentPage * itemsPerPage, data.length)}</span> de <span className="text-slate-200">{data.length}</span>
+                        Mostrando <span className="text-slate-200">{(currentPage - 1) * itemsPerPage + 1}</span> - <span className="text-slate-200">{Math.min(currentPage * itemsPerPage, totalRows)}</span> de <span className="text-slate-200">{totalRows}</span>
                     </span>
                     
                     <div className="flex items-center gap-2">

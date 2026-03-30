@@ -213,14 +213,16 @@ const ComprasView = () => {
     const [page, setPage] = useState(1)
     const pageSize = 20
 
-    const { data, count, loading } = useCompras({
+    const options = React.useMemo(() => ({
         sortColumn,
         sortOrder,
         filterColumn,
         filterValue,
         page,
         pageSize
-    })
+    }), [sortColumn, sortOrder, filterColumn, filterValue, page, pageSize])
+
+    const { data, count, loading } = useCompras(options)
 
     const searchColumns = [
         { key: 'proveedor', label: 'Proveedor' },

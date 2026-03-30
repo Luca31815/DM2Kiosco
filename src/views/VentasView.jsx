@@ -202,14 +202,16 @@ const VentasView = () => {
     const [page, setPage] = useState(1)
     const pageSize = 20
 
-    const { data, count, loading } = useVentas({
+    const options = React.useMemo(() => ({
         sortColumn,
         sortOrder,
         filterColumn,
         filterValue,
         page,
         pageSize
-    })
+    }), [sortColumn, sortOrder, filterColumn, filterValue, page, pageSize])
+
+    const { data, count, loading } = useVentas(options)
 
     const searchColumns = [
         { key: 'cliente', label: 'Cliente' },

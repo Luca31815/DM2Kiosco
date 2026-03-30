@@ -20,14 +20,16 @@ const ProductosView = () => {
     const [editForm, setEditForm] = useState({})
     const [isSaving, setIsSaving] = useState(false)
 
-    const { data: rawData, count, loading } = useProductos({
+    const options = React.useMemo(() => ({
         sortColumn,
         sortOrder,
         filterColumn: 'nombre',
         filterValue,
         page,
         pageSize
-    })
+    }), [sortColumn, sortOrder, filterValue, page, pageSize])
+
+    const { data: rawData, count, loading } = useProductos(options)
     
     const { data: predictionData } = usePredictiveStock()
     

@@ -219,14 +219,16 @@ const ReservasView = () => {
     const [page, setPage] = useState(1)
     const pageSize = 20
 
-    const { data, count, loading } = useReservas({
+    const options = React.useMemo(() => ({
         sortColumn,
         sortOrder,
         filterColumn,
         filterValue,
         page,
         pageSize
-    }, showOpenOnly)
+    }), [sortColumn, sortOrder, filterColumn, filterValue, page, pageSize])
+
+    const { data, count, loading } = useReservas(options, showOpenOnly)
 
     const searchColumns = [
         { key: 'cliente', label: 'Cliente' },
