@@ -14,7 +14,7 @@ const DuplicadosView = () => {
     const { data: allProducts } = useProductos({ page: 1, pageSize: 3000, select: 'producto_id,nombre,ultimo_precio_venta,stock_actual' })
     const [searchTerm, setSearchTerm] = useState('')
     const [mergingId, setMergingId] = useState(null)
-    const [selections, setSelections] = useState({}) // { pairIndex: 'p1' o 'p2' }
+    const [selections, setSelections] = useState({}) // { "id1_id2": 'p1' o 'p2' }
     
     // IA State
     const [aiDuplicates, setAiDuplicates] = useState([])
@@ -30,33 +30,39 @@ const DuplicadosView = () => {
         const loadingToast = toast.loading('Analizando el catálogo completo con la Inteligencia Artificial (Groq Llama-3.3)...');
         
         try {
-            // Preparamos los datos en formato ultra-condensado para la IA
-            const catalogList = allProducts.map(p => `[${p.producto_id || p.id}] ${p.nombre} ($${p.ultimo_precio_venta || p.precio_venta})`).join('\n');
-            const prompt = `Actúa como un experto en inventario de Kioscos Argentinos y Analista de Datos.
-Tu misión es encontrar productos DUPLICADOS en el catálogo para ser fusionados.
+            // Preparamos los datos en formato etiquetado para que la IA no se pierda
+            const catalogList = allProducts.map(p => `PRODUCTO { ID: "${p.producto_id || p.id}", NOMBRE: "${p.nombre}", PRECIO: "$${p.ultimo_precio_venta || p.precio_venta}" }`).join('\n');
+            const prompt = `Actúa como un Auditor de Inventario Senior para Kioscos Argentinos.
+Tu misión es encontrar productos DUPLICADOS (mismo ítem físico, misma marca, mismo tamaño) que tengan nombres ligeramente distintos.
 
-REGLAS DE ORO PARA ENCONTRAR DUPLICADOS:
-1. UNIDADES: 1L = 1000ML = 1000CC = 1000CM3. 1KG = 1000G = 1000GRS. 10u = 12u, pero son **DIFERENTES** de 20u.
-2. CIGARRILLOS: 
-   - "Mentolado" = "Convertible" = "On" son SINÓNIMOS entre sí, pero **DIFERENTES** de la versión normal (si uno dice "On" y el otro no, NO son duplicados).
-   - "Box" y "Común" (o Soft) son DIFERENTES (No fusionar).
-   - "Origen" y "Original" son DIFERENTES (No fusionar).
-3. ALFAJORES:
-   - "Simple" vs "Triple" son DIFERENTES (No fusionar).
-   - "Chocolate" vs "Negro" son IGUALES (Se pueden fusionar).
-4. PRECIO COMO FILTRO: Si los nombres son similares pero el precio difiere en más de un 40%, PROBABLEMENTE NO son el mismo producto (pueden ser tamaños distintos omitidos en el nombre). NO los marques si el precio es muy distinto.
-5. GOLOSINAS/CARAMELOS: Diferenciar estrictamente por sabor (Menta, Miel, Chocolate, Café).
-6. MARCAS: Las marcas son **FUNDAMENTALES**. Si las marcas son diferentes (ej: Marlboro vs Philip Morris), NO son duplicados bajo ningún concepto.
-7. ABREVIATURAS: PM=Philip Morris, CC=Coca Cola, GFA=Garrafa.
+PROHIBICIONES ABSOLUTAS (Si rompes una, tu sugerencia es INVÁLIDA):
+1. MARCAS: Prohibido sugerir fusión si las marcas son distintas (ej: Marlboro vs Philip Morris, Rosamonte vs Mañanita, Arcor vs Georgalos).
+2. TABACO/CIGARRILLOS: 
+   - Prohibido mezclar "Mentolado/Convertible/On" con la versión "Común/Regular".
+   - Prohibido mezclar "12u/10u" con "20u".
+   - Prohibido mezclar "Box" con "Común/Soft".
+3. PRECIO: Si el precio de un producto es un 25% mayor o menor que el otro, NO son duplicados (probablemente son tamaños distintos como 38g vs 110g).
+4. CATEGORÍAS: Prohibido mezclar productos de distintas categorías (ej: Lámparas vs Gomitas, Yerba vs Galletitas).
+5. ALFAJORES: Prohibido mezclar "Simple" con "Triple".
+
+REGLAS DE AFINIDAD:
+- 1L = 1000ML = 1000CC. 1KG = 1000G.
+- "Chocolate" y "Negro" suelen ser sinónimos en alfajores.
+- "PM" = "Philip Morris", "CC" = "Coca Cola".
 
 FORMATO DE SALIDA (ESTRICTAMENTE JSON):
 {
   "duplicates": [
-    { "idKeep": "ID_CON_NOMBRE_MAS_COMPLETO", "idDelete": "ID_DEL_DUPLICADO", "reason": "Motivo breve" }
+    { 
+      "idKeep": "ID_DEL_NOMBRE_MAS_COMPLETO", 
+      "idDelete": "ID_DEL_DUPLICADO", 
+      "reason": "Explicación breve de por qué cumple todas las reglas",
+      "verification": "Confirmación de que marca y precio coinciden"
+    }
   ]
 }
 
-Si no hay duplicados razonables, devuelve {"duplicates": []}. Máximo 20 sugerencias de alta relevancia.
+Si tienes dudas razonables, NO sugieras nada. Mejor calidad que cantidad.
 
 CATÁLOGO A AUDITAR:
 ${catalogList}`;
@@ -117,8 +123,9 @@ ${catalogList}`;
         }
     }
 
-    const handleMergeSelection = async (index, d) => {
-        const selectedKey = selections[index]
+    const handleMergeSelection = async (d) => {
+        const uniqueKey = `${d.p1.producto_id || d.p1.id}_${d.p2.producto_id || d.p2.id}`
+        const selectedKey = selections[uniqueKey]
         if (!selectedKey) {
             toast.error('Por favor, selecciona cuál de los dos nombres querés dejar como principal.');
             return;
@@ -267,8 +274,10 @@ Producto 2: [${d.p2.producto_id || d.p2.id}] ${d.p2.nombre} ($${d.p2.ultimo_prec
                 </div>
             ) : (
                 <div className="grid grid-cols-1 gap-4">
-                    {filteredDuplicados.map((d, index) => (
-                        <motion.div key={index} variants={itemVariants} className="glass-panel rounded-2xl p-6 relative overflow-hidden group border border-transparent hover:border-red-500/20 transition-colors">
+                    {filteredDuplicados.map((d, index) => {
+                        const uniqueKey = `${d.p1.producto_id || d.p1.id}_${d.p2.producto_id || d.p2.id}`
+                        return (
+                        <motion.div key={uniqueKey} variants={itemVariants} className="glass-panel rounded-2xl p-6 relative overflow-hidden group border border-transparent hover:border-red-500/20 transition-colors">
                             <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none group-hover:bg-red-500/10 transition-colors" />
                             
                             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10">
@@ -287,15 +296,15 @@ Producto 2: [${d.p2.producto_id || d.p2.id}] ${d.p2.nombre} ($${d.p2.ultimo_prec
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         {/* Producto 1 */}
                                         <div 
-                                            onClick={() => setSelections(prev => ({ ...prev, [index]: 'p1' }))}
-                                            className={`p-4 rounded-xl border transition-all cursor-pointer ${selections[index] === 'p1' ? 'bg-blue-600/20 border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.2)]' : 'bg-white/5 border-white/5 hover:border-white/10'}`}
+                                            onClick={() => setSelections(prev => ({ ...prev, [uniqueKey]: 'p1' }))}
+                                            className={`p-4 rounded-xl border transition-all cursor-pointer ${selections[uniqueKey] === 'p1' ? 'bg-blue-600/20 border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.2)]' : 'bg-white/5 border-white/5 hover:border-white/10'}`}
                                         >
                                             <div className="flex items-start justify-between">
                                                 <div className="flex items-center gap-3 mb-2">
-                                                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors ${selections[index] === 'p1' ? 'border-blue-500' : 'border-slate-500'}`}>
-                                                        {selections[index] === 'p1' && <div className="w-2 h-2 rounded-full bg-blue-500" />}
+                                                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors ${selections[uniqueKey] === 'p1' ? 'border-blue-500' : 'border-slate-500'}`}>
+                                                        {selections[uniqueKey] === 'p1' && <div className="w-2 h-2 rounded-full bg-blue-500" />}
                                                     </div>
-                                                    <span className={`text-[10px] uppercase font-black tracking-widest ${selections[index] === 'p1' ? 'text-blue-400' : 'text-slate-500'}`}>Producto A</span>
+                                                    <span className={`text-[10px] uppercase font-black tracking-widest ${selections[uniqueKey] === 'p1' ? 'text-blue-400' : 'text-slate-500'}`}>Producto A</span>
                                                 </div>
                                             </div>
                                             <p className="text-lg font-bold text-white leading-tight mt-2">{d.p1.nombre}</p>
@@ -304,15 +313,15 @@ Producto 2: [${d.p2.producto_id || d.p2.id}] ${d.p2.nombre} ($${d.p2.ultimo_prec
 
                                         {/* Producto 2 */}
                                         <div 
-                                            onClick={() => setSelections(prev => ({ ...prev, [index]: 'p2' }))}
-                                            className={`p-4 rounded-xl border transition-all cursor-pointer ${selections[index] === 'p2' ? 'bg-blue-600/20 border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.2)]' : 'bg-white/5 border-white/5 hover:border-white/10'}`}
+                                            onClick={() => setSelections(prev => ({ ...prev, [uniqueKey]: 'p2' }))}
+                                            className={`p-4 rounded-xl border transition-all cursor-pointer ${selections[uniqueKey] === 'p2' ? 'bg-blue-600/20 border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.2)]' : 'bg-white/5 border-white/5 hover:border-white/10'}`}
                                         >
                                             <div className="flex items-start justify-between">
                                                 <div className="flex items-center gap-3 mb-2">
-                                                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors ${selections[index] === 'p2' ? 'border-blue-500' : 'border-slate-500'}`}>
-                                                        {selections[index] === 'p2' && <div className="w-2 h-2 rounded-full bg-blue-500" />}
+                                                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors ${selections[uniqueKey] === 'p2' ? 'border-blue-500' : 'border-slate-500'}`}>
+                                                        {selections[uniqueKey] === 'p2' && <div className="w-2 h-2 rounded-full bg-blue-500" />}
                                                     </div>
-                                                    <span className={`text-[10px] uppercase font-black tracking-widest ${selections[index] === 'p2' ? 'text-blue-400' : 'text-slate-500'}`}>Producto B</span>
+                                                    <span className={`text-[10px] uppercase font-black tracking-widest ${selections[uniqueKey] === 'p2' ? 'text-blue-400' : 'text-slate-500'}`}>Producto B</span>
                                                 </div>
                                             </div>
                                             <p className="text-lg font-bold text-white leading-tight mt-2">{d.p2.nombre}</p>
@@ -324,8 +333,8 @@ Producto 2: [${d.p2.producto_id || d.p2.id}] ${d.p2.nombre} ($${d.p2.ultimo_prec
                                 {/* Acciones */}
                                 <div className="flex flex-col gap-2 shrink-0 w-full md:w-48 self-stretch md:self-auto justify-end">
                                     <button 
-                                        onClick={() => handleMergeSelection(index, d)}
-                                        disabled={!selections[index] || mergingId !== null}
+                                        onClick={() => handleMergeSelection(d)}
+                                        disabled={!selections[uniqueKey] || mergingId !== null}
                                         className="w-full flex justify-center items-center gap-2 px-4 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:hover:bg-blue-600 text-white text-sm font-bold transition-transform active:scale-95 shadow-lg shadow-blue-500/20"
                                         title="El producto no seleccionado cambiará su nombre al seleccionado"
                                     >
@@ -341,7 +350,8 @@ Producto 2: [${d.p2.producto_id || d.p2.id}] ${d.p2.nombre} ($${d.p2.ultimo_prec
                                 </div>
                             </div>
                         </motion.div>
-                    ))}
+                        );
+                    })}
                 </div>
             )}
         </motion.div>
