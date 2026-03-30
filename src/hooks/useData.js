@@ -575,10 +575,10 @@ export function useUnifiedFeed(limit = 15) {
         if (!ventas && !compras && !retiros && !reservas) return []
         
         const result = [
-            ...(ventas || []).map(v => ({ id: v.venta_id, type: 'venta', title: `Venta #${v.venta_id.split('_').pop()}`, amount: v.total, time: v.fecha })),
-            ...(compras || []).map(c => ({ id: c.compra_id, type: 'compra', title: `Compra: ${c.proveedor || 'S/P'}`, amount: -c.total, time: c.fecha })),
+            ...(ventas || []).map(v => ({ id: v.venta_id, type: 'venta', title: `Venta #${v.venta_id.split('_').pop()}`, amount: v.total_venta, time: v.fecha })),
+            ...(compras || []).map(c => ({ id: c.compra_id, type: 'compra', title: `Compra: ${c.proveedor || 'S/P'}`, amount: -c.total_compra, time: c.fecha })),
             ...(retiros || []).map(r => ({ id: r.retiro_id, type: 'retiro', title: `Retiro: ${r.motivo}`, amount: -r.monto, time: r.fecha })),
-            ...(reservas || []).map(res => ({ id: res.reserva_id, type: 'reserva', title: `Reserva: ${res.cliente}`, amount: res.total, time: res.fecha_creacion, isReserva: true })),
+            ...(reservas || []).map(res => ({ id: res.reserva_id, type: 'reserva', title: `Reserva: ${res.cliente}`, amount: res.total_reserva, time: res.fecha_creacion, isReserva: true })),
         ]
         return result.sort((a, b) => new Date(b.time) - new Date(a.time)).slice(0, limit)
     }, [ventas, compras, retiros, reservas, limit])

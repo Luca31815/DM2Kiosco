@@ -250,7 +250,7 @@ const ComprasView = () => {
             }
         },
         { key: 'proveedor', label: 'Proveedor', width: 'w-1/4', wrap: true, render: (val) => <span className="font-bold text-blue-400">{val || 'S/D'}</span> },
-        { key: 'total', label: 'Total', width: 'w-24', render: (val) => <span className="font-black text-emerald-400 tabular-nums">${val?.toLocaleString() || '0'}</span> },
+        { key: 'total_compra', label: 'Total', width: 'w-24', render: (val) => <span className="font-black text-emerald-400 tabular-nums">${val?.toLocaleString() || '0'}</span> },
         { key: 'notas', label: 'Notas', width: 'w-1/3', wrap: true, render: (val) => <span className="text-slate-400 italic text-xs">{val || '-'}</span> },
     ]
 

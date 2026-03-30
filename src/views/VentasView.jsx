@@ -228,7 +228,7 @@ const VentasView = () => {
         { key: 'venta_id', label: 'ID', width: 'w-40', render: (val) => <span className="font-black text-slate-500 truncate block">#{val}</span> },
         { key: 'fecha', label: 'Fecha', width: 'w-56', render: (val) => <span className="font-semibold text-slate-400">{val ? new Date(val).toLocaleString() : '-'}</span> },
         { key: 'cliente', label: 'Cliente', width: 'w-1/4', wrap: true, render: (val) => <span className="font-bold text-slate-200">{val || 'N/A'}</span> },
-        { key: 'total', label: 'Total', width: 'w-32', render: (val) => <span className="font-black text-blue-400 text-lg tabular-nums">${val?.toLocaleString() || '0'}</span> },
+        { key: 'total_venta', label: 'Total', width: 'w-32', render: (val) => <span className="font-black text-blue-400 text-lg tabular-nums">${val?.toLocaleString() || '0'}</span> },
         { key: 'notas', label: 'Notas', width: 'w-1/3', wrap: true, render: (val) => <span className="text-xs italic text-slate-500">{val || '-'}</span> },
     ]
 

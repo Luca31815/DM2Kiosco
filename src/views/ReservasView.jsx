@@ -266,7 +266,7 @@ const ReservasView = () => {
                 </div>
             )
         },
-        { key: 'total', label: 'Total', width: 'w-24', render: (val) => <span className="font-black text-slate-400 tabular-nums">${val?.toLocaleString() || '0'}</span> },
+        { key: 'total_reserva', label: 'Total', width: 'w-24', render: (val) => <span className="font-black text-slate-400 tabular-nums">${val?.toLocaleString() || '0'}</span> },
         { key: 'total_pagado', label: 'Pagado', width: 'w-24', render: (val) => <span className="font-black text-emerald-400 tabular-nums">${val?.toLocaleString() || '0'}</span> },
         { key: 'saldo_pendiente', label: 'Saldo', width: 'w-24', render: (val) => <span className={`font-black tabular-nums ${val > 0 ? 'text-rose-400' : 'text-slate-500'}`}>${val?.toLocaleString() || '0'}</span> },
         {
