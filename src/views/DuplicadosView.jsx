@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
-import { AlertCircle, ArrowRight, Package, Tag, ArrowUpRight, Search, EyeOff, CheckCircle2, Loader2, Sparkles } from 'lucide-react'
+import { AlertCircle, ArrowRight, Package, Tag, ArrowUpRight, Search, EyeOff, CheckCircle2, Loader2, Sparkles, Copy } from 'lucide-react'
 import { useSWRConfig } from 'swr'
 import { toast } from 'react-hot-toast'
 import * as api from '../services/api'
@@ -160,6 +160,27 @@ ${catalogList}`;
         }
     }
 
+    const handleCopyAiReport = () => {
+        if (!aiDuplicates || aiDuplicates.length === 0) {
+            toast.error('No hay resultados de la IA para copiar.');
+            return;
+        }
+
+        const report = aiDuplicates.map(d => {
+            return `---
+REGLA/RAZÓN: ${d.reason}
+Producto 1: [${d.p1.producto_id || d.p1.id}] ${d.p1.nombre} ($${d.p1.ultimo_precio_venta || d.p1.precio_venta})
+Producto 2: [${d.p2.producto_id || d.p2.id}] ${d.p2.nombre} ($${d.p2.ultimo_precio_venta || d.p2.precio_venta})`
+        }).join('\n\n');
+
+        navigator.clipboard.writeText(report).then(() => {
+            toast.success('Reporte copiado al portapapeles. Pegalo en el chat para que el soporte pueda corregirlo.');
+        }).catch(err => {
+            console.error('Error al copiar:', err);
+            toast.error('Error al copiar al portapapeles.');
+        });
+    }
+
     const filteredDuplicados = duplicados.filter(d => {
         const name1 = d.p1?.nombre || '';
         const name2 = d.p2?.nombre || '';
@@ -194,18 +215,28 @@ ${catalogList}`;
                 </div>
                 {/* Contadores y Botón IA */}
                 <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3">
-                    <button 
-                        onClick={handleAiScan}
-                        disabled={isAiScanning}
-                        className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white rounded-xl font-bold transition-all shadow-[0_0_20px_rgba(99,102,241,0.3)] hover:shadow-[0_0_25px_rgba(99,102,241,0.5)] active:scale-95 disabled:opacity-50"
-                    >
-                        {isAiScanning ? <Loader2 className="h-5 w-5 animate-spin" /> : <Sparkles className="h-5 w-5" />}
-                        <span className="hidden md:inline">Auditoría Extendida IA</span>
-                        <span className="md:hidden">IA</span>
-                    </button>
-                    <div className="flex items-center gap-2 px-4 py-3 md:py-2 bg-red-500/10 border border-red-500/20 rounded-xl justify-center">
-                        <span className="text-xs font-black text-red-400 uppercase tracking-widest">{duplicados.length} Alertas Activas</span>
-                    </div>
+                        <button 
+                            onClick={handleAiScan}
+                            disabled={isAiScanning}
+                            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white rounded-xl font-bold transition-all shadow-[0_0_20px_rgba(99,102,241,0.3)] hover:shadow-[0_0_25px_rgba(99,102,241,0.5)] active:scale-95 disabled:opacity-50"
+                        >
+                            {isAiScanning ? <Loader2 className="h-5 w-5 animate-spin" /> : <Sparkles className="h-5 w-5" />}
+                            <span className="hidden md:inline">Auditoría IA</span>
+                            <span className="md:hidden">IA</span>
+                        </button>
+                        {aiDuplicates.length > 0 && (
+                            <button 
+                                onClick={handleCopyAiReport}
+                                className="flex items-center gap-2 px-4 py-2 bg-slate-800 border border-slate-700 hover:bg-slate-700 text-slate-300 rounded-xl font-bold transition-all active:scale-95"
+                                title="Copiar reporte técnico para soporte"
+                            >
+                                <Copy className="h-5 w-5" />
+                                <span className="hidden md:inline">Copiar Reporte IA</span>
+                            </button>
+                        )}
+                        <div className="flex items-center gap-2 px-4 py-3 md:py-2 bg-red-500/10 border border-red-500/20 rounded-xl justify-center">
+                            <span className="text-xs font-black text-red-400 uppercase tracking-widest">{duplicados.length} Alertas Activas</span>
+                        </div>
                 </div>
             </div>
 
