@@ -210,6 +210,10 @@ const ExpandedRow = ({ row }) => {
 }
 
 const ComprasView = () => {
+    const [sortColumn, setSortColumn] = useState('fecha')
+    const [sortOrder, setSortOrder] = useState('desc')
+    const [filterValue, setFilterValue] = useState('')
+    const [filterColumn, setFilterColumn] = useState('proveedor')
     const [page, setPage] = useState(1)
     const pageSize = 20
 
