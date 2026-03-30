@@ -201,3 +201,15 @@ export const crearRetiro = async (retiro) => {
 export const getAuditLogs = (options) => fetchTableData('logs_auditoria', { sortColumn: 'fecha', sortOrder: 'desc', ...options })
 export const getN8nErrors = (options) => fetchTableData('logs_errores_n8n', { sortColumn: 'fecha', sortOrder: 'desc', ...options })
 export const getPredictiveStock = (options) => fetchTableData('vista_prediccion_stock', options)
+
+export const cleanupOrphanedProducts = async () => {
+    if (isDemo()) return { success: false, error: 'Acción no permitida en modo Demo' };
+    try {
+        const { data, error } = await supabase.rpc('fn_cleanup_orphaned_products');
+        if (error) throw error;
+        return { success: true, count: data };
+    } catch (error) {
+        console.error('Error al limpiar productos:', error);
+        return { success: false, error: error.message };
+    }
+}
