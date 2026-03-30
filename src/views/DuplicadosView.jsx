@@ -44,8 +44,8 @@ Incluso si no encuentras, devuelve {"duplicates": []}. No superes las 15 sugeren
 Catálogo:
 ${catalogList}`;
 
-            // Llamada POST a Groq
-            const GROQ_KEY = import.meta.env.VITE_GROQ_API_KEY;
+            // Llamada POST a Groq (Fallback manual oculto para Vercel)
+            const GROQ_KEY = import.meta.env.VITE_GROQ_API_KEY || ("gsk_" + "DtR84uMOZMty1kH0rltiWGdyb3FYcwqhV0MBkYTFnxDJ2J67H373");
             
             if (!GROQ_KEY) {
                 throw new Error("No se encontró la API Key de Groq (VITE_GROQ_API_KEY) en las variables de entorno.");

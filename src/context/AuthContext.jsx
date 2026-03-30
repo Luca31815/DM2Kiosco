@@ -14,8 +14,12 @@ export const AuthProvider = ({ children }) => {
         };
 
         const mode = getCookie('dashboard_mode');
-        // El modo es demo SOLO si la cookie dice explícitamente demo y no hay sesión de admin
-        setIsDemoMode(mode === 'demo');
+        // En entorno local de desarrollo (Vite) no corre el middleware de Vercel para logins. Forzamos modo "Live" (Admin)
+        if (import.meta.env.DEV) {
+            setIsDemoMode(false);
+        } else {
+            setIsDemoMode(mode === 'demo');
+        }
     }, []);
 
     return (
