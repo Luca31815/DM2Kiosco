@@ -38,7 +38,7 @@ Tu misión es encontrar productos DUPLICADOS en el catálogo para ser fusionados
 REGLAS DE ORO PARA ENCONTRAR DUPLICADOS:
 1. UNIDADES: 1L = 1000ML = 1000CC = 1000CM3. 1KG = 1000G = 1000GRS. 10u = 12u (en paquetes).
 2. CIGARRILLOS: 
-   - "Mentolado" = "Convertible" = "On" son SINÓNIMOS (Mismo producto).
+   - "Mentolado" = "Convertible" = "On" son SINÓNIMOS entre sí, pero **DIFERENTES** de la versión normal (si uno dice "On" y el otro no, NO son duplicados).
    - "Box" y "Común" (o Soft) son DIFERENTES (No fusionar).
    - "Origen" y "Original" son DIFERENTES (No fusionar).
 3. ALFAJORES:
