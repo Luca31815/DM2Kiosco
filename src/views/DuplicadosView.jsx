@@ -30,44 +30,58 @@ const DuplicadosView = () => {
         const loadingToast = toast.loading('Analizando el catálogo completo con la Inteligencia Artificial (Groq Llama-3.3)...');
         
         try {
-            // Preparamos los datos en formato etiquetado para que la IA no se pierda
-            const catalogList = allProducts.map(p => `PRODUCTO { ID: "${p.producto_id || p.id}", NOMBRE: "${p.nombre}", PRECIO: "$${p.ultimo_precio_venta || p.precio_venta}" }`).join('\n');
+            // --- CAPA 1: PRE-FILTRADO LOCAL (Filtro Anti-Mareo) ---
+            // Agrupamos productos por las primeras 2 palabras para reducir ruido
+            const groups = {};
+            allProducts.forEach(p => {
+                const words = p.nombre?.trim().split(/\s+/) || [];
+                const key = words.slice(0, 2).join(' ').toUpperCase();
+                if (!groups[key]) groups[key] = [];
+                groups[key].push(p);
+            });
+
+            // Solo enviamos grupos que tengan más de un producto (sospechosos)
+            const suspiciousGroups = Object.entries(groups)
+                .filter(([_, list]) => list.length > 1)
+                .map(([name, list]) => {
+                    const itemsText = list.map(p => `  ID: ${p.producto_id || p.id} | ${p.nombre} ($${p.ultimo_precio_venta || p.precio_venta})`).join('\n');
+                    return `### GRUPO SOSPECHOSO: ${name}\n${itemsText}`;
+                })
+                .join('\n\n');
+
+            if (!suspiciousGroups) {
+                toast.success('No se detectaron grupos sospechosos para auditar.', { id: loadingToast });
+                setIsAiScanning(false);
+                return;
+            }
+
             const prompt = `Actúa como un Auditor de Inventario Senior para Kioscos Argentinos.
-Tu misión es encontrar productos DUPLICADOS (mismo ítem físico, misma marca, mismo tamaño) que tengan nombres ligeramente distintos.
+Analiza los siguientes GRUPOS SOSPECHOSOS de productos duplicados.
 
-PROHIBICIONES ABSOLUTAS (Si rompes una, tu sugerencia es INVÁLIDA):
-1. MARCAS: Prohibido sugerir fusión si las marcas son distintas (ej: Marlboro vs Philip Morris, Rosamonte vs Mañanita, Arcor vs Georgalos).
-2. TABACO/CIGARRILLOS: 
-   - Prohibido mezclar "Mentolado/Convertible/On" con la versión "Común/Regular".
-   - Prohibido mezclar "12u/10u" con "20u".
-   - Prohibido mezclar "Box" con "Común/Soft".
-3. PRECIO: Si el precio de un producto es un 25% mayor o menor que el otro, NO son duplicados (probablemente son tamaños distintos como 38g vs 110g).
-4. CATEGORÍAS: Prohibido mezclar productos de distintas categorías (ej: Lámparas vs Gomitas, Yerba vs Galletitas).
-5. ALFAJORES: Prohibido mezclar "Simple" con "Triple".
+PROHIBICIONES ABSOLUTAS (Si las rompes, la sugerencia es INVÁLIDA):
+1. DIFERENCIA DE SABOR/TIPO: Si los productos tienen sabores distintos (Frambuesa vs Chocolate, Menta vs Miel, Regular vs Mentolado) o tipos distintos (Mentolado vs Original), NO son duplicados.
+2. MARCAS: Prohibido mezclar marcas distintas (ej: Marlboro vs PM, Fachitas vs Parnor).
+3. TAMAÑO/PRECIO: Si el precio de un producto es un 30% mayor o menor que el otro, NO son duplicados (suelen ser tamaños distintos).
+4. CIGARRILLOS: Box vs Común (Soft) son productos distintos. 12u vs 20u son distintos.
 
-REGLAS DE AFINIDAD:
-- 1L = 1000ML = 1000CC. 1KG = 1000G.
-- "Chocolate" y "Negro" suelen ser sinónimos en alfajores.
-- "PM" = "Philip Morris", "CC" = "Coca Cola".
-
-FORMATO DE SALIDA (ESTRICTAMENTE JSON):
+Tu misión es encontrar duplicados reales DENTRO de cada grupo.
+FORMATO DE SALIDA (JSON ESTRICTO):
 {
   "duplicates": [
     { 
       "idKeep": "ID_DEL_NOMBRE_MAS_COMPLETO", 
       "idDelete": "ID_DEL_DUPLICADO", 
-      "reason": "Explicación breve de por qué cumple todas las reglas",
-      "verification": "Confirmación de que marca y precio coinciden"
+      "reason": "Explicación breve (Marca idéntica, solo cambia abreviatura, precio similar)",
+      "validation": "Confirmación de sabor y precio coincidente"
     }
   ]
 }
 
-Si tienes dudas razonables, NO sugieras nada. Mejor calidad que cantidad.
+Si no hay duplicados seguros en un grupo, no devuelvas nada para ese grupo.
 
-CATÁLOGO A AUDITAR:
-${catalogList}`;
+GRUPOS A AUDITAR:
+${suspiciousGroups}`;
 
-            // Llamada POST a Groq (Fallback manual oculto para Vercel)
             const GROQ_KEY = import.meta.env.VITE_GROQ_API_KEY || ("gsk_" + "DtR84uMOZMty1kH0rltiWGdyb3FYcwqhV0MBkYTFnxDJ2J67H373");
             
             if (!GROQ_KEY) {
@@ -97,14 +111,33 @@ ${catalogList}`;
             if (aiParsed.duplicates) aiParsed = aiParsed.duplicates;
             if (!Array.isArray(aiParsed)) aiParsed = [];
 
-            // Convertir la respuesta de IA al formato que usa nuestro frontend: { p1: {}, p2: {}, reason: string }
+            // --- CAPA 3: VALIDADOR DE SEGURIDAD EN JS ---
             const mappedAiResults = aiParsed.map(res => {
-                const keepProduct = allProducts.find(p => (p.producto_id || p.id) == res.idKeep)
-                const deleteProduct = allProducts.find(p => (p.producto_id || p.id) == res.idDelete)
-                if (keepProduct && deleteProduct) {
-                    return { p1: keepProduct, p2: deleteProduct, reason: `[IA] ${res.reason || 'Detección Semántica'}` }
+                const p1 = allProducts.find(p => (p.producto_id || p.id) == res.idKeep)
+                const p2 = allProducts.find(p => (p.producto_id || p.id) == res.idDelete)
+                
+                if (!p1 || !p2) return null;
+
+                // Validación manual de seguridad antes de mostrar al usuario
+                const price1 = parseFloat(p1.ultimo_precio_venta || p1.precio_venta || 0);
+                const price2 = parseFloat(p2.ultimo_precio_venta || p2.precio_venta || 0);
+                const priceDiff = Math.abs(price1 - price2) / Math.max(price1, price2);
+
+                // Si los precios varían más del 35%, probablemente sea un error de la IA mezclando tamaños
+                if (priceDiff > 0.35 && price1 > 0 && price2 > 0) return null;
+
+                // Si una palabra clave de sabor/marca cambia drásticamente
+                const words1 = p1.nombre.toUpperCase().split(' ');
+                const words2 = p2.nombre.toUpperCase().split(' ');
+                
+                // Sabores críticos que nunca deben mezclarse
+                const flavors = ['FRAMBUESA', 'CHOCOLATE', 'FRUTILLA', 'MENTA', 'MIEL', 'MENTOLADO', 'CONVERTIBLE', 'ON', 'ORIGINAL', 'BOX', 'SOFT', 'COMUN'];
+                for (const f of flavors) {
+                    if (words1.includes(f) && !words2.includes(f)) return null;
+                    if (!words1.includes(f) && words2.includes(f)) return null;
                 }
-                return null;
+
+                return { p1, p2, reason: `[Auditoría IA] ${res.reason || 'Detección Semántica'}` }
             }).filter(Boolean);
 
             setAiDuplicates(mappedAiResults);
