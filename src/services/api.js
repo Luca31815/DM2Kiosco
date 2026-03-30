@@ -213,3 +213,27 @@ export const cleanupOrphanedProducts = async () => {
         return { success: false, error: error.message };
     }
 }
+
+export const sincronizarProductosFaltantes = async () => {
+    if (isDemo()) return { success: false, error: 'Acción no permitida en modo Demo' };
+    try {
+        const { data, error } = await supabase.rpc('auditar_productos_faltantes');
+        if (error) throw error;
+        const faltantes = data?.faltantes || [];
+        const total = data?.total_faltantes || 0;
+        if (total === 0) return { success: true, count: 0 };
+        // Deduplicar por nombre_norm
+        const seen = new Set();
+        const uniqueRows = faltantes
+            .filter(f => { if (seen.has(f.nombre_norm)) return false; seen.add(f.nombre_norm); return true; })
+            .map(f => ({ nombre: f.nombre_norm, ultimo_precio_venta: 0, fecha_actualizacion: new Date().toISOString() }));
+        const { error: insertError } = await supabase
+            .from('productos_base')
+            .upsert(uniqueRows, { onConflict: 'nombre', ignoreDuplicates: true });
+        if (insertError) throw insertError;
+        return { success: true, count: uniqueRows.length };
+    } catch (error) {
+        console.error('Error al sincronizar productos faltantes:', error);
+        return { success: false, error: error.message };
+    }
+}

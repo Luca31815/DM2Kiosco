@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import DataTable from '../components/DataTable'
 import { useProductos, usePredictiveStock } from '../hooks/useData'
-import { Edit2, Check, X, Loader2, Package, TrendingUp, TrendingDown, Clock, Search, Timer, Trash2 } from 'lucide-react'
+import { Edit2, Check, X, Loader2, Package, TrendingUp, TrendingDown, Clock, Search, Timer, Trash2, PackagePlus } from 'lucide-react'
 import * as api from '../services/api'
 import { useSWRConfig } from 'swr'
 import ProductAutocomplete from '../components/ProductAutocomplete'
@@ -20,6 +20,7 @@ const ProductosView = () => {
     const [editForm, setEditForm] = useState({})
     const [isSaving, setIsSaving] = useState(false)
     const [isCleaning, setIsCleaning] = useState(false)
+    const [isSyncing, setIsSyncing] = useState(false)
 
     const options = React.useMemo(() => ({
         sortColumn,
@@ -116,6 +117,28 @@ const ProductosView = () => {
             toast.error('Error al limpiar: ' + (error.message || 'Error desconocido'), { id: loadingToast })
         } finally {
             setIsCleaning(false)
+        }
+    }
+
+    const handleSyncFaltantes = async () => {
+        const loadingToast = toast.loading('Buscando productos faltantes en operaciones...')
+        setIsSyncing(true)
+        try {
+            const result = await api.sincronizarProductosFaltantes()
+            if (result.success) {
+                if (result.count > 0) {
+                    toast.success(`¡Listo! Se agregaron ${result.count} productos nuevos al catálogo.`, { id: loadingToast, duration: 5000 })
+                    mutate(key => Array.isArray(key) && key[0] === 'productos')
+                } else {
+                    toast.success('¡Todo en orden! No había productos faltantes.', { id: loadingToast, duration: 4000 })
+                }
+            } else {
+                toast.error('Error: ' + result.error, { id: loadingToast })
+            }
+        } catch (error) {
+            toast.error('Error al sincronizar: ' + (error.message || 'Error desconocido'), { id: loadingToast })
+        } finally {
+            setIsSyncing(false)
         }
     }
 
@@ -295,6 +318,15 @@ const ProductosView = () => {
                 </div>
 
                 <div className="flex gap-2 w-full sm:w-auto">
+                    <button
+                        onClick={handleSyncFaltantes}
+                        disabled={isSyncing}
+                        className="flex-1 sm:flex-none px-5 py-2.5 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-amber-500/20 transition-all flex items-center justify-center gap-2 group"
+                        title="Busca todos los productos en Ventas, Compras y Reservas y agrega los que faltan al catálogo"
+                    >
+                        {isSyncing ? <Loader2 size={14} className="animate-spin" /> : <PackagePlus size={14} className="group-hover:scale-110 transition-transform" />}
+                        {isSyncing ? 'Sincronizando...' : 'Sincronizar Faltantes'}
+                    </button>
                     <button
                         onClick={handleCleanup}
                         disabled={isCleaning}
