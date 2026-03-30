@@ -36,7 +36,7 @@ const DuplicadosView = () => {
 Tu misión es encontrar productos DUPLICADOS en el catálogo para ser fusionados.
 
 REGLAS DE ORO PARA ENCONTRAR DUPLICADOS:
-1. UNIDADES: 1L = 1000ML = 1000CC = 1000CM3. 1KG = 1000G = 1000GRS. 10u = 12u (en paquetes).
+1. UNIDADES: 1L = 1000ML = 1000CC = 1000CM3. 1KG = 1000G = 1000GRS. 10u = 12u, pero son **DIFERENTES** de 20u.
 2. CIGARRILLOS: 
    - "Mentolado" = "Convertible" = "On" son SINÓNIMOS entre sí, pero **DIFERENTES** de la versión normal (si uno dice "On" y el otro no, NO son duplicados).
    - "Box" y "Común" (o Soft) son DIFERENTES (No fusionar).
@@ -46,7 +46,8 @@ REGLAS DE ORO PARA ENCONTRAR DUPLICADOS:
    - "Chocolate" vs "Negro" son IGUALES (Se pueden fusionar).
 4. PRECIO COMO FILTRO: Si los nombres son similares pero el precio difiere en más de un 40%, PROBABLEMENTE NO son el mismo producto (pueden ser tamaños distintos omitidos en el nombre). NO los marques si el precio es muy distinto.
 5. GOLOSINAS/CARAMELOS: Diferenciar estrictamente por sabor (Menta, Miel, Chocolate, Café).
-6. ABREVIATURAS: PM=Philip Morris, CC=Coca Cola, GFA=Garrafa.
+6. MARCAS: Las marcas son **FUNDAMENTALES**. Si las marcas son diferentes (ej: Marlboro vs Philip Morris), NO son duplicados bajo ningún concepto.
+7. ABREVIATURAS: PM=Philip Morris, CC=Coca Cola, GFA=Garrafa.
 
 FORMATO DE SALIDA (ESTRICTAMENTE JSON):
 {
