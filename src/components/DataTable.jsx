@@ -174,7 +174,14 @@ const DataTable = ({
                                         >
                                             {columns.map((col) => (
                                                 <td key={`${rowIndex}-${col.key}`} className={`text-slate-300 group-hover:text-white transition-colors font-medium ${compact ? 'px-4 py-2 text-[11px]' : 'px-6 py-3.5'} ${col.wrap ? 'whitespace-normal break-words' : 'whitespace-nowrap'}`}>
-                                                    {col.render ? col.render(row[col.key], row) : row[col.key]}
+                                                    {(() => {
+                                                        try {
+                                                            return col.render ? col.render(row[col.key], row) : row[col.key] || '-'
+                                                        } catch (err) {
+                                                            console.error(`Error rendering column ${col.key}:`, err)
+                                                            return <span className="text-red-500/50 text-[10px] italic">Error</span>
+                                                        }
+                                                    })()}
                                                 </td>
                                             ))}
                                         </motion.tr>

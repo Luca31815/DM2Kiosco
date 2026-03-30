@@ -266,9 +266,9 @@ const ReservasView = () => {
                 </div>
             )
         },
-        { key: 'total_reserva', label: 'Total', width: 'w-24', render: (val) => <span className="font-black text-slate-400 tabular-nums">${val}</span> },
-        { key: 'total_pagado', label: 'Pagado', width: 'w-24', render: (val) => <span className="font-black text-emerald-400 tabular-nums">${val || 0}</span> },
-        { key: 'saldo_pendiente', label: 'Saldo', width: 'w-24', render: (val) => <span className={`font-black tabular-nums ${val > 0 ? 'text-rose-400' : 'text-slate-500'}`}>${val}</span> },
+        { key: 'total', label: 'Total', width: 'w-24', render: (val) => <span className="font-black text-slate-400 tabular-nums">${val?.toLocaleString() || '0'}</span> },
+        { key: 'total_pagado', label: 'Pagado', width: 'w-24', render: (val) => <span className="font-black text-emerald-400 tabular-nums">${val?.toLocaleString() || '0'}</span> },
+        { key: 'saldo_pendiente', label: 'Saldo', width: 'w-24', render: (val) => <span className={`font-black tabular-nums ${val > 0 ? 'text-rose-400' : 'text-slate-500'}`}>${val?.toLocaleString() || '0'}</span> },
         {
             key: 'estado_pago', label: 'Status', width: 'w-28', render: (val) => (
                 <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider ${val === 'Pagado' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
