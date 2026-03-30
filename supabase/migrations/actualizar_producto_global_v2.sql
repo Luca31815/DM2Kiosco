@@ -50,9 +50,10 @@ BEGIN
 
         IF v_id_destino IS NOT NULL THEN
             -- CASO A: FUSIÓN (El destino ya existe)
-            UPDATE public.ventas_detalles SET producto = v_nombre_norm WHERE producto = v_nombre_viejo;
-            UPDATE public.compras_detalles SET producto = v_nombre_norm WHERE producto = v_nombre_viejo;
-            UPDATE public.reservas_detalles SET producto = v_nombre_norm WHERE producto = v_nombre_viejo;
+            -- ACTUALIZAR HISTORIAL USANDO NORMALIZACIÓN (FIX: captura variantes de casing/espacios)
+            UPDATE public.ventas_detalles SET producto = v_nombre_norm WHERE public.normalizar_texto(producto) = v_nombre_viejo;
+            UPDATE public.compras_detalles SET producto = v_nombre_norm WHERE public.normalizar_texto(producto) = v_nombre_viejo;
+            UPDATE public.reservas_detalles SET producto = v_nombre_norm WHERE public.normalizar_texto(producto) = v_nombre_viejo;
             
             -- Resolver conflictos de stock_movimientos antes de renombrar
             -- 1. Sumar cantidades donde ya exista el producto destino para esa misma referencia
@@ -61,7 +62,7 @@ BEGIN
             FROM (
                 SELECT referencia_tipo, referencia_id, cantidad 
                 FROM public.stock_movimientos 
-                WHERE producto = v_nombre_viejo
+                WHERE public.normalizar_texto(producto) = v_nombre_viejo
             ) a
             WHERE s.referencia_tipo = a.referencia_tipo 
               AND s.referencia_id = a.referencia_id 
@@ -69,7 +70,7 @@ BEGIN
 
             -- 2. Eliminar el viejo en los casos donde hubo conflicto (porque ya sumamos la cantidad)
             DELETE FROM public.stock_movimientos s
-            WHERE producto = v_nombre_viejo 
+            WHERE public.normalizar_texto(producto) = v_nombre_viejo 
               AND EXISTS (
                   SELECT 1 FROM public.stock_movimientos s2 
                   WHERE s2.referencia_tipo = s.referencia_tipo 
@@ -78,10 +79,15 @@ BEGIN
               );
 
             -- 3. Renombrar los que no tuvieron conflicto
-            UPDATE public.stock_movimientos SET producto = v_nombre_norm WHERE producto = v_nombre_viejo;
+            UPDATE public.stock_movimientos SET producto = v_nombre_norm WHERE public.normalizar_texto(producto) = v_nombre_viejo;
             
             -- Eliminar el producto viejo (los movimientos ya pasaron al nuevo)
             DELETE FROM public.productos_base WHERE producto_id = p_id;
+
+            -- APRENDIZAJE AUTOMÁTICO: guardar nombre viejo como sinónimo del nuevo
+            INSERT INTO public.productos_sinonimos (alias, nombre_oficial)
+            VALUES (v_nombre_viejo, v_nombre_norm)
+            ON CONFLICT (alias) DO UPDATE SET nombre_oficial = EXCLUDED.nombre_oficial;
             
             -- REENCENDER TRIGGERS
             PERFORM set_config('app.bypass_triggers', 'false', true);
@@ -98,10 +104,10 @@ BEGIN
     END IF;
 
     -- CASO B: ACTUALIZACIÓN O RENOMBRADO SIMPLE
-    -- Obtener stock actual real (suma de movimientos)
+    -- Obtener stock actual real (suma de movimientos usando normalización para precisión)
     SELECT COALESCE(SUM(cantidad), 0)::integer INTO v_stock_actual_calculado 
     FROM public.stock_movimientos 
-    WHERE producto = v_nombre_viejo;
+    WHERE public.normalizar_texto(producto) = v_nombre_viejo;
 
     -- Calcular diferencia de stock ANTES de renombrar en stock_movimientos
     v_diferencia_stock := p_nuevo_stock - v_stock_actual_calculado;
@@ -114,11 +120,11 @@ BEGIN
         fecha_actualizacion = now()
     WHERE producto_id = p_id;
 
-    -- Si hubo cambio de nombre, propagarlo al historial
+    -- Si hubo cambio de nombre, propagarlo al historial (usando normalización)
     IF v_nombre_viejo <> v_nombre_norm THEN
-        UPDATE public.ventas_detalles SET producto = v_nombre_norm WHERE producto = v_nombre_viejo;
-        UPDATE public.compras_detalles SET producto = v_nombre_norm WHERE producto = v_nombre_viejo;
-        UPDATE public.reservas_detalles SET producto = v_nombre_norm WHERE producto = v_nombre_viejo;
+        UPDATE public.ventas_detalles SET producto = v_nombre_norm WHERE public.normalizar_texto(producto) = v_nombre_viejo;
+        UPDATE public.compras_detalles SET producto = v_nombre_norm WHERE public.normalizar_texto(producto) = v_nombre_viejo;
+        UPDATE public.reservas_detalles SET producto = v_nombre_norm WHERE public.normalizar_texto(producto) = v_nombre_viejo;
         
         -- Misma logica de conflictos para renombramiento simple 
         UPDATE public.stock_movimientos s
@@ -126,14 +132,14 @@ BEGIN
         FROM (
             SELECT referencia_tipo, referencia_id, cantidad 
             FROM public.stock_movimientos 
-            WHERE producto = v_nombre_viejo
+            WHERE public.normalizar_texto(producto) = v_nombre_viejo
         ) a
         WHERE s.referencia_tipo = a.referencia_tipo 
           AND s.referencia_id = a.referencia_id 
           AND s.producto = v_nombre_norm;
 
         DELETE FROM public.stock_movimientos s
-        WHERE producto = v_nombre_viejo 
+        WHERE public.normalizar_texto(producto) = v_nombre_viejo 
           AND EXISTS (
               SELECT 1 FROM public.stock_movimientos s2 
               WHERE s2.referencia_tipo = s.referencia_tipo 
@@ -141,7 +147,12 @@ BEGIN
                 AND s2.producto = v_nombre_norm
           );
 
-        UPDATE public.stock_movimientos SET producto = v_nombre_norm WHERE producto = v_nombre_viejo;
+        UPDATE public.stock_movimientos SET producto = v_nombre_norm WHERE public.normalizar_texto(producto) = v_nombre_viejo;
+
+        -- Registrar sinónimo
+        INSERT INTO public.productos_sinonimos (alias, nombre_oficial)
+        VALUES (v_nombre_viejo, v_nombre_norm)
+        ON CONFLICT (alias) DO UPDATE SET nombre_oficial = EXCLUDED.nombre_oficial;
     END IF;
 
     -- Ajuste de stock si es necesario (se hace sobre el nombre ya normalizado)
