@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import DataTable from '../components/DataTable'
 import { useProductos, usePredictiveStock } from '../hooks/useData'
-import { Edit2, Check, X, Loader2, Package, TrendingUp, TrendingDown, Clock, Search, Timer } from 'lucide-react'
+import { Edit2, Check, X, Loader2, Package, TrendingUp, TrendingDown, Clock, Search, Timer, Trash2 } from 'lucide-react'
 import * as api from '../services/api'
 import { useSWRConfig } from 'swr'
 import ProductAutocomplete from '../components/ProductAutocomplete'
@@ -19,6 +19,7 @@ const ProductosView = () => {
     const [editingId, setEditingId] = useState(null)
     const [editForm, setEditForm] = useState({})
     const [isSaving, setIsSaving] = useState(false)
+    const [isCleaning, setIsCleaning] = useState(false)
 
     const options = React.useMemo(() => ({
         sortColumn,
@@ -97,6 +98,24 @@ const ProductosView = () => {
             toast.error('Error al actualizar: ' + (error.message || 'Error desconocido'), { id: loadingToast })
         } finally {
             setIsSaving(false)
+        }
+    }
+
+    const handleCleanup = async () => {
+        if (!window.confirm('¿Estás seguro de que deseas eliminar permanentemente todos los productos que no tienen NINGUNA operación (Ventas, Compras o Reservas)?')) {
+            return
+        }
+
+        const loadingToast = toast.loading('Limpiando catálogo...')
+        setIsCleaning(true)
+        try {
+            const countDeleted = await api.cleanupOrphanedProducts()
+            toast.success(`Se han eliminado ${countDeleted} productos huérfanos.`, { id: loadingToast, duration: 5000 })
+            mutate(key => Array.isArray(key) && key[0] === 'productos')
+        } catch (error) {
+            toast.error('Error al limpiar: ' + (error.message || 'Error desconocido'), { id: loadingToast })
+        } finally {
+            setIsCleaning(false)
         }
     }
 
@@ -275,15 +294,26 @@ const ProductosView = () => {
                     <p className="text-slate-400 font-medium mt-1">Gestión de productos, precios y stock inteligente.</p>
                 </div>
 
-                <div className="relative w-full sm:w-80 group">
-                    <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-500 h-4 w-4 group-focus-within:text-blue-400 transition-colors" />
-                    <input
-                        type="text"
-                        placeholder="Buscar producto por nombre..."
-                        className="pl-11 pr-4 py-2.5 bg-slate-800/50 border border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/50 text-slate-200 placeholder-slate-500 w-full outline-none backdrop-blur-md transition-all"
-                        value={filterValue}
-                        onChange={(e) => handleFilter(e.target.value)}
-                    />
+                <div className="flex gap-2 w-full sm:w-auto">
+                    <button
+                        onClick={handleCleanup}
+                        disabled={isCleaning}
+                        className="flex-1 sm:flex-none px-5 py-2.5 bg-rose-500/10 text-rose-400 border border-rose-500/20 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-rose-500/20 transition-all flex items-center justify-center gap-2 group"
+                    >
+                        {isCleaning ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} className="group-hover:scale-110 transition-transform" />}
+                        {isCleaning ? 'Limpiando...' : 'Limpiar Catálogo'}
+                    </button>
+                    
+                    <div className="relative flex-1 sm:w-80 group">
+                        <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-500 h-4 w-4 group-focus-within:text-blue-400 transition-colors" />
+                        <input
+                            type="text"
+                            placeholder="Buscar producto por nombre..."
+                            className="pl-11 pr-4 py-2.5 bg-slate-800/50 border border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/50 text-slate-200 placeholder-slate-500 w-full outline-none backdrop-blur-md transition-all"
+                            value={filterValue}
+                            onChange={(e) => handleFilter(e.target.value)}
+                        />
+                    </div>
                 </div>
             </div>
 
