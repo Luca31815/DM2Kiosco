@@ -216,12 +216,16 @@ const ReservasView = () => {
     const [filterValue, setFilterValue] = useState('')
     const [filterColumn, setFilterColumn] = useState('cliente')
     const [showOpenOnly, setShowOpenOnly] = useState(true)
+    const [page, setPage] = useState(1)
+    const pageSize = 20
 
-    const { data, loading } = useReservas({
+    const { data, count, loading } = useReservas({
         sortColumn,
         sortOrder,
         filterColumn,
-        filterValue
+        filterValue,
+        page,
+        pageSize
     }, showOpenOnly)
 
     const searchColumns = [
@@ -282,12 +286,18 @@ const ReservasView = () => {
     ]
 
     const handleSort = (column) => {
+        setPage(1)
         if (sortColumn === column) {
             setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
         } else {
             setSortColumn(column)
             setSortOrder('asc')
         }
+    }
+
+    const handleFilter = (val) => {
+        setFilterValue(val)
+        setPage(1)
     }
 
     const renderSearchInput = (value, onChange) => {
@@ -348,13 +358,13 @@ const ReservasView = () => {
 
                 <div className="flex gap-2 bg-slate-900/50 p-1 rounded-xl border border-white/5 backdrop-blur-md">
                     <button
-                        onClick={() => setShowOpenOnly(true)}
+                        onClick={() => { setShowOpenOnly(true); setPage(1); }}
                         className={`px-5 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${showOpenOnly ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'text-slate-500 hover:text-slate-300'}`}
                     >
                         Abiertas
                     </button>
                     <button
-                        onClick={() => setShowOpenOnly(false)}
+                        onClick={() => { setShowOpenOnly(false); setPage(1); }}
                         className={`px-5 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${!showOpenOnly ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'text-slate-500 hover:text-slate-300'}`}
                     >
                         Todas
@@ -369,13 +379,18 @@ const ReservasView = () => {
                 onSort={handleSort}
                 sortColumn={sortColumn}
                 sortOrder={sortOrder}
-                onFilter={setFilterValue}
+                onFilter={handleFilter}
                 searchColumns={searchColumns}
                 searchColumn={filterColumn}
-                onSearchColumnChange={setFilterColumn}
+                onSearchColumnChange={(col) => { setFilterColumn(col); setPage(1); }}
                 renderSearchInput={renderSearchInput}
                 renderExpandedRow={(row) => <ExpandedRow row={row} />}
                 rowKey="reserva_id"
+                serverSide={true}
+                totalCount={count}
+                currentPage={page}
+                onPageChange={setPage}
+                itemsPerPage={pageSize}
             />
         </motion.div>
     )

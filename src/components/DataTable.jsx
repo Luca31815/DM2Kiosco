@@ -16,20 +16,29 @@ const DataTable = ({
     searchColumns = [],
     searchColumn,
     onSearchColumnChange,
-    renderSearchInput
+    renderSearchInput,
+    serverSide = false,
+    totalCount = 0,
+    onPageChange,
+    currentPage: externalPage,
+    itemsPerPage = 20
 }) => {
     const [filterValue, setFilterValue] = useState('')
     const [expandedRow, setExpandedRow] = useState(null)
-    const [currentPage, setCurrentPage] = useState(1)
-    const itemsPerPage = 20
+    const [internalPage, setInternalPage] = useState(1)
+
+    const currentPage = serverSide ? externalPage : internalPage
+    const setCurrentPage = serverSide ? onPageChange : setInternalPage
 
     // Reset pagination when data changes (e.g., search/filter)
     useEffect(() => {
-        setCurrentPage(1)
-    }, [data.length])
+        if (!serverSide) setInternalPage(1)
+    }, [data.length, serverSide])
 
-    const totalPages = Math.ceil(data.length / itemsPerPage)
-    const paginatedData = data.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+    const totalRows = serverSide ? totalCount : data.length
+    const totalPages = Math.ceil(totalRows / itemsPerPage)
+    const paginatedData = serverSide ? data : data.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+
 
     const handleFilterChange = (val) => {
         setFilterValue(val)

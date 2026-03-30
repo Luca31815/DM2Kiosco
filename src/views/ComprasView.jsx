@@ -210,16 +210,16 @@ const ExpandedRow = ({ row }) => {
 }
 
 const ComprasView = () => {
-    const [sortColumn, setSortColumn] = useState('fecha')
-    const [sortOrder, setSortOrder] = useState('desc')
-    const [filterValue, setFilterValue] = useState('')
-    const [filterColumn, setFilterColumn] = useState('proveedor')
+    const [page, setPage] = useState(1)
+    const pageSize = 20
 
-    const { data, loading } = useCompras({
+    const { data, count, loading } = useCompras({
         sortColumn,
         sortOrder,
         filterColumn,
-        filterValue
+        filterValue,
+        page,
+        pageSize
     })
 
     const searchColumns = [
@@ -249,12 +249,18 @@ const ComprasView = () => {
     ]
 
     const handleSort = (column) => {
+        setPage(1)
         if (sortColumn === column) {
             setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
         } else {
             setSortColumn(column)
             setSortOrder('asc')
         }
+    }
+
+    const handleFilter = (val) => {
+        setFilterValue(val)
+        setPage(1)
     }
 
     const renderSearchInput = (value, onChange) => {
@@ -309,13 +315,18 @@ const ComprasView = () => {
                 onSort={handleSort}
                 sortColumn={sortColumn}
                 sortOrder={sortOrder}
-                onFilter={setFilterValue}
+                onFilter={handleFilter}
                 searchColumns={searchColumns}
                 searchColumn={filterColumn}
-                onSearchColumnChange={setFilterColumn}
+                onSearchColumnChange={(col) => { setFilterColumn(col); setPage(1); }}
                 renderSearchInput={renderSearchInput}
                 renderExpandedRow={(row) => <ExpandedRow row={row} />}
                 rowKey="compra_id"
+                serverSide={true}
+                totalCount={count}
+                currentPage={page}
+                onPageChange={setPage}
+                itemsPerPage={pageSize}
             />
         </motion.div>
     )

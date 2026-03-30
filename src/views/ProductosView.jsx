@@ -12,24 +12,28 @@ const ProductosView = () => {
     const [sortColumn, setSortColumn] = useState('nombre')
     const [sortOrder, setSortOrder] = useState('asc')
     const [filterValue, setFilterValue] = useState('')
+    const [page, setPage] = useState(1)
+    const pageSize = 20
     const { mutate } = useSWRConfig()
 
     const [editingId, setEditingId] = useState(null)
     const [editForm, setEditForm] = useState({})
     const [isSaving, setIsSaving] = useState(false)
 
-    const { data, loading } = useProductos({
+    const { data: rawData, count, loading } = useProductos({
         sortColumn,
         sortOrder,
         filterColumn: 'nombre',
-        filterValue
+        filterValue,
+        page,
+        pageSize
     })
     
     const { data: predictionData } = usePredictiveStock()
     
     const productsWithPrediction = React.useMemo(() => {
-        if (!data) return []
-        return data.map(p => {
+        if (!rawData) return []
+        return rawData.map(p => {
             const prediction = predictionData?.find(pred => pred.nombre === p.nombre)
             return {
                 ...p,
@@ -37,7 +41,7 @@ const ProductosView = () => {
                 ventas_diarias_promedio: prediction ? prediction.ventas_diarias_promedio : 0
             }
         })
-    }, [data, predictionData])
+    }, [rawData, predictionData])
 
     const handleEditStart = (product) => {
         setEditingId(product.producto_id)
@@ -45,13 +49,11 @@ const ProductosView = () => {
     }
 
     const handleSave = async () => {
-        // Normalización y saneamiento de datos
         const nombreNormalizado = editForm.nombre?.trim().toUpperCase()
         const stockNum = parseInt(editForm.stock_actual)
         const precioVentaNum = parseFloat(editForm.ultimo_precio_venta)
         const precioCompraNum = parseFloat(editForm.ultimo_costo_compra)
 
-        // Validaciones básicas
         if (!nombreNormalizado) {
             toast.error('El nombre del producto no puede estar vacío')
             return
@@ -74,22 +76,17 @@ const ProductosView = () => {
         try {
             const result = await api.actualizarProducto(dataToSend)
             if (result.success) {
-                // Refrescar lista de productos
                 mutate(key => Array.isArray(key) && key[0] === 'productos')
-
-                // Si hubo unificación o cambio de nombre, refrescar todo
                 if (result.tipo_accion === 'MERGE' || result.renombrado) {
                     mutate('ventas')
                     mutate('compras')
                     mutate('reservas')
                 }
-
                 if (result.tipo_accion === 'MERGE') {
                     toast.success('¡Unificación exitosa! Los productos se han fusionado.', { id: loadingToast, duration: 5000 })
                 } else {
                     toast.success('Producto actualizado correctamente', { id: loadingToast })
                 }
-
                 setEditingId(null)
             } else {
                 toast.error('Error: ' + result.error, { id: loadingToast })
@@ -245,12 +242,18 @@ const ProductosView = () => {
 
     const handleSort = (column) => {
         if (column === 'acciones') return
+        setPage(1)
         if (sortColumn === column) {
             setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
         } else {
             setSortColumn(column)
             setSortOrder('asc')
         }
+    }
+
+    const handleFilter = (val) => {
+        setFilterValue(val)
+        setPage(1)
     }
 
     return (
@@ -277,7 +280,7 @@ const ProductosView = () => {
                         placeholder="Buscar producto por nombre..."
                         className="pl-11 pr-4 py-2.5 bg-slate-800/50 border border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/50 text-slate-200 placeholder-slate-500 w-full outline-none backdrop-blur-md transition-all"
                         value={filterValue}
-                        onChange={(e) => setFilterValue(e.target.value)}
+                        onChange={(e) => handleFilter(e.target.value)}
                     />
                 </div>
             </div>
@@ -289,8 +292,14 @@ const ProductosView = () => {
                 onSort={handleSort}
                 sortColumn={sortColumn}
                 sortOrder={sortOrder}
-                onFilter={setFilterValue}
+                onFilter={handleFilter}
                 rowKey="producto_id"
+                compact={true}
+                serverSide={true}
+                totalCount={count}
+                currentPage={page}
+                onPageChange={setPage}
+                itemsPerPage={pageSize}
             />
         </motion.div>
     )

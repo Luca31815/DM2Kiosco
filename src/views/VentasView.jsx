@@ -199,16 +199,16 @@ const ExpandedRow = ({ row }) => {
 }
 
 const VentasView = () => {
-    const [sortColumn, setSortColumn] = useState('fecha')
-    const [sortOrder, setSortOrder] = useState('desc')
-    const [filterValue, setFilterValue] = useState('')
-    const [filterColumn, setFilterColumn] = useState('cliente')
+    const [page, setPage] = useState(1)
+    const pageSize = 20
 
-    const { data, loading } = useVentas({
+    const { data, count, loading } = useVentas({
         sortColumn,
         sortOrder,
         filterColumn,
-        filterValue
+        filterValue,
+        page,
+        pageSize
     })
 
     const searchColumns = [
@@ -227,12 +227,18 @@ const VentasView = () => {
     ]
 
     const handleSort = (column) => {
+        setPage(1) // Reset a página 1 al ordenar
         if (sortColumn === column) {
             setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
         } else {
             setSortColumn(column)
             setSortOrder('asc')
         }
+    }
+
+    const handleFilter = (val) => {
+        setFilterValue(val)
+        setPage(1) // Reset a página 1 al filtrar
     }
 
     const renderSearchInput = (value, onChange) => {
@@ -296,13 +302,18 @@ const VentasView = () => {
                 onSort={handleSort}
                 sortColumn={sortColumn}
                 sortOrder={sortOrder}
-                onFilter={setFilterValue}
+                onFilter={handleFilter}
                 searchColumns={searchColumns}
                 searchColumn={filterColumn}
-                onSearchColumnChange={setFilterColumn}
+                onSearchColumnChange={(col) => { setFilterColumn(col); setPage(1); }}
                 renderSearchInput={renderSearchInput}
                 renderExpandedRow={(row) => <ExpandedRow row={row} />}
                 rowKey="venta_id"
+                serverSide={true}
+                totalCount={count}
+                currentPage={page}
+                onPageChange={setPage}
+                itemsPerPage={pageSize}
             />
         </motion.div>
     )
