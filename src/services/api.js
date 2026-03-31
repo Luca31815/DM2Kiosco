@@ -237,3 +237,15 @@ export const sincronizarProductosFaltantes = async () => {
         return { success: false, error: error.message };
     }
 }
+
+export const sincronizarPrecios = async () => {
+    if (isDemo()) return { success: false, error: 'Acción no permitida en modo Demo' };
+    try {
+        const { error } = await supabase.rpc('sincronizar_precios_productos');
+        if (error) throw error;
+        return { success: true };
+    } catch (error) {
+        console.error('Error al sincronizar precios:', error);
+        return { success: false, error: error.message };
+    }
+}

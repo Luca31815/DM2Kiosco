@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import DataTable from '../components/DataTable'
 import { useProductos, usePredictiveStock } from '../hooks/useData'
-import { Edit2, Check, X, Loader2, Package, TrendingUp, TrendingDown, Clock, Search, Timer, Trash2, PackagePlus } from 'lucide-react'
+import { Edit2, Check, X, Loader2, Package, TrendingUp, TrendingDown, Clock, Search, Timer, Trash2, PackagePlus, DollarSign } from 'lucide-react'
 import * as api from '../services/api'
 import { useSWRConfig } from 'swr'
 import ProductAutocomplete from '../components/ProductAutocomplete'
@@ -21,6 +21,7 @@ const ProductosView = () => {
     const [isSaving, setIsSaving] = useState(false)
     const [isCleaning, setIsCleaning] = useState(false)
     const [isSyncing, setIsSyncing] = useState(false)
+    const [isSyncingPrecios, setIsSyncingPrecios] = useState(false)
 
     const options = React.useMemo(() => ({
         sortColumn,
@@ -139,6 +140,24 @@ const ProductosView = () => {
             toast.error('Error al sincronizar: ' + (error.message || 'Error desconocido'), { id: loadingToast })
         } finally {
             setIsSyncing(false)
+        }
+    }
+
+    const handleSyncPrecios = async () => {
+        const loadingToast = toast.loading('Sincronizando precios desde el historial...')
+        setIsSyncingPrecios(true)
+        try {
+            const result = await api.sincronizarPrecios()
+            if (result.success) {
+                toast.success('¡Precios actualizados correctamente!', { id: loadingToast, duration: 4000 })
+                mutate(key => Array.isArray(key) && key[0] === 'productos')
+            } else {
+                toast.error('Error: ' + result.error, { id: loadingToast })
+            }
+        } catch (error) {
+            toast.error('Error al sincronizar precios: ' + (error.message || 'Error desconocido'), { id: loadingToast })
+        } finally {
+            setIsSyncingPrecios(false)
         }
     }
 
@@ -318,6 +337,15 @@ const ProductosView = () => {
                 </div>
 
                 <div className="flex gap-2 w-full sm:w-auto">
+                    <button
+                        onClick={handleSyncPrecios}
+                        disabled={isSyncingPrecios}
+                        className="flex-1 sm:flex-none px-5 py-2.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-emerald-500/20 transition-all flex items-center justify-center gap-2 group"
+                        title="Actualiza los precios de venta y compra según las últimas operaciones registradas"
+                    >
+                        {isSyncingPrecios ? <Loader2 size={14} className="animate-spin" /> : <DollarSign size={14} className="group-hover:scale-110 transition-transform" />}
+                        {isSyncingPrecios ? 'Sincronizando...' : 'Sincronizar Precios'}
+                    </button>
                     <button
                         onClick={handleSyncFaltantes}
                         disabled={isSyncing}
