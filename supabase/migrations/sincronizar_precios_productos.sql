@@ -29,10 +29,11 @@ BEGIN
     UPDATE public.productos_base p
     SET 
         -- Si hay venta nueva, actualizamos. Si no, dejamos el que estaba.
-        ultimo_precio_venta = COALESCE(uv.precio_unitario, p.ultimo_precio_venta),
+        -- FIX: Accedemos a través del alias 'sub' de la subquerie de abajo
+        ultimo_precio_venta = COALESCE(sub.precio_venta, p.ultimo_precio_venta),
         
         -- Si hay compra nueva, actualizamos (casteando a numeric por si acaso)
-        ultimo_costo_compra = COALESCE(uc.precio_unitario::numeric, p.ultimo_costo_compra),
+        ultimo_costo_compra = COALESCE(sub.precio_compra::numeric, p.ultimo_costo_compra),
         
         fecha_actualizacion = NOW()
     FROM (
