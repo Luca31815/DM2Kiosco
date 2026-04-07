@@ -11,7 +11,7 @@ const DuplicadosView = () => {
     const navigate = useNavigate()
     const { mutate } = useSWRConfig()
     const { data: duplicadosLocales, loading: localLoading, ignoreDuplicate } = useProductosDuplicados()
-    const { data: allProducts } = useProductos({ page: 1, pageSize: 3000, select: 'producto_id,nombre,ultimo_precio_venta,stock_actual' })
+    const { data: allProducts } = useProductos({ page: 1, pageSize: 3000, select: 'producto_id,nombre,ultimo_precio_venta,stock_actual,ultimo_costo_compra' })
     const [searchTerm, setSearchTerm] = useState('')
     const [mergingId, setMergingId] = useState(null)
     const [selections, setSelections] = useState({}) // { "id1_id2": 'p1' o 'p2' }
@@ -44,7 +44,7 @@ const DuplicadosView = () => {
             const suspiciousGroups = Object.entries(groups)
                 .filter(([_, list]) => list.length > 1)
                 .map(([name, list]) => {
-                    const itemsText = list.map(p => `  ID: ${p.producto_id || p.id} | ${p.nombre} ($${p.ultimo_precio_venta || p.precio_venta})`).join('\n');
+                    const itemsText = list.map(p => `  ID: ${p.producto_id || p.id} | ${p.nombre} (Venta: $${p.ultimo_precio_venta || p.precio_venta || 0} | Costo: $${p.ultimo_costo_compra || 0})`).join('\n');
                     return `### GRUPO SOSPECHOSO: ${name}\n${itemsText}`;
                 })
                 .join('\n\n');
@@ -71,8 +71,8 @@ FORMATO DE SALIDA (JSON ESTRICTO):
     { 
       "idKeep": "ID_DEL_NOMBRE_MAS_COMPLETO", 
       "idDelete": "ID_DEL_DUPLICADO", 
-      "reason": "Explicación breve (Marca idéntica, solo cambia abreviatura, precio similar)",
-      "validation": "Confirmación de sabor y precio coincidente"
+      "reason": "Explicación breve (Marca idéntica, abreviatura, precio/costo similar)",
+      "validation": "Confirmación de sabor y precios (venta/costo) coincidentes"
     }
   ]
 }
@@ -121,10 +121,17 @@ ${suspiciousGroups}`;
                 // Validación manual de seguridad antes de mostrar al usuario
                 const price1 = parseFloat(p1.ultimo_precio_venta || p1.precio_venta || 0);
                 const price2 = parseFloat(p2.ultimo_precio_venta || p2.precio_venta || 0);
-                const priceDiff = Math.abs(price1 - price2) / Math.max(price1, price2);
+                const cost1 = parseFloat(p1.ultimo_costo_compra || 0);
+                const cost2 = parseFloat(p2.ultimo_costo_compra || 0);
 
-                // Si los precios varían más del 35%, probablemente sea un error de la IA mezclando tamaños
-                if (priceDiff > 0.35 && price1 > 0 && price2 > 0) return null;
+                const priceDiff = Math.abs(price1 - price2) / Math.max(price1, price2 || 1);
+                const costDiff = cost1 > 0 && cost2 > 0 ? Math.abs(cost1 - cost2) / Math.max(cost1, cost2) : 1;
+
+                // Si los precios de venta varían mucho, pero los de costo son idénticos o casi iguales, es muy probable que sea duplicado
+                const costsAreMatch = cost1 > 0 && cost2 > 0 && costDiff < 0.05;
+                const pricesAreMatch = priceDiff < 0.35;
+
+                if (!pricesAreMatch && !costsAreMatch) return null;
 
                 // Si una palabra clave de sabor/marca cambia drásticamente
                 const words1 = p1.nombre.toUpperCase().split(' ');
@@ -157,7 +164,9 @@ ${suspiciousGroups}`;
     }
 
     const handleMergeSelection = async (d) => {
-        const uniqueKey = `${d.p1.producto_id || d.p1.id}_${d.p2.producto_id || d.p2.id}`
+        const id1 = String(d.p1.producto_id || d.p1.id || '');
+        const id2 = String(d.p2.producto_id || d.p2.id || '');
+        const uniqueKey = `${id1}_${id2}`
         const selectedKey = selections[uniqueKey]
         if (!selectedKey) {
             toast.error('Por favor, selecciona cuál de los dos nombres querés dejar como principal.');
@@ -185,13 +194,13 @@ ${suspiciousGroups}`;
         try {
             const result = await api.actualizarProducto(dataToSend)
             if (result.success) {
-                toast.success('¡Listo! Al tener el mismo nombre se han fusionado correctamente.', { id: loadingToast, duration: 4000 })
+                toast.success(result.mensaje || '¡Listo! Al tener el mismo nombre se han fusionado correctamente.', { id: loadingToast, duration: 4000 })
                 mutate(key => Array.isArray(key) && key[0] === 'productos')
                 mutate('ventas')
                 mutate('compras')
                 mutate('reservas')
             } else {
-                toast.error('Error: ' + result.error, { id: loadingToast })
+                toast.error('Error al fusionar: ' + (result.error || 'Desconocido'), { id: loadingToast, duration: 5000 })
             }
         } catch (error) {
             toast.error('Error de red: ' + (error.message || 'Desconocido'), { id: loadingToast })
@@ -338,7 +347,9 @@ Producto 2: [${d.p2.producto_id || d.p2.id}] ${d.p2.nombre} ($${d.p2.ultimo_prec
             ) : (
                 <div className="grid grid-cols-1 gap-4">
                     {filteredDuplicados.map((d, index) => {
-                        const uniqueKey = `${d.p1.producto_id || d.p1.id}_${d.p2.producto_id || d.p2.id}`
+                        const id1 = String(d.p1.producto_id || d.p1.id || '');
+                        const id2 = String(d.p2.producto_id || d.p2.id || '');
+                        const uniqueKey = `${id1}_${id2}`
                         return (
                         <motion.div key={uniqueKey} variants={itemVariants} className="glass-panel rounded-2xl p-6 relative overflow-hidden group border border-transparent hover:border-red-500/20 transition-colors">
                             <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none group-hover:bg-red-500/10 transition-colors" />

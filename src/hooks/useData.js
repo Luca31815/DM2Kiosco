@@ -178,8 +178,8 @@ export function useProductosDuplicados() {
         
         const parsedProducts = [];
         for (const p of productos) {
-            // Incluir productos con precio 0 o null (precio nulo = 0 para la comparación)
             const price = parseFloat(p.ultimo_precio_venta || p.precio_venta || 0);
+            const cost = parseFloat(p.ultimo_costo_compra || 0);
             
             const wordsMatch = getWords(p.nombre || '');
             const rawStr = wordsMatch.map(w => w.raw).sort().join(" ");
@@ -187,6 +187,7 @@ export function useProductosDuplicados() {
             parsedProducts.push({
                 ...p,
                 price: price,
+                cost: cost,
                 idStr: String(p.producto_id || p.id),
                 words: wordsMatch,
                 str: rawStr
@@ -196,18 +197,19 @@ export function useProductosDuplicados() {
         // Ordenar por precio ascendente para la "Ventana Deslizante"
         parsedProducts.sort((a, b) => a.price - b.price);
 
-        // 3. Ventana de tolerancia de Precio (Diferencia máxima: 15%)
+        // 3. Ventana de tolerancia de Precio y Costo
         for (let i = 0; i < parsedProducts.length; i++) {
             const p1 = parsedProducts[i];
             
             for (let j = i + 1; j < parsedProducts.length; j++) {
                 const p2 = parsedProducts[j];
                 
-                // Si p2 es más del 35% más caro que p1, romper ciclo j (lista ordenada, el resto será aún más caro)
-                // Excepción: si ambos tienen precio 0, sí los comparamos
-                if (p1.price === 0 && p2.price === 0) {
-                    // continuar comparando
-                } else if (p2.price > p1.price * 1.35) {
+                const isSimilarPrice = (p1.price === 0 && p2.price === 0) || (Math.abs(p1.price - p2.price) <= Math.max(p1.price, p2.price) * 0.35);
+                const isSimilarCost = (p1.cost > 0 && p2.cost > 0 && Math.abs(p1.cost - p2.cost) <= Math.max(p1.cost, p2.cost) * 0.20);
+
+                // Si los precios de venta ya se alejaron demasiado (más del 40%),
+                // solo seguimos si los costos de compra siguen siendo sospechosamente similares.
+                if (p2.price > p1.price * 1.40 && !isSimilarCost) {
                     break;
                 }
 
@@ -217,18 +219,25 @@ export function useProductosDuplicados() {
                 const words2 = p2.words;
                 if (words1.length === 0 || words2.length === 0) continue;
 
+                let matchReason = '';
                 if (p1.str === p2.str) {
-                    candidates.push({ p1, p2, reason: 'Nombres similares' });
-                    continue;
+                    matchReason = 'Nombres similares';
+                } else {
+                    const isW1Shorter = words1.length < words2.length;
+                    const shorter = isW1Shorter ? words1 : words2;
+                    const longer = isW1Shorter ? words2 : words1;
+
+                    if (checkFuzzyInclude(shorter, longer)) {
+                        matchReason = shorter.length === longer.length ? 'Variación Ortográfica/Fonética' : 'Palabras incluidas';
+                    }
                 }
 
-                const isW1Shorter = words1.length < words2.length;
-                const shorter = isW1Shorter ? words1 : words2;
-                const longer = isW1Shorter ? words2 : words1;
-
-                if (checkFuzzyInclude(shorter, longer)) {
-                    candidates.push({ p1, p2, reason: shorter.length === longer.length ? 'Variación Ortográfica/Fonética' : 'Palabras incluidas' });
-                    continue;
+                if (matchReason) {
+                    // Si el match fue reforzado por el costo simlar, lo indicamos en la razón
+                    if (isSimilarCost && !isSimilarPrice) {
+                        matchReason += ' (Costo similar)';
+                    }
+                    candidates.push({ p1, p2, reason: matchReason });
                 }
             }
         }
