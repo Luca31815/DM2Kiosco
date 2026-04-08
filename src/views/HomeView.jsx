@@ -26,7 +26,7 @@ import {
     Area
 } from 'recharts'
 import { motion } from 'framer-motion'
-import { useReporte, useReservas, useProductos, useUnifiedFeed, usePredictiveStock, useProductosDuplicados } from '../hooks/useData'
+import { useReporte, useReservas, useProductos, useUnifiedFeed, usePredictiveStock, useProductosDuplicadosTrigram } from '../hooks/useData'
 
 const StatCard = ({ title, value, icon: Icon, trend, trendValue, color, index }) => (
     <motion.div
@@ -99,7 +99,7 @@ const HomeView = () => {
     const { data: productos, loading: loadingProductos } = useProductos({ pageSize: 5, sortColumn: 'stock_actual', sortOrder: 'asc' })
     const { data: unifiedFeed, loading: loadingFeed } = useUnifiedFeed(10)
     const { data: topAgotados, loading: loadingPred } = usePredictiveStock({ pageSize: 3, sortColumn: 'dias_restantes', sortOrder: 'asc' })
-    const { data: duplicados, loading: loadingDuplicados } = useProductosDuplicados()
+    const { data: duplicados, loading: loadingDuplicados } = useProductosDuplicadosTrigram()
 
     // Calcular KPIs
     const stats = useMemo(() => {
