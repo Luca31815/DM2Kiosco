@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { useProductos } from '../hooks/useData'
+import * as api from '../services/api'
 import { Loader2 } from 'lucide-react'
 
 const ProductAutocomplete = ({ value, onChange, placeholder = 'Buscar producto...', className = '' }) => {
@@ -24,14 +25,30 @@ const ProductAutocomplete = ({ value, onChange, placeholder = 'Buscar producto..
         setInputValue(value || '')
     }, [value])
 
-    // Fetch suggestions
-    const { data: suggestions, loading } = useProductos({
-        filterColumn: 'nombre',
-        filterValue: debouncedQuery,
-        pageSize: 10,
-        sortColumn: 'nombre',
-        sortOrder: 'asc'
-    })
+    const [suggestions, setSuggestions] = useState([])
+    const [loading, setLoading] = useState(false)
+
+    // Fetch suggestions using trigram similarity
+    useEffect(() => {
+        if (!debouncedQuery || debouncedQuery.length < 2) {
+            setSuggestions([])
+            return
+        }
+
+        const fetchSuggestions = async () => {
+            setLoading(true)
+            try {
+                const results = await api.buscarProductosSimilares(debouncedQuery)
+                setSuggestions(results || [])
+            } catch (err) {
+                console.error('Error fetching suggestions:', err)
+            } finally {
+                setLoading(false)
+            }
+        }
+
+        fetchSuggestions()
+    }, [debouncedQuery])
 
     // Update position for portal
     const updatePosition = () => {
@@ -87,15 +104,24 @@ const ProductAutocomplete = ({ value, onChange, placeholder = 'Buscar producto..
                 marginTop: '4px'
             }}
         >
-            {suggestions.map((product) => (
+            {suggestions.map((product, idx) => (
                 <li
-                    key={product.producto_id}
+                    key={idx}
                     className="px-4 py-2 hover:bg-white/5 cursor-pointer text-gray-300 transition-colors"
                     onMouseDown={(e) => handleSelect(e, product.nombre)}
                 >
                     <div className="flex flex-col">
-                        <span className="font-medium text-white">{product.nombre}</span>
-                        <span className="text-[10px] text-gray-500 uppercase">En stock: {product.stock_actual} • ${product.ultimo_precio_venta || '-'}</span>
+                        <div className="flex justify-between items-center">
+                            <span className="font-medium text-white">{product.nombre}</span>
+                            {product.similitud && (
+                                <span className="text-[9px] bg-blue-900/40 text-blue-300 px-1 rounded">
+                                    {Math.round(product.similitud * 100)}% Match
+                                </span>
+                            )}
+                        </div>
+                        <span className="text-[10px] text-gray-500 uppercase">
+                            Precio: ${product.precio || product.ultimo_precio_venta || '-'}
+                        </span>
                     </div>
                 </li>
             ))}

@@ -63,189 +63,43 @@ export function useProductos(options = {}) {
     }
 }
 
-export function useProductosDuplicados() {
-    const { data: productos, loading, error } = useProductos({ page: 1, pageSize: 3000, select: 'producto_id,nombre,ultimo_precio_venta,stock_actual,ultimo_costo_compra' });
+export function useProductosDuplicadosTrigram() {
+    const { isDemoMode } = useAuth()
+    const { data: rawDups, isLoading, error } = useSWR(
+        !isDemoMode ? 'duplicados_trigram' : null,
+        () => api.getDuplicadosTrigram(),
+        SWR_OPTIONS
+    )
+    const { data: allProducts } = useProductos({ pageSize: 5000 })
 
     const [ignoredPairs, setIgnoredPairs] = useState(() => {
         try {
-            const saved = localStorage.getItem('ignoredDuplicates');
+            const saved = localStorage.getItem('ignoredDuplicatesTrigram');
             return saved ? JSON.parse(saved) : [];
-        } catch (e) {
-            return [];
-        }
+        } catch (e) { return []; }
     });
 
     const ignoreDuplicate = (id1, id2) => {
-        if (!id1 || !id2) return;
         const pair = [String(id1), String(id2)].sort().join('|');
         setIgnoredPairs(prev => {
-            if (prev.includes(pair)) return prev;
             const next = [...prev, pair];
-            localStorage.setItem('ignoredDuplicates', JSON.stringify(next));
+            localStorage.setItem('ignoredDuplicatesTrigram', JSON.stringify(next));
             return next;
         });
     };
 
     const duplicados = useMemo(() => {
-        if (!productos || productos.length === 0) return [];
-        
-        // Función ultra básica para quitar plurales en español
-        const stemWord = (word) => {
-            if (word.length > 3 && word.endsWith('S')) {
-                if (word.endsWith('ES') && !word.endsWith('RES') && !word.endsWith('TES')) return word.slice(0, -2);
-                return word.slice(0, -1);
-            }
-            return word;
-        };
+        if (!rawDups || !allProducts) return []
+        return rawDups.map(d => {
+            const p1 = allProducts.find(p => String(p.producto_id) === d.id1)
+            const p2 = allProducts.find(p => String(p.producto_id) === d.id2)
+            if (!p1 || !p2) return null
+            if (ignoredPairs.includes([d.id1, d.id2].sort().join('|'))) return null
+            return { p1, p2, reason: `Similitud SQL: ${Math.round(d.similitud * 100)}%` }
+        }).filter(Boolean)
+    }, [rawDups, allProducts, ignoredPairs])
 
-        // Algoritmo Fonético Simplificado Español
-        const phonetic = (word) => {
-            return word.toUpperCase()
-                .replace(/H/g, '')
-                .replace(/[ZV]/g, 'B')
-                .replace(/[CSZ]/g, 'S')
-                .replace(/LL/g, 'Y')
-                .replace(/QU/g, 'K')
-                .replace(/C[EI]/g, 'S')
-                .replace(/C/g, 'K')
-                .replace(/G[EI]/g, 'J')
-                .replace(/(.)\1+/g, '$1'); // Quitar letras dobles restantes
-        };
-
-        const getWords = (name) => {
-            if (!name) return [];
-            const stopwords = new Set(['DE', 'LA', 'EL', 'LOS', 'LAS', 'CON', 'SIN', 'SABOR', 'UN', 'UNA', 'Y', 'O', 'PARA', 'AL', 'DEL']);
-            
-            // Reemplazos de Diccionario Kiosco
-            let cleaned = String(name).toUpperCase()
-                .replace(/\bCHOC\b/g, "CHOCOLATE")
-                .replace(/\bDLCE\b/g, "DULCE")
-                .replace(/\bC\/\b/g, "CON ")
-                .replace(/\bP\/\b/g, "PARA ")
-                .replace(/\bGFA\b/g, "GARRAFA")
-                // Reemplazar unidades y limpiar caracteres
-                .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, " ")
-                .replace(/(\d+)\s*(LTS|LT|L)\b/g, "$1L")
-                .replace(/(\d+)\s*(CM3|CC|ML)\b/g, "$1ML")
-                .replace(/(\d+)\s*(GRS|GR|GRAMOS|G)\b/g, "$1G")
-                .replace(/(\d+)\s*(KILOS|KG|K)\b/g, "$1KG")
-                .trim();
-
-            return cleaned.split(/\s+/)
-                .filter(w => w.length > 0 && !stopwords.has(w))
-                .map(w => ({ raw: stemWord(w), sound: phonetic(stemWord(w)) }));
-        };
-
-        // Algoritmo de Distancia de Levenshtein
-        const levenshtein = (a, b) => {
-            if (a.length === 0) return b.length;
-            if (b.length === 0) return a.length;
-            let matrix = Array(b.length + 1).fill(null).map(() => Array(a.length + 1).fill(null));
-            for (let i = 0; i <= a.length; i++) matrix[0][i] = i;
-            for (let j = 0; j <= b.length; j++) matrix[j][0] = j;
-            for (let j = 1; j <= b.length; j++) {
-                for (let i = 1; i <= a.length; i++) {
-                    const indicator = a[i - 1] === b[j - 1] ? 0 : 1;
-                    matrix[j][i] = Math.min(
-                        matrix[j][i - 1] + 1,
-                        matrix[j - 1][i] + 1,
-                        matrix[j - 1][i - 1] + indicator
-                    );
-                }
-            }
-            return matrix[b.length][a.length];
-        };
-
-        const isFuzzyMatch = (w1, w2) => {
-            if (w1.raw === w2.raw) return true;
-            if (w1.sound === w2.sound) return true; // Match fonético ("Sanwich" == "Sandwich")
-            
-            // Typos matemáticos
-            if (Math.abs(w1.raw.length - w2.raw.length) > 2) return false;
-            // Solo aplicar typos en palabras grandes para evitar falsos positivos
-            if (w1.raw.length > 4 && w2.raw.length > 4) {
-                const threshold = Math.max(w1.raw.length, w2.raw.length) > 7 ? 2 : 1;
-                return levenshtein(w1.raw, w2.raw) <= threshold;
-            }
-            return false;
-        };
-
-        const checkFuzzyInclude = (shorter, longer) => {
-            return shorter.every(w1 => longer.some(w2 => isFuzzyMatch(w1, w2)));
-        };
-
-        const candidates = [];
-        
-        const parsedProducts = [];
-        for (const p of productos) {
-            const price = parseFloat(p.ultimo_precio_venta || p.precio_venta || 0);
-            const cost = parseFloat(p.ultimo_costo_compra || 0);
-            
-            const wordsMatch = getWords(p.nombre || '');
-            const rawStr = wordsMatch.map(w => w.raw).sort().join(" ");
-
-            parsedProducts.push({
-                ...p,
-                price: price,
-                cost: cost,
-                idStr: String(p.producto_id || p.id),
-                words: wordsMatch,
-                str: rawStr
-            });
-        }
-
-        // Ordenar por precio ascendente para la "Ventana Deslizante"
-        parsedProducts.sort((a, b) => a.price - b.price);
-
-        // 3. Ventana de tolerancia de Precio y Costo
-        for (let i = 0; i < parsedProducts.length; i++) {
-            const p1 = parsedProducts[i];
-            
-            for (let j = i + 1; j < parsedProducts.length; j++) {
-                const p2 = parsedProducts[j];
-                
-                const isSimilarPrice = (p1.price === 0 && p2.price === 0) || (Math.abs(p1.price - p2.price) <= Math.max(p1.price, p2.price) * 0.35);
-                const isSimilarCost = (p1.cost > 0 && p2.cost > 0 && Math.abs(p1.cost - p2.cost) <= Math.max(p1.cost, p2.cost) * 0.20);
-
-                // Si los precios de venta ya se alejaron demasiado (más del 40%),
-                // solo seguimos si los costos de compra siguen siendo sospechosamente similares.
-                if (p2.price > p1.price * 1.40 && !isSimilarCost) {
-                    break;
-                }
-
-                if (ignoredPairs.includes([p1.idStr, p2.idStr].sort().join('|'))) continue;
-
-                const words1 = p1.words;
-                const words2 = p2.words;
-                if (words1.length === 0 || words2.length === 0) continue;
-
-                let matchReason = '';
-                if (p1.str === p2.str) {
-                    matchReason = 'Nombres similares';
-                } else {
-                    const isW1Shorter = words1.length < words2.length;
-                    const shorter = isW1Shorter ? words1 : words2;
-                    const longer = isW1Shorter ? words2 : words1;
-
-                    if (checkFuzzyInclude(shorter, longer)) {
-                        matchReason = shorter.length === longer.length ? 'Variación Ortográfica/Fonética' : 'Palabras incluidas';
-                    }
-                }
-
-                if (matchReason) {
-                    // Si el match fue reforzado por el costo simlar, lo indicamos en la razón
-                    if (isSimilarCost && !isSimilarPrice) {
-                        matchReason += ' (Costo similar)';
-                    }
-                    candidates.push({ p1, p2, reason: matchReason });
-                }
-            }
-        }
-        
-        return candidates;
-    }, [productos, ignoredPairs]);
-
-    return { data: duplicados, loading, error, count: duplicados.length, ignoreDuplicate };
+    return { data: duplicados, loading: isLoading, error, ignoreDuplicate }
 }
 
 export function useCompras(options = {}) {

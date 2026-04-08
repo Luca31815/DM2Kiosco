@@ -141,12 +141,32 @@ export const getMovimientosStock = (id) => fetchDetails('stock_movimientos', 're
 
 export const corregirOperacion = async (data) => {
     if (isDemo()) throw new Error('Acción deshabilitada en el modo Demo');
-    const { data: result, error } = await supabase.rpc('corregir_operacion_v18', { p_input: data })
+    const { data: result, error } = await supabase.rpc('corregir_operacion_v19', { p_input: data })
     if (error) {
-        console.error('Error calling corregir_operacion_v18:', error)
+        console.error('Error calling corregir_operacion_v19:', error)
         throw error
     }
     return result
+}
+
+export const buscarProductosSimilares = async (query) => {
+    if (isDemo()) return []
+    const { data, error } = await supabase.rpc('fn_buscar_productos_similares', { p_search: query })
+    if (error) {
+        console.error('Error calling fn_buscar_productos_similares:', error)
+        return []
+    }
+    return data || []
+}
+
+export const getDuplicadosTrigram = async () => {
+    if (isDemo()) return []
+    const { data, error } = await supabase.rpc('fn_buscar_duplicados_trigram')
+    if (error) {
+        console.error('Error calling fn_buscar_duplicados_trigram:', error)
+        return []
+    }
+    return data || []
 }
 
 export const actualizarProducto = async (data) => {

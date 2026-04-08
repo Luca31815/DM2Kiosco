@@ -5,13 +5,13 @@ import { AlertCircle, ArrowRight, Package, Tag, ArrowUpRight, Search, EyeOff, Ch
 import { useSWRConfig } from 'swr'
 import { toast } from 'react-hot-toast'
 import * as api from '../services/api'
-import { useProductosDuplicados, useProductos } from '../hooks/useData'
+import { useProductosDuplicadosTrigram, useProductos } from '../hooks/useData'
 
 const DuplicadosView = () => {
     const navigate = useNavigate()
     const { mutate } = useSWRConfig()
-    const { data: duplicadosLocales, loading: localLoading, ignoreDuplicate } = useProductosDuplicados()
-    const { data: allProducts } = useProductos({ page: 1, pageSize: 3000, select: 'producto_id,nombre,ultimo_precio_venta,stock_actual,ultimo_costo_compra' })
+    const { data: duplicadosSQL, loading: sqlLoading, ignoreDuplicate: ignoreSQL } = useProductosDuplicadosTrigram()
+    const { data: allProducts } = useProductos({ pageSize: 5000 })
     const [searchTerm, setSearchTerm] = useState('')
     const [mergingId, setMergingId] = useState(null)
     const [selections, setSelections] = useState({}) // { "id1_id2": 'p1' o 'p2' }
@@ -20,8 +20,8 @@ const DuplicadosView = () => {
     const [aiDuplicates, setAiDuplicates] = useState([])
     const [isAiScanning, setIsAiScanning] = useState(false)
 
-    // Fusionar listas (Local + IA)
-    const duplicados = [...duplicadosLocales, ...aiDuplicates]
+    // Fusionar listas (SQL Trigrams + IA)
+    const duplicados = [...duplicadosSQL, ...aiDuplicates]
 
     const handleAiScan = async () => {
         if (!allProducts || allProducts.length === 0) return toast.error('El catálogo aún no cargó');
@@ -332,7 +332,7 @@ Producto 2: [${d.p2.producto_id || d.p2.id}] ${d.p2.nombre} ($${d.p2.ultimo_prec
             </div>
 
             {/* Lista Principal */}
-            {localLoading && !isAiScanning ? (
+            {sqlLoading && !isAiScanning ? (
                 <div className="py-20 flex justify-center items-center">
                     <div className="h-8 w-8 rounded-full border-4 border-slate-700 border-t-red-500 animate-spin" />
                 </div>
@@ -415,7 +415,7 @@ Producto 2: [${d.p2.producto_id || d.p2.id}] ${d.p2.nombre} ($${d.p2.ultimo_prec
                                         {(mergingId === d.p1.producto_id || mergingId === d.p2.producto_id) ? <Loader2 className="h-4 w-4 animate-spin"/> : <CheckCircle2 className="h-4 w-4"/>} Fusionar aquí
                                     </button>
                                     <button 
-                                        onClick={() => ignoreDuplicate(d.p1.producto_id || d.p1.id, d.p2.producto_id || d.p2.id)}
+                                        onClick={() => ignoreSQL(d.p1.producto_id || d.p1.id, d.p2.producto_id || d.p2.id)}
                                         className="w-full flex justify-center items-center gap-2 px-4 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-bold transition-transform active:scale-95 border border-white/5"
                                         title="Ocultar esta alerta permanentemente"
                                     >
