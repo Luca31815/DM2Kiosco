@@ -43,7 +43,7 @@ const isLikelyDuplicate = (p1, p2, ignoredPairs = []) => {
 
     // C. Diferenciadores (Si uno lo tiene y el otro no, NO son duplicados)
     // Sabores y Variantes
-    const flavors = ['FRAMBUESA', 'CHOCOLATE', 'FRUTILLA', 'MENTA', 'MIEL', 'MENTOLADO', 'CONVERTIBLE', 'ON', 'ORIGINAL', 'ZERO', 'LIGHT', 'PLACER', 'PERA', 'MANZANA', 'LIMA', 'COLA', 'BLANCO'];
+    const flavors = ['FRAMBUESA', 'CHOCOLATE', 'FRUTILLA', 'MENTA', 'MIEL', 'MENTOLADO', 'CONVERTIBLE', 'ON', 'ORIGINAL', 'ZERO', 'LIGHT', 'PLACER', 'PERA', 'MANZANA', 'LIMA', 'COLA', 'BLANCO', 'LIMON'];
     for (const f of flavors) {
         if (words1.includes(f) && !words2.includes(f)) return false;
         if (!words1.includes(f) && words2.includes(f)) return false;
@@ -153,7 +153,7 @@ const DuplicadosView = () => {
 Analiza los siguientes GRUPOS SOSPECHOSOS de productos duplicados.
 
 PROHIBICIONES ABSOLUTAS (Si las rompes, la sugerencia es INVÁLIDA):
-1. SABORES: Manzana vs Pera, Lima vs Frutilla, Lima vs Cola, Placer vs Original, Blanco vs Negro son todos DIFERENTES.
+1. SABORES: Manzana vs Pera, Lima vs Frutilla, Lima vs Cola, Limón vs Pomelo, Placer vs Original, Blanco vs Negro son todos DIFERENTES.
 2. MARCAS/LÍNEAS: Prohibido mezclar marcas distintas o líneas de la misma marca que sean diferentes (ej: Jorgito vs Jorgelín, Rasta vs Gula, Guaymallén vs Milka, Marlboro vs PM).
 3. ESTRUCTURA: Solo descarta si uno es "SIMPLE" y el otro "TRIPLE". Si uno es "TRIPLE" y el otro NO especifica, trátalo como posible duplicado.
 4. PRECIOS/COSTOS: Si uno tiene venta $0 pero el costo coincide (error < 5%), es un duplicado probable. Prioriza el costo si está disponible.
