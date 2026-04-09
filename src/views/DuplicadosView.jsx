@@ -43,6 +43,9 @@ const isLikelyDuplicate = (p1, p2, ignoredPairs = []) => {
         .replace(/\bBLANCA\b/g, 'BLANCO')
         .replace(/\bPEQUEÑO\b/g, 'CHICA')
         .replace(/\bPEQUEÑA\b/g, 'CHICA')
+        .replace(/\bGRANDES\b/g, 'GRANDE')
+        .replace(/\bCHICAS\b/g, 'CHICA')
+        .replace(/\bCHICOS\b/g, 'CHICA')
         .replace(/\bCONVERTIBLE\b/g, 'MENTOLADO');
     
     const name1Normalized = normalize(name1);
@@ -66,7 +69,7 @@ const isLikelyDuplicate = (p1, p2, ignoredPairs = []) => {
     };
 
     // 1. Sabores, Variedades y Cigarrillos
-    const flavors = ['FRAMBUESA', 'CHOCOLATE', 'FRUTILLA', 'MENTA', 'MIEL', 'MENTOLADO', 'CONVERTIBLE', 'FUSION', 'ON', 'ICE', 'ORIGINAL', 'COMUN', 'BOX', 'ZERO', 'LIGHT', 'PLACER', 'PERA', 'MANZANA', 'LIMA', 'COLA', 'BLANCO', 'LIMON', 'AZUL', 'ROJO', 'VERDE', 'PECESITOS', 'PECECITOS', 'OSITOS', 'MORITAS', 'ORIGEN', 'ECONOMICO', 'SELECT', 'UVA', 'ANANA', 'AGUA CREAM', 'NARANJA', 'POMELO'];
+    const flavors = ['FRAMBUESA', 'CHOCOLATE', 'FRUTILLA', 'MENTA', 'MIEL', 'MENTOLADO', 'CONVERTIBLE', 'FUSION', 'ON', 'ICE', 'ORIGINAL', 'COMUN', 'BOX', 'ZERO', 'LIGHT', 'PLACER', 'PERA', 'MANZANA', 'LIMA', 'COLA', 'BLANCO', 'LIMON', 'AZUL', 'ROJO', 'VERDE', 'PECESITOS', 'PECECITOS', 'OSITOS', 'MORITAS', 'ORIGEN', 'ECONOMICO', 'SELECT', 'UVA', 'ANANA', 'AGUA CREAM', 'NARANJA', 'POMELO', 'CAFE', 'OCEANO', 'COCO', 'VAINILLA', 'DURAZNO', 'DULCE DE LECHE', 'MARACUYA', 'MULTIFRUTAL'];
     const attrs1 = findAllAttrs(name1Normalized, words1, flavors);
     const attrs2 = findAllAttrs(name2Normalized, words2, flavors);
     if (hasContradiction(attrs1, attrs2)) return false;
