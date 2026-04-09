@@ -56,6 +56,13 @@ const isLikelyDuplicate = (p1, p2, ignoredPairs = []) => {
     const hasTriple2 = words2.includes('TRIPLE');
     if ((hasSimple1 && hasTriple2) || (hasTriple1 && hasSimple2)) return false; 
 
+    // Marcas y Líneas Exclusivas (Si uno lo tiene y el otro no, NO son duplicados)
+    const brands = ['JORGITO', 'JORGELIN', 'RASTA', 'GULA', 'GUAYMALLEN', 'TERRABUSI', 'MILKA', 'SUCHARD', 'HAVANNA', 'CACHAFAZ', 'VICENTIN', 'CAPITAN'];
+    for (const b of brands) {
+        if (words1.includes(b) && !words2.includes(b)) return false;
+        if (!words1.includes(b) && words2.includes(b)) return false;
+    }
+
     // Formato de Packaging
     const formats = ['BOX', 'SOFT', 'COMUN', 'GRANDE', 'MEDIANA', 'CHICA'];
     for (const f of formats) {
@@ -146,11 +153,12 @@ const DuplicadosView = () => {
 Analiza los siguientes GRUPOS SOSPECHOSOS de productos duplicados.
 
 PROHIBICIONES ABSOLUTAS (Si las rompes, la sugerencia es INVÁLIDA):
-4. ATRIBUTOS CRÍTICOS: Blanco y Negro son diferentes. Box vs Común son diferentes.
-5. ESTRUCTURA: Solo descarta si uno es "SIMPLE" y el otro "TRIPLE". Si uno es "TRIPLE" y el otro NO especifica, trátalo como posible duplicado.
-6. PRECIOS/COSTOS: Si uno tiene venta $0 pero el costo coincide (error < 5%), es un duplicado probable. Prioriza el costo si está disponible.
-7. SINÓNIMOS (MISMO PRODUCTO): En alfajores, "NEGRO" y "CHOCOLATE" se consideran el mismo sabor.
-8. REGLA DE ORO (MAGNITUDES): Diferencias numéricas (12u vs 20u, 500ml vs 1L, 100g vs 150g) implican productos distintos.
+1. SABORES: Manzana vs Pera, Lima vs Frutilla, Lima vs Cola, Placer vs Original, Blanco vs Negro son todos DIFERENTES.
+2. MARCAS/LÍNEAS: Prohibido mezclar marcas distintas o líneas de la misma marca que sean diferentes (ej: Jorgito vs Jorgelín, Rasta vs Gula, Guaymallén vs Milka, Marlboro vs PM).
+3. ESTRUCTURA: Solo descarta si uno es "SIMPLE" y el otro "TRIPLE". Si uno es "TRIPLE" y el otro NO especifica, trátalo como posible duplicado.
+4. PRECIOS/COSTOS: Si uno tiene venta $0 pero el costo coincide (error < 5%), es un duplicado probable. Prioriza el costo si está disponible.
+5. SINÓNIMOS (MISMO PRODUCTO): En alfajores, "NEGRO" y "CHOCOLATE" se consideran el mismo sabor.
+6. REGLA DE ORO (MAGNITUDES): Diferencias numéricas (12u vs 20u, 500ml vs 1L, 100g vs 150g) implican productos distintos.
 
 Tu misión es encontrar duplicados reales DENTRO de cada grupo.
 FORMATO DE SALIDA (JSON ESTRICTO):
