@@ -10,7 +10,7 @@ import { useProductosDuplicadosTrigram, useProductos } from '../hooks/useData'
 const DuplicadosView = () => {
     const navigate = useNavigate()
     const { mutate } = useSWRConfig()
-    const { data: duplicadosSQL, loading: sqlLoading, ignoreDuplicate: ignoreSQL } = useProductosDuplicadosTrigram()
+    const { data: duplicadosSQL, loading: sqlLoading, ignoreDuplicate: ignoreSQL, ignoredPairs } = useProductosDuplicadosTrigram()
     const { data: allProducts } = useProductos({ pageSize: 5000 })
     const [searchTerm, setSearchTerm] = useState('')
     const [mergingId, setMergingId] = useState(null)
@@ -62,7 +62,8 @@ PROHIBICIONES ABSOLUTAS (Si las rompes, la sugerencia es INVÁLIDA):
 1. DIFERENCIA DE SABOR/TIPO: Si los productos tienen sabores distintos (Frambuesa vs Chocolate, Menta vs Miel, Regular vs Mentolado) o tipos distintos (Mentolado vs Original), NO son duplicados.
 2. MARCAS: Prohibido mezclar marcas distintas (ej: Marlboro vs PM, Fachitas vs Parnor).
 3. TAMAÑO/PRECIO: Si el precio de un producto es un 30% mayor o menor que el otro, NO son duplicados (suelen ser tamaños distintos).
-4. CIGARRILLOS: Box vs Común (Soft) son productos distintos. 12u vs 20u son distintos.
+4. ATRIBUTOS CRÍTICOS: No son duplicados si uno dice "GRANDE" y otro "CHICA/MEDIANA", o si son versiones con azúcar vs light/zero.
+5. CIGARRILLOS: Box vs Común (Soft) son productos distintos. 20u vs 12u son distintos. Sin embargo, 10u y 12u pueden ser errores de carga, trátalos como posibles duplicados si el precio coincide.
 
 Tu misión es encontrar duplicados reales DENTRO de cada grupo.
 FORMATO DE SALIDA (JSON ESTRICTO):
@@ -82,7 +83,7 @@ Si no hay duplicados seguros en un grupo, no devuelvas nada para ese grupo.
 GRUPOS A AUDITAR:
 ${suspiciousGroups}`;
 
-            const GROQ_KEY = import.meta.env.VITE_GROQ_API_KEY || ("gsk_" + "DtR84uMOZMty1kH0rltiWGdyb3FYcwqhV0MBkYTFnxDJ2J67H373");
+            const GROQ_KEY = import.meta.env.VITE_GROQ_API_KEY;
             
             if (!GROQ_KEY) {
                 throw new Error("No se encontró la API Key de Groq (VITE_GROQ_API_KEY) en las variables de entorno.");
@@ -137,17 +138,36 @@ ${suspiciousGroups}`;
                 const words1 = p1.nombre.toUpperCase().split(' ');
                 const words2 = p2.nombre.toUpperCase().split(' ');
                 
-                // Sabores críticos que nunca deben mezclarse
-                const flavors = ['FRAMBUESA', 'CHOCOLATE', 'FRUTILLA', 'MENTA', 'MIEL', 'MENTOLADO', 'CONVERTIBLE', 'ON', 'ORIGINAL', 'BOX', 'SOFT', 'COMUN'];
+                // Sabores y atributos críticos que nunca deben mezclarse
+                const flavors = ['FRAMBUESA', 'CHOCOLATE', 'FRUTILLA', 'MENTA', 'MIEL', 'MENTOLADO', 'CONVERTIBLE', 'ON', 'ORIGINAL', 'BOX', 'SOFT', 'COMUN', 'GRANDE', 'MEDIANA', 'CHICA', 'ZERO', 'LIGHT'];
                 for (const f of flavors) {
                     if (words1.includes(f) && !words2.includes(f)) return null;
                     if (!words1.includes(f) && words2.includes(f)) return null;
                 }
 
+                // Validación especial de Cigarrillos (U)
+                const getU = (words) => {
+                    const found = words.find(w => w.endsWith('U') && /^\d+U$/.test(w));
+                    return found ? parseInt(found) : null;
+                }
+                const u1 = getU(words1);
+                const u2 = getU(words2);
+                if (u1 && u2 && u1 !== u2) {
+                    // Permitir 10u vs 12u como posible duplicado, el resto descartar
+                    const diff = Math.abs(u1 - u2);
+                    if (!(u1 + u2 === 22 && diff === 2)) return null;
+                }
+
                 return { p1, p2, reason: `[Auditoría IA] ${res.reason || 'Detección Semántica'}` }
             }).filter(Boolean);
 
-            setAiDuplicates(mappedAiResults);
+            // Filtrar inmediatamente por los pares ya ignorados
+            const filteredAiResults = mappedAiResults.filter(res => {
+                const pair = [String(res.p1.producto_id || res.p1.id), String(res.p2.producto_id || res.p2.id)].sort().join('|');
+                return !ignoredPairs.includes(pair);
+            });
+
+            setAiDuplicates(filteredAiResults);
             
             if (mappedAiResults.length > 0) {
                 toast.success(`La IA encontró ${mappedAiResults.length} duplicados ocultos usando contexto semántico.`, { id: loadingToast, duration: 6000 });
@@ -199,6 +219,16 @@ ${suspiciousGroups}`;
                 mutate('ventas')
                 mutate('compras')
                 mutate('reservas')
+
+                // Filtrar localmente de la lista de la IA para desaparecer de inmediato
+                setAiDuplicates(prev => prev.filter(item => {
+                    const currentId1 = String(item.p1.producto_id || item.p1.id);
+                    const currentId2 = String(item.p2.producto_id || item.p2.id);
+                    return !(
+                        (currentId1 === id1 && currentId2 === id2) || 
+                        (currentId1 === id2 && currentId2 === id1)
+                    );
+                }));
             } else {
                 toast.error('Error al fusionar: ' + (result.error || 'Desconocido'), { id: loadingToast, duration: 5000 })
             }
@@ -415,7 +445,18 @@ Producto 2: [${d.p2.producto_id || d.p2.id}] ${d.p2.nombre} ($${d.p2.ultimo_prec
                                         {(mergingId === d.p1.producto_id || mergingId === d.p2.producto_id) ? <Loader2 className="h-4 w-4 animate-spin"/> : <CheckCircle2 className="h-4 w-4"/>} Fusionar aquí
                                     </button>
                                     <button 
-                                        onClick={() => ignoreSQL(d.p1.producto_id || d.p1.id, d.p2.producto_id || d.p2.id)}
+                                        onClick={() => {
+                                            ignoreSQL(id1, id2);
+                                            // También filtrar localmente de la IA para desaparecer de inmediato
+                                            setAiDuplicates(prev => prev.filter(item => {
+                                                const currentId1 = String(item.p1.producto_id || item.p1.id);
+                                                const currentId2 = String(item.p2.producto_id || item.p2.id);
+                                                return !(
+                                                    (currentId1 === id1 && currentId2 === id2) || 
+                                                    (currentId1 === id2 && currentId2 === id1)
+                                                );
+                                            }));
+                                        }}
                                         className="w-full flex justify-center items-center gap-2 px-4 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-bold transition-transform active:scale-95 border border-white/5"
                                         title="Ocultar esta alerta permanentemente"
                                     >

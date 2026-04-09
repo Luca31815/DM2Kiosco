@@ -99,7 +99,7 @@ export function useProductosDuplicadosTrigram() {
         }).filter(Boolean)
     }, [rawDups, allProducts, ignoredPairs])
 
-    return { data: duplicados, loading: isLoading, error, ignoreDuplicate }
+    return { data: duplicados, loading: isLoading, error, ignoreDuplicate, ignoredPairs }
 }
 
 export function useCompras(options = {}) {
