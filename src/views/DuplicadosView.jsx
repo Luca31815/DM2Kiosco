@@ -53,9 +53,7 @@ const isLikelyDuplicate = (p1, p2, ignoredPairs = []) => {
     });
 
     // 1. Sabores, Variedades y Cigarrillos
-    // Nota: Ponemos MENTOLADO antes que COMUN para que en nombres como "CIG. MENTOLADO COMUN" 
-    // detecte la variedad más específica primero.
-    const flavors = ['FRAMBUESA', 'CHOCOLATE', 'FRUTILLA', 'MENTA', 'MIEL', 'MENTOLADO', 'CONVERTIBLE', 'FUSION', 'ON', 'ICE', 'ORIGINAL', 'COMUN', 'ZERO', 'LIGHT', 'PLACER', 'PERA', 'MANZANA', 'LIMA', 'COLA', 'BLANCO', 'LIMON', 'AZUL', 'ROJO', 'VERDE', 'PECESITOS', 'OSITOS', 'MORITAS', 'ORIGEN', 'ECONOMICO', 'SELECT', 'UVA', 'ANANA', 'AGUA CREAM', 'NARANJA', 'POMELO'];
+    const flavors = ['FRAMBUESA', 'CHOCOLATE', 'FRUTILLA', 'MENTA', 'MIEL', 'MENTOLADO', 'CONVERTIBLE', 'FUSION', 'ON', 'ICE', 'ORIGINAL', 'COMUN', 'BOX', 'SOFT', 'ZERO', 'LIGHT', 'PLACER', 'PERA', 'MANZANA', 'LIMA', 'COLA', 'BLANCO', 'LIMON', 'AZUL', 'ROJO', 'VERDE', 'PECESITOS', 'OSITOS', 'MORITAS', 'ORIGEN', 'ECONOMICO', 'SELECT', 'UVA', 'ANANA', 'AGUA CREAM', 'NARANJA', 'POMELO'];
     const flavor1 = findAttr(name1Normalized, words1, flavors);
     const flavor2 = findAttr(name2Normalized, words2, flavors);
     if (flavor1 && flavor2 && flavor1 !== flavor2) return false;
@@ -74,7 +72,7 @@ const isLikelyDuplicate = (p1, p2, ignoredPairs = []) => {
     if ((hasSimple1 && hasTriple2) || (hasTriple1 && hasSimple2)) return false; 
 
     // 4. Formato de Packaging y Tamaño
-    const formats = ['BOX', 'SOFT', 'GRANDE', 'MEDIANA', 'CHICA'];
+    const formats = ['GRANDE', 'MEDIANA', 'CHICA'];
     const format1 = findAttr(name1Normalized, words1, formats);
     const format2 = findAttr(name2Normalized, words2, formats);
     if (format1 && format2 && format1 !== format2) return false;
