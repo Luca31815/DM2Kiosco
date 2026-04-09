@@ -51,7 +51,7 @@ const isLikelyDuplicate = (p1, p2, ignoredPairs = []) => {
     }
 
     // Sabores y Variantes
-    const flavors = ['FRAMBUESA', 'CHOCOLATE', 'FRUTILLA', 'MENTA', 'MIEL', 'MENTOLADO', 'CONVERTIBLE', 'ON', 'ORIGINAL', 'ZERO', 'LIGHT', 'PLACER', 'PERA', 'MANZANA', 'LIMA', 'COLA', 'BLANCO', 'LIMON', 'AZUL', 'ROJO', 'PECESITOS', 'OSITOS', 'MORITAS', 'ORIGEN', 'ECONOMICO', 'SELECT', 'UVA', 'ANANA', 'AGUA CREAM'];
+    const flavors = ['FRAMBUESA', 'CHOCOLATE', 'FRUTILLA', 'MENTA', 'MIEL', 'MENTOLADO', 'CONVERTIBLE', 'ON', 'ORIGINAL', 'ZERO', 'LIGHT', 'PLACER', 'PERA', 'MANZANA', 'LIMA', 'COLA', 'BLANCO', 'LIMON', 'AZUL', 'ROJO', 'VERDE', 'PECESITOS', 'OSITOS', 'MORITAS', 'ORIGEN', 'ECONOMICO', 'SELECT', 'UVA', 'ANANA', 'AGUA CREAM'];
     for (const f of flavors) {
         if (hasAttr(name1Normalized, words1, f) && !hasAttr(name2Normalized, words2, f)) return false;
         if (!hasAttr(name1Normalized, words1, f) && hasAttr(name2Normalized, words2, f)) return false;
@@ -65,7 +65,7 @@ const isLikelyDuplicate = (p1, p2, ignoredPairs = []) => {
     if ((hasSimple1 && hasTriple2) || (hasTriple1 && hasSimple2)) return false; 
 
     // Marcas y Líneas Exclusivas
-    const brands = ['JORGITO', 'JORGELIN', 'RASTA', 'GULA', 'GUAYMALLEN', 'TERRABUSI', 'MILKA', 'SUCHARD', 'HAVANNA', 'CACHAFAZ', 'VICENTIN', 'CAPITAN', 'BLOCK', 'SPEED', 'MONSTER', 'FLYING', 'RED BULL', 'SCHNEIDER', 'BRAHMA', 'KARITA'];
+    const brands = ['JORGITO', 'JORGELIN', 'RASTA', 'GULA', 'GUAYMALLEN', 'TERRABUSI', 'MILKA', 'SUCHARD', 'HAVANNA', 'CACHAFAZ', 'VICENTIN', 'CAPITAN', 'BLOCK', 'SPEED', 'MONSTER', 'FLYING', 'RED BULL', 'SCHNEIDER', 'BRAHMA', 'KARITA', 'CALIPSO', 'DONCELLA', 'MASTER', 'MELBOURNE', 'AQUARIUS', 'LEVITE'];
     for (const b of brands) {
         if (hasAttr(name1Normalized, words1, b) && !hasAttr(name2Normalized, words2, b)) return false;
         if (!hasAttr(name1Normalized, words1, b) && hasAttr(name2Normalized, words2, b)) return false;
@@ -161,8 +161,8 @@ const DuplicadosView = () => {
 Analiza los siguientes GRUPOS SOSPECHOSOS de productos duplicados.
 
 PROHIBICIONES ABSOLUTAS (Si las rompes, la sugerencia es INVÁLIDA):
-1. SABORES/VARIANTES: Manzana vs Pera, Limón vs Pomelo, Azul vs Rojo, Uva vs Ananá, Agua Cream vs Agua, Pecesitos vs Ositos vs Moritas, Origen vs Original vs Economico vs Select son todos DIFERENTES.
-2. MARCAS/LÍNEAS: Prohibido mezclar marcas distintas (ej: Monster vs Speed vs Block, Schneider vs Brahma, Jorgito vs Jorgelín, Rasta vs Gula, Karita).
+1. SABORES/VARIANTES: Manzana vs Pera, Limón vs Pomelo, Azul vs Rojo vs Verde, Uva vs Ananá, Agua Cream vs Agua, Pecesitos vs Ositos vs Moritas, Origen vs Original vs Economico vs Select son todos DIFERENTES.
+2. MARCAS/LÍNEAS: Prohibido mezclar marcas distintas (ej: Monster vs Speed vs Block, Aquarius vs Levite, Schneider vs Brahma, Calipso vs Doncella, Master vs Melbourne, Jorgito vs Jorgelín, Rasta vs Gula, Karita).
 3. ESTRUCTURA: Solo descarta si uno es "SIMPLE" y el otro "TRIPLE". Si uno es "TRIPLE" y el otro NO especifica, trátalo como posible duplicado.
 4. PRECIOS/COSTOS: Si uno tiene venta $0 pero el costo coincide (error < 5%), es un duplicado probable. Prioriza el costo si está disponible.
 5. SINÓNIMOS (MISMO PRODUCTO): En alfajores, "NEGRO" y "CHOCOLATE" se consideran el mismo sabor.
