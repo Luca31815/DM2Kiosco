@@ -63,7 +63,8 @@ PROHIBICIONES ABSOLUTAS (Si las rompes, la sugerencia es INVÁLIDA):
 2. MARCAS: Prohibido mezclar marcas distintas (ej: Marlboro vs PM, Fachitas vs Parnor).
 3. TAMAÑO/PRECIO: Si el precio de un producto es un 30% mayor o menor que el otro, NO son duplicados (suelen ser tamaños distintos).
 4. ATRIBUTOS CRÍTICOS: No son duplicados si uno dice "GRANDE" y otro "CHICA/MEDIANA", o si son versiones con azúcar vs light/zero.
-5. CIGARRILLOS: Box vs Común (Soft) son productos distintos. 20u vs 12u son distintos. Sin embargo, 10u y 12u pueden ser errores de carga, trátalos como posibles duplicados si el precio coincide.
+5. CIGARRILLOS: Box vs Común (Soft) son productos distintos. 20u vs 12u son distintos. Sin embargo, 10u y 12u pueden ser errores de carga en este kiosco, trátalos como posibles duplicados si el precio coincide.
+6. REGLA DE ORO (MAGNITUDES): Cualquier variación numérica en unidades (G, GR, ML, L, KG, U, X) define productos distintos. Ej: Lucky Strike 12u y 20u NO son duplicados. Coca 500ml y Coca 1L NO son duplicados.
 
 Tu misión es encontrar duplicados reales DENTRO de cada grupo.
 FORMATO DE SALIDA (JSON ESTRICTO):
@@ -145,17 +146,36 @@ ${suspiciousGroups}`;
                     if (!words1.includes(f) && words2.includes(f)) return null;
                 }
 
-                // Validación especial de Cigarrillos (U)
-                const getU = (words) => {
-                    const found = words.find(w => w.endsWith('U') && /^\d+U$/.test(w));
-                    return found ? parseInt(found) : null;
+                // Validación especial de Magnitudes (U, G, ML, KG, etc.)
+                const getQuantity = (words) => {
+                    const units = ['U', 'G', 'GR', 'GRS', 'KG', 'K', 'ML', 'L', 'CC', 'CM3'];
+                    for (const word of words) {
+                        // Buscar patrón Número + Unidad (ej: 500ML, 20U, 1KG)
+                        const match = word.match(/^(\d+(?:\.\d+)?)([A-Z1-3]+)$/);
+                        if (match) {
+                            const value = parseFloat(match[1]);
+                            const unit = match[2];
+                            if (units.includes(unit)) return { value, unit };
+                        }
+                        // Buscar patrón X + Número (ej: X3, X6)
+                        const xMatch = word.match(/^X(\d+)$/);
+                        if (xMatch) return { value: parseInt(xMatch[1]), unit: 'X' };
+                    }
+                    return null;
                 }
-                const u1 = getU(words1);
-                const u2 = getU(words2);
-                if (u1 && u2 && u1 !== u2) {
-                    // Permitir 10u vs 12u como posible duplicado, el resto descartar
-                    const diff = Math.abs(u1 - u2);
-                    if (!(u1 + u2 === 22 && diff === 2)) return null;
+
+                const q1 = getQuantity(words1);
+                const q2 = getQuantity(words2);
+                
+                if (q1 && q2) {
+                    if (q1.value !== q2.value || q1.unit !== q2.unit) {
+                        // Excepción autorizada: 10u vs 12u en cigarrillos
+                        const isCigaretteException = (q1.unit === 'U' && q2.unit === 'U' && (q1.value + q2.value === 22) && Math.abs(q1.value - q2.value) === 2);
+                        if (!isCigaretteException) return null;
+                    }
+                } else if ((q1 && !q2) || (!q1 && q2)) {
+                    // Si uno tiene medida y el otro no, sospechar pero permitir (puede ser el genérico)
+                    // excepto si es una diferencia muy obvia de tamaño detectada por el prompt
                 }
 
                 return { p1, p2, reason: `[Auditoría IA] ${res.reason || 'Detección Semántica'}` }
