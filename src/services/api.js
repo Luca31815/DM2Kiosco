@@ -159,6 +159,46 @@ export const buscarProductosSimilares = async (query) => {
     return data || []
 }
 
+// --- INTELIGENCIA Y APRENDIZAJE ---
+
+export const registrarSinonimo = async (variante, canonical) => {
+    if (isDemo()) throw new Error('Acción deshabilitada en el modo Demo');
+    const { data, error } = await supabase.rpc('fn_registrar_sinonimo', { 
+        p_variante: variante, 
+        p_canonical: canonical 
+    })
+    if (error) {
+        console.error('Error calling fn_registrar_sinonimo:', error)
+        throw error
+    }
+    return data
+}
+
+export const getProductIntelligence = async (nombre) => {
+    if (isDemo()) return null
+    const { data, error } = await supabase.rpc('fn_get_product_details', { 
+        p_nombre: nombre 
+    })
+    if (error) {
+        console.error('Error calling fn_get_product_details:', error)
+        throw error
+    }
+    return data
+}
+
+export const getProductosSinonimos = async () => {
+    if (isDemo()) return []
+    const { data, error } = await supabase
+        .from('productos_sinonimos')
+        .select('*')
+    
+    if (error) {
+        console.error('Error fetching productos_sinonimos:', error)
+        return []
+    }
+    return data || []
+}
+
 export const getDuplicadosTrigram = async () => {
     if (isDemo()) return []
     const { data, error } = await supabase.rpc('fn_buscar_duplicados_trigram')

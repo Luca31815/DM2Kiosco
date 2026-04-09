@@ -449,3 +449,19 @@ export function useUnifiedFeed(limit = 15) {
 
     return { data: combined, loading: !ventas && !compras }
 }
+export function useProductosSinonimos() {
+    const { isDemoMode } = useAuth()
+    const { data, error, isLoading } = useSWR(
+        !isDemoMode ? 'productos_sinonimos' : null,
+        () => api.getProductosSinonimos(),
+        SWR_OPTIONS
+    )
+
+    if (isDemoMode) return { data: [], loading: false }
+
+    return {
+        data: data || [],
+        loading: isLoading,
+        error
+    }
+}

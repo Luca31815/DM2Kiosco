@@ -114,15 +114,36 @@ const getContradiction = (attrs1, attrs2) => {
 // --- FUNCIÓN PRINCIPAL DE VALIDACIÓN ---
 
 /**
- * Valida si dos productos son probablemente duplicados basándose en reglas de negocio v3.
- * @returns {Object} { isDuplicate: boolean, reason: string | null }
+ * Motor de Decisiones de Duplicados
+ * @param {Object} p1 Producto 1
+ * @param {Object} p2 Producto 2
+ * @param {Array} ignoredPairs Pares ignorados por el usuario
+ * @param {Array} learnedSynonyms Lista de {nombre_variante, nombre_canonical} desde DB
+ * @returns {Object} { isDuplicate: bool, confidence: 0-1, reason: string }
  */
-export const checkDuplicateStatus = (p1, p2, ignoredPairs = []) => {
-    if (!p1 || !p2) return { isDuplicate: false, reason: "Datos incompletos" };
+export const checkDuplicateStatus = (p1, p2, ignoredPairs = [], learnedSynonyms = []) => {
+    if (!p1 || !p2) return { isDuplicate: false, confidence: 0, reason: "Datos incompletos" };
 
-    // 1. Pares ignorados
-    const pairKey = [String(p1.producto_id || p1.id), String(p2.producto_id || p2.id)].sort().join('|');
-    if (ignoredPairs.includes(pairKey)) return { isDuplicate: false, reason: "Ignorado por el usuario" };
+    const name1Raw = p1.nombre?.toUpperCase().trim() || "";
+    const name2Raw = p2.nombre?.toUpperCase().trim() || "";
+    const id1 = p1.producto_id || p1.id;
+    const id2 = p2.producto_id || p2.id;
+
+    // 0. Verificar si ya fue ignorado por el usuario
+    const pairId = [String(id1), String(id2)].sort().join('_');
+    if (ignoredPairs.includes(pairId)) {
+        return { isDuplicate: false, confidence: 0, reason: "Ignorado por el usuario" };
+    }
+
+    // 0.1 Verificar sinónimos aprendidos (MEMORIA DEL SISTEMA)
+    const isLearned = learnedSynonyms.some(s => 
+        (s.nombre_variante === name1Raw && s.nombre_canonical === name2Raw) ||
+        (s.nombre_variante === name2Raw && s.nombre_canonical === name1Raw)
+    );
+
+    if (isLearned) {
+        return { isDuplicate: true, confidence: 1.0, reason: "Sinónimo Aprendido (Validado por Usuario)" };
+    }
 
     // 2. Normalización
     const name1 = normalizeName(p1.nombre);

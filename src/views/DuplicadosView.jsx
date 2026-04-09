@@ -5,7 +5,7 @@ import { AlertCircle, ArrowRight, Package, Tag, ArrowUpRight, Search, EyeOff, Ch
 import { useSWRConfig } from 'swr'
 import { toast } from 'react-hot-toast'
 import * as api from '../services/api'
-import { useProductosDuplicadosTrigram, useProductos } from '../hooks/useData'
+import { useProductosDuplicadosTrigram, useProductos, useProductosSinonimos } from '../hooks/useData'
 import { useMemo } from 'react'
 import { checkDuplicateStatus, FLAVORS, BRANDS, FORMATS } from '../utils/duplicateRules'
 
@@ -14,6 +14,7 @@ const DuplicadosView = () => {
     const { mutate } = useSWRConfig()
     const { data: duplicadosSQL, loading: sqlLoading, ignoreDuplicate: ignoreSQL, ignoredPairs } = useProductosDuplicadosTrigram()
     const { data: allProducts } = useProductos({ pageSize: 5000 })
+    const { data: learnedSynonyms } = useProductosSinonimos()
     const [searchTerm, setSearchTerm] = useState('')
     const [mergingId, setMergingId] = useState(null)
     const [selections, setSelections] = useState({}) // { "id1_id2": 'p1' o 'p2' }
@@ -31,7 +32,7 @@ const DuplicadosView = () => {
         const rejected = [];
 
         combined.forEach(d => {
-            const status = checkDuplicateStatus(d.p1, d.p2, ignoredPairs);
+            const status = checkDuplicateStatus(d.p1, d.p2, ignoredPairs, learnedSynonyms);
             if (status.isDuplicate) {
                 valid.push(d);
             } else if (status.reason && !status.reason.includes("Ignorado") && !status.reason.includes("incompletos")) {
@@ -44,7 +45,7 @@ const DuplicadosView = () => {
         const uniqueConflicts = rejected.filter(r => !validIds.has(`${r.p1.id}_${r.p2.id}`));
 
         return { duplicados: valid, conflictos: uniqueConflicts };
-    }, [duplicadosSQL, aiDuplicates, ignoredPairs]);
+    }, [duplicadosSQL, aiDuplicates, ignoredPairs, learnedSynonyms]);
 
     const handleAiScan = async () => {
         if (!allProducts || allProducts.length === 0) return toast.error('El catálogo aún no cargó');
@@ -192,13 +193,23 @@ ${suspiciousGroups}`;
         try {
             const result = await api.actualizarProducto(dataToSend)
             if (result.success) {
-                toast.success(result.mensaje || '¡Listo! Al tener el mismo nombre se han fusionado correctamente.', { id: loadingToast, duration: 4000 })
-                mutate(key => Array.isArray(key) && key[0] === 'productos')
-                mutate('ventas')
-                mutate('compras')
-                mutate('reservas')
+                // Guardar Sinónimo para Aprendizaje (Regla 3)
+                try {
+                    await api.registrarSinonimo(deleteProduct.nombre, keepProduct.nombre)
+                    console.log(`Aprendido: "${deleteProduct.nombre}" -> "${keepProduct.nombre}"`)
+                    toast.success(`Sistema alimentado: "${deleteProduct.nombre}" ahora es un sinónimo de "${keepProduct.nombre}"`, { 
+                        icon: '🧠',
+                        duration: 3000 
+                    })
+                } catch (sErr) {
+                    console.error('Error al registrar sinónimo de aprendizaje:', sErr)
+                }
 
-                // Filtrar localmente de la lista de la IA para desaparecer de inmediato
+                toast.success('Fusión completada con éxito', { id: loadingToast })
+                
+                // Actualizar listas locales
+                mutate(key => Array.isArray(key) && key[0] === 'productos')
+                
                 setAiDuplicates(prev => prev.filter(item => {
                     const currentId1 = String(item.p1.producto_id || item.p1.id);
                     const currentId2 = String(item.p2.producto_id || item.p2.id);
@@ -323,7 +334,11 @@ Producto 2: [${d.p2.producto_id || d.p2.id}] ${d.p2.nombre} ($${d.p2.ultimo_prec
                     </button>
                     <div className="flex items-center gap-2 px-4 py-3 md:py-2 bg-red-500/10 border border-red-500/20 rounded-xl justify-center">
                         <span className="text-xs font-black text-red-400 uppercase tracking-widest">{duplicados.length} Alertas</span>
-                       {/* Tabs de Selección */}
+                    </div>
+                </div>
+            </div>
+
+            {/* Tabs de Selección */}
             <div className="flex items-center gap-2 p-1 bg-slate-900/50 border border-slate-800 rounded-2xl w-fit">
                 <button
                     onClick={() => setActiveTab('sugerencias')}

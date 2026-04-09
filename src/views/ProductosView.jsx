@@ -7,6 +7,7 @@ import { useSWRConfig } from 'swr'
 import ProductAutocomplete from '../components/ProductAutocomplete'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'react-hot-toast'
+import ProductDetailExpansion from '../components/ProductDetailExpansion'
 
 const ProductosView = () => {
     const [sortColumn, setSortColumn] = useState('nombre')
@@ -392,6 +393,9 @@ const ProductosView = () => {
                 currentPage={page}
                 onPageChange={setPage}
                 itemsPerPage={pageSize}
+                renderExpandedRow={(product) => (
+                    <ProductDetailExpansion product={product} />
+                )}
             />
         </motion.div>
     )
