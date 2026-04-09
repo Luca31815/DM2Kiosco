@@ -41,6 +41,8 @@ const isLikelyDuplicate = (p1, p2, ignoredPairs = []) => {
         .replace(/\bNEGRA\b/g, 'CHOCOLATE')
         .replace(/\bROJA\b/g, 'ROJO')
         .replace(/\bBLANCA\b/g, 'BLANCO')
+        .replace(/\bPEQUEÑO\b/g, 'CHICA')
+        .replace(/\bPEQUEÑA\b/g, 'CHICA')
         .replace(/\bCONVERTIBLE\b/g, 'MENTOLADO');
     
     const name1Normalized = normalize(name1);
@@ -83,7 +85,7 @@ const isLikelyDuplicate = (p1, p2, ignoredPairs = []) => {
     if ((hasSimple1 && hasTriple2) || (hasTriple1 && hasSimple2)) return false; 
 
     // 4. Formato de Packaging y Tamaño
-    const formats = ['GRANDE', 'MEDIANA', 'CHICA'];
+    const formats = ['GRANDE', 'MEDIANA', 'CHICA', 'CHICO', 'MINI'];
     const formatAttrs1 = findAllAttrs(name1Normalized, words1, formats);
     const formatAttrs2 = findAllAttrs(name2Normalized, words2, formats);
     if (hasContradiction(formatAttrs1, formatAttrs2)) return false;
