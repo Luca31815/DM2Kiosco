@@ -35,8 +35,10 @@ const isLikelyDuplicate = (p1, p2, ignoredPairs = []) => {
     const name1 = p1.nombre.toUpperCase();
     const name2 = p2.nombre.toUpperCase();
     
-    // Normalizar sinónimos (Negro = Chocolate) para evitar falsos negativos
-    const normalize = (name) => name.replace(/\bNEGRO\b/g, 'CHOCOLATE');
+    // Normalizar sinónimos para evitar falsos negativos
+    const normalize = (name) => name
+        .replace(/\bNEGRO\b/g, 'CHOCOLATE')
+        .replace(/\bCONVERTIBLE\b/g, 'MENTOLADO');
     
     const name1Normalized = normalize(name1);
     const name2Normalized = normalize(name2);
@@ -50,8 +52,10 @@ const isLikelyDuplicate = (p1, p2, ignoredPairs = []) => {
         return words.includes(attr);
     });
 
-    // 1. Sabores y Variantes
-    const flavors = ['FRAMBUESA', 'CHOCOLATE', 'FRUTILLA', 'MENTA', 'MIEL', 'MENTOLADO', 'CONVERTIBLE', 'ON', 'ORIGINAL', 'ZERO', 'LIGHT', 'PLACER', 'PERA', 'MANZANA', 'LIMA', 'COLA', 'BLANCO', 'LIMON', 'AZUL', 'ROJO', 'VERDE', 'PECESITOS', 'OSITOS', 'MORITAS', 'ORIGEN', 'ECONOMICO', 'SELECT', 'UVA', 'ANANA', 'AGUA CREAM', 'NARANJA', 'POMELO'];
+    // 1. Sabores, Variedades y Cigarrillos
+    // Nota: Ponemos MENTOLADO antes que COMUN para que en nombres como "CIG. MENTOLADO COMUN" 
+    // detecte la variedad más específica primero.
+    const flavors = ['FRAMBUESA', 'CHOCOLATE', 'FRUTILLA', 'MENTA', 'MIEL', 'MENTOLADO', 'CONVERTIBLE', 'FUSION', 'ON', 'ICE', 'ORIGINAL', 'COMUN', 'ZERO', 'LIGHT', 'PLACER', 'PERA', 'MANZANA', 'LIMA', 'COLA', 'BLANCO', 'LIMON', 'AZUL', 'ROJO', 'VERDE', 'PECESITOS', 'OSITOS', 'MORITAS', 'ORIGEN', 'ECONOMICO', 'SELECT', 'UVA', 'ANANA', 'AGUA CREAM', 'NARANJA', 'POMELO'];
     const flavor1 = findAttr(name1Normalized, words1, flavors);
     const flavor2 = findAttr(name2Normalized, words2, flavors);
     if (flavor1 && flavor2 && flavor1 !== flavor2) return false;
@@ -70,7 +74,7 @@ const isLikelyDuplicate = (p1, p2, ignoredPairs = []) => {
     if ((hasSimple1 && hasTriple2) || (hasTriple1 && hasSimple2)) return false; 
 
     // 4. Formato de Packaging y Tamaño
-    const formats = ['BOX', 'SOFT', 'COMUN', 'GRANDE', 'MEDIANA', 'CHICA'];
+    const formats = ['BOX', 'SOFT', 'GRANDE', 'MEDIANA', 'CHICA'];
     const format1 = findAttr(name1Normalized, words1, formats);
     const format2 = findAttr(name2Normalized, words2, formats);
     if (format1 && format2 && format1 !== format2) return false;
@@ -158,11 +162,11 @@ const DuplicadosView = () => {
 Analiza los siguientes GRUPOS SOSPECHOSOS de productos duplicados.
 
 PROHIBICIONES ABSOLUTAS (Si las rompes, la sugerencia es INVÁLIDA):
-1. SABORES/VARIANTES: Si AMBOS tienen sabores distintos (ej: Manzana vs Pera), NO son duplicados. Pero si uno tiene sabor y el otro NO especifica, SÍ pueden ser duplicados.
-2. MARCAS: Prohibido mezclar marcas distintas (ej: Monster vs Speed). Si uno tiene marca y el otro es genérico, SÍ pueden ser duplicados.
-3. ESTRUCTURA/CAPAS: Solo descarta contradicciones directas (Simple vs Triple). Si uno es Triple y el otro es genérico, trátalo como duplicado probable.
-4. PRECIOS/COSTOS: Si uno tiene venta $0 pero el costo coincide (error < 5%), es un duplicado probable. Prioriza el costo si está disponible.
-5. SINÓNIMOS (MISMO PRODUCTO): En alfajores, "NEGRO" y "CHOCOLATE" se consideran el mismo sabor.
+1. SABORES/VARIANTES: Si AMBOS tienen sabores distintos (ej: Manzana vs Pera, Común vs Mentolado), NO son duplicados. Pero si uno tiene sabor y el otro NO especifica, SÍ pueden ser duplicados.
+2. SINÓNIMOS (MISMO PRODUCTO): En alfajores, "NEGRO" y "CHOCOLATE" son lo mismo. En cigarrillos, "MENTOLADO" y "CONVERTIBLE" son lo mismo.
+3. MARCAS: Prohibido mezclar marcas distintas (ej: Monster vs Speed). Si uno tiene marca y el otro es genérico, SÍ pueden ser duplicados.
+4. ESTRUCTURA/CAPAS: Solo descarta contradicciones directas (Simple vs Triple). Si uno es Triple y el otro es genérico, trátalo como duplicado probable.
+5. PRECIOS/COSTOS: Si uno tiene venta $0 pero el costo coincide (error < 5%), es un duplicado probable.
 6. REGLA DE ORO (MAGNITUDES): Diferencias numéricas (12u vs 20u, 500ml vs 1L, 100g vs 150g) definen productos distintos.
 
 Tu misión es encontrar duplicados reales DENTRO de cada grupo.
