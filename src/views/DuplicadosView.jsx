@@ -31,19 +31,39 @@ const isLikelyDuplicate = (p1, p2, ignoredPairs = []) => {
     const pairKey = [String(p1.producto_id || p1.id), String(p2.producto_id || p2.id)].sort().join('|');
     if (ignoredPairs.includes(pairKey)) return false;
 
+    // B. Normalización y Extracción de palabras
     const name1 = p1.nombre.toUpperCase();
     const name2 = p2.nombre.toUpperCase();
-    const words1 = name1.split(/\s+/);
-    const words2 = name2.split(/\s+/);
+    
+    // Normalizar sinónimos (Negro = Chocolate) para evitar falsos negativos
+    const normalize = (name) => name.replace(/\bNEGRO\b/g, 'CHOCOLATE');
+    
+    const words1 = normalize(name1).split(/\s+/);
+    const words2 = normalize(name2).split(/\s+/);
 
-    // B. Sabores y atributos críticos (Exclusión mutua)
-    const flavors = ['FRAMBUESA', 'CHOCOLATE', 'FRUTILLA', 'MENTA', 'MIEL', 'MENTOLADO', 'CONVERTIBLE', 'ON', 'ORIGINAL', 'BOX', 'SOFT', 'COMUN', 'GRANDE', 'MEDIANA', 'CHICA', 'ZERO', 'LIGHT'];
+    // C. Diferenciadores (Si uno lo tiene y el otro no, NO son duplicados)
+    // Sabores y Variantes
+    const flavors = ['FRAMBUESA', 'CHOCOLATE', 'FRUTILLA', 'MENTA', 'MIEL', 'MENTOLADO', 'CONVERTIBLE', 'ON', 'ORIGINAL', 'ZERO', 'LIGHT', 'PLACER', 'PERA', 'MANZANA', 'LIMA', 'COLA', 'BLANCO'];
     for (const f of flavors) {
         if (words1.includes(f) && !words2.includes(f)) return false;
         if (!words1.includes(f) && words2.includes(f)) return false;
     }
 
-    // C. Regla de Oro: Magnitudes/Cantidades
+    // Estructura y Capas (Separado para posible lógica futura)
+    const structures = ['SIMPLE', 'TRIPLE'];
+    for (const s of structures) {
+        if (words1.includes(s) && !words2.includes(s)) return false;
+        if (!words1.includes(s) && words2.includes(s)) return false;
+    }
+
+    // Formato de Packaging
+    const formats = ['BOX', 'SOFT', 'COMUN', 'GRANDE', 'MEDIANA', 'CHICA'];
+    for (const f of formats) {
+        if (words1.includes(f) && !words2.includes(f)) return false;
+        if (!words1.includes(f) && words2.includes(f)) return false;
+    }
+
+    // D. Regla de Oro: Magnitudes/Cantidades
     const q1 = getQuantity(words1);
     const q2 = getQuantity(words2);
     if (q1 && q2) {
@@ -124,12 +144,12 @@ const DuplicadosView = () => {
 Analiza los siguientes GRUPOS SOSPECHOSOS de productos duplicados.
 
 PROHIBICIONES ABSOLUTAS (Si las rompes, la sugerencia es INVÁLIDA):
-1. DIFERENCIA DE SABOR/TIPO: Si los productos tienen sabores distintos (Frambuesa vs Chocolate, Menta vs Miel, Regular vs Mentolado) o tipos distintos (Mentolado vs Original), NO son duplicados.
-2. MARCAS: Prohibido mezclar marcas distintas (ej: Marlboro vs PM, Fachitas vs Parnor).
-3. TAMAÑO/PRECIO: Si el precio de un producto es un 30% mayor o menor que el otro, NO son duplicados (suelen ser tamaños distintos).
-4. ATRIBUTOS CRÍTICOS: No son duplicados si uno dice "GRANDE" y otro "CHICA/MEDIANA", o si son versiones con azúcar vs light/zero.
-5. CIGARRILLOS: Box vs Común (Soft) son productos distintos. 20u vs 12u son distintos. Sin embargo, 10u y 12u pueden ser errores de carga en este kiosco, trátalos como posibles duplicados si el precio coincide.
-6. REGLA DE ORO (MAGNITUDES): Cualquier variación numérica en unidades (G, GR, ML, L, KG, U, X) define productos distintos. Ej: Lucky Strike 12u y 20u NO son duplicados. Coca 500ml y Coca 1L NO son duplicados.
+1. DIFERENCIA DE SABOR/TIPO: Si los productos tienen sabores distintos (Manzana vs Pera, Lima vs Frutilla, Lima vs Cola, Placer vs Original), NO son duplicados.
+2. MARCAS: Prohibido mezclar marcas distintas (ej: Marlboro vs PM, Alfajor Shot vs Alfajor Jorgito).
+3. TAMAÑO/PRECIO: Si el precio es un 30% mayor o menor, NO son duplicados.
+4. ATRIBUTOS CRÍTICOS: Blanco y Negro son diferentes. Simple y Triple son diferentes. Box vs Común son diferentes.
+5. SINÓNIMOS (MISMO PRODUCTO): En alfajores, "NEGRO" y "CHOCOLATE" se consideran el mismo sabor.
+6. REGLA DE ORO (MAGNITUDES): Diferencias numéricas (12u vs 20u, 500ml vs 1L, 100g vs 150g) implican productos distintos.
 
 Tu misión es encontrar duplicados reales DENTRO de cada grupo.
 FORMATO DE SALIDA (JSON ESTRICTO):
