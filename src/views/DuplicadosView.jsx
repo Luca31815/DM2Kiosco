@@ -51,7 +51,7 @@ const isLikelyDuplicate = (p1, p2, ignoredPairs = []) => {
     }
 
     // Sabores y Variantes
-    const flavors = ['FRAMBUESA', 'CHOCOLATE', 'FRUTILLA', 'MENTA', 'MIEL', 'MENTOLADO', 'CONVERTIBLE', 'ON', 'ORIGINAL', 'ZERO', 'LIGHT', 'PLACER', 'PERA', 'MANZANA', 'LIMA', 'COLA', 'BLANCO', 'LIMON', 'AZUL', 'ROJO', 'VERDE', 'PECESITOS', 'OSITOS', 'MORITAS', 'ORIGEN', 'ECONOMICO', 'SELECT', 'UVA', 'ANANA', 'AGUA CREAM'];
+    const flavors = ['FRAMBUESA', 'CHOCOLATE', 'FRUTILLA', 'MENTA', 'MIEL', 'MENTOLADO', 'CONVERTIBLE', 'ON', 'ORIGINAL', 'ZERO', 'LIGHT', 'PLACER', 'PERA', 'MANZANA', 'LIMA', 'COLA', 'BLANCO', 'LIMON', 'AZUL', 'ROJO', 'VERDE', 'PECESITOS', 'OSITOS', 'MORITAS', 'ORIGEN', 'ECONOMICO', 'SELECT', 'UVA', 'ANANA', 'AGUA CREAM', 'NARANJA', 'POMELO'];
     for (const f of flavors) {
         if (hasAttr(name1Normalized, words1, f) && !hasAttr(name2Normalized, words2, f)) return false;
         if (!hasAttr(name1Normalized, words1, f) && hasAttr(name2Normalized, words2, f)) return false;
