@@ -35,9 +35,12 @@ const isLikelyDuplicate = (p1, p2, ignoredPairs = []) => {
     const name1 = p1.nombre.toUpperCase();
     const name2 = p2.nombre.toUpperCase();
     
-    // Normalizar sinónimos para evitar falsos negativos
+    // Normalizar sinónimos y géneros para evitar falsos negativos
     const normalize = (name) => name
         .replace(/\bNEGRO\b/g, 'CHOCOLATE')
+        .replace(/\bNEGRA\b/g, 'CHOCOLATE')
+        .replace(/\bROJA\b/g, 'ROJO')
+        .replace(/\bBLANCA\b/g, 'BLANCO')
         .replace(/\bCONVERTIBLE\b/g, 'MENTOLADO');
     
     const name1Normalized = normalize(name1);
