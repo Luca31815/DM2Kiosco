@@ -6,6 +6,67 @@ import { useSWRConfig } from 'swr'
 import { toast } from 'react-hot-toast'
 import * as api from '../services/api'
 import { useProductosDuplicadosTrigram, useProductos } from '../hooks/useData'
+import { useMemo } from 'react'
+
+// --- HELPERS DE VALIDACIÓN GLOBAL ---
+const getQuantity = (words) => {
+    const units = ['U', 'G', 'GR', 'GRS', 'KG', 'K', 'ML', 'L', 'CC', 'CM3'];
+    for (const word of words) {
+        const match = word.match(/^(\d+(?:\.\d+)?)([A-Z1-3]+)$/);
+        if (match) {
+            const value = parseFloat(match[1]);
+            const unit = match[2];
+            if (units.includes(unit)) return { value, unit };
+        }
+        const xMatch = word.match(/^X(\d+)$/);
+        if (xMatch) return { value: parseInt(xMatch[1]), unit: 'X' };
+    }
+    return null;
+}
+
+const isLikelyDuplicate = (p1, p2, ignoredPairs = []) => {
+    if (!p1 || !p2) return false;
+
+    // A. Filtrado por pares ignorados por el usuario
+    const pairKey = [String(p1.producto_id || p1.id), String(p2.producto_id || p2.id)].sort().join('|');
+    if (ignoredPairs.includes(pairKey)) return false;
+
+    const name1 = p1.nombre.toUpperCase();
+    const name2 = p2.nombre.toUpperCase();
+    const words1 = name1.split(/\s+/);
+    const words2 = name2.split(/\s+/);
+
+    // B. Sabores y atributos críticos (Exclusión mutua)
+    const flavors = ['FRAMBUESA', 'CHOCOLATE', 'FRUTILLA', 'MENTA', 'MIEL', 'MENTOLADO', 'CONVERTIBLE', 'ON', 'ORIGINAL', 'BOX', 'SOFT', 'COMUN', 'GRANDE', 'MEDIANA', 'CHICA', 'ZERO', 'LIGHT'];
+    for (const f of flavors) {
+        if (words1.includes(f) && !words2.includes(f)) return false;
+        if (!words1.includes(f) && words2.includes(f)) return false;
+    }
+
+    // C. Regla de Oro: Magnitudes/Cantidades
+    const q1 = getQuantity(words1);
+    const q2 = getQuantity(words2);
+    if (q1 && q2) {
+        if (q1.value !== q2.value || q1.unit !== q2.unit) {
+            const isCigaretteException = (q1.unit === 'U' && q2.unit === 'U' && (q1.value + q2.value === 22) && Math.abs(q1.value - q2.value) === 2);
+            if (!isCigaretteException) return false;
+        }
+    }
+
+    // D. Validación de Precios/Costos (Opcional, pero ayuda a filtrar ruido de SQL)
+    const price1 = parseFloat(p1.ultimo_precio_venta || p1.precio_venta || 0);
+    const price2 = parseFloat(p2.ultimo_precio_venta || p2.precio_venta || 0);
+    const cost1 = parseFloat(p1.ultimo_costo_compra || 0);
+    const cost2 = parseFloat(p2.ultimo_costo_compra || 0);
+
+    const priceDiff = Math.abs(price1 - price2) / Math.max(price1, price2 || 1);
+    const costDiff = cost1 > 0 && cost2 > 0 ? Math.abs(cost1 - cost2) / Math.max(cost1, cost2) : 1;
+    
+    const costsMatch = cost1 > 0 && cost2 > 0 && costDiff < 0.05;
+    const pricesMatch = priceDiff < 0.35;
+
+    return costsMatch || pricesMatch;
+}
 
 const DuplicadosView = () => {
     const navigate = useNavigate()
@@ -20,8 +81,12 @@ const DuplicadosView = () => {
     const [aiDuplicates, setAiDuplicates] = useState([])
     const [isAiScanning, setIsAiScanning] = useState(false)
 
-    // Fusionar listas (SQL Trigrams + IA)
-    const duplicados = [...duplicadosSQL, ...aiDuplicates]
+    // Fusionar listas (SQL Trigrams + IA) con filtrado estricto unificado
+    const duplicados = useMemo(() => {
+        const combined = [...duplicadosSQL, ...aiDuplicates];
+        // Aplicar el filtro de seguridad a ambas listas para eliminar 12U vs 20U, etc.
+        return combined.filter(d => isLikelyDuplicate(d.p1, d.p2));
+    }, [duplicadosSQL, aiDuplicates]);
 
     const handleAiScan = async () => {
         if (!allProducts || allProducts.length === 0) return toast.error('El catálogo aún no cargó');
@@ -113,81 +178,15 @@ ${suspiciousGroups}`;
             if (aiParsed.duplicates) aiParsed = aiParsed.duplicates;
             if (!Array.isArray(aiParsed)) aiParsed = [];
 
-            // --- CAPA 3: VALIDADOR DE SEGURIDAD EN JS ---
             const mappedAiResults = aiParsed.map(res => {
                 const p1 = allProducts.find(p => (p.producto_id || p.id) == res.idKeep)
                 const p2 = allProducts.find(p => (p.producto_id || p.id) == res.idDelete)
-                
                 if (!p1 || !p2) return null;
-
-                // Validación manual de seguridad antes de mostrar al usuario
-                const price1 = parseFloat(p1.ultimo_precio_venta || p1.precio_venta || 0);
-                const price2 = parseFloat(p2.ultimo_precio_venta || p2.precio_venta || 0);
-                const cost1 = parseFloat(p1.ultimo_costo_compra || 0);
-                const cost2 = parseFloat(p2.ultimo_costo_compra || 0);
-
-                const priceDiff = Math.abs(price1 - price2) / Math.max(price1, price2 || 1);
-                const costDiff = cost1 > 0 && cost2 > 0 ? Math.abs(cost1 - cost2) / Math.max(cost1, cost2) : 1;
-
-                // Si los precios de venta varían mucho, pero los de costo son idénticos o casi iguales, es muy probable que sea duplicado
-                const costsAreMatch = cost1 > 0 && cost2 > 0 && costDiff < 0.05;
-                const pricesAreMatch = priceDiff < 0.35;
-
-                if (!pricesAreMatch && !costsAreMatch) return null;
-
-                // Si una palabra clave de sabor/marca cambia drásticamente
-                const words1 = p1.nombre.toUpperCase().split(' ');
-                const words2 = p2.nombre.toUpperCase().split(' ');
-                
-                // Sabores y atributos críticos que nunca deben mezclarse
-                const flavors = ['FRAMBUESA', 'CHOCOLATE', 'FRUTILLA', 'MENTA', 'MIEL', 'MENTOLADO', 'CONVERTIBLE', 'ON', 'ORIGINAL', 'BOX', 'SOFT', 'COMUN', 'GRANDE', 'MEDIANA', 'CHICA', 'ZERO', 'LIGHT'];
-                for (const f of flavors) {
-                    if (words1.includes(f) && !words2.includes(f)) return null;
-                    if (!words1.includes(f) && words2.includes(f)) return null;
-                }
-
-                // Validación especial de Magnitudes (U, G, ML, KG, etc.)
-                const getQuantity = (words) => {
-                    const units = ['U', 'G', 'GR', 'GRS', 'KG', 'K', 'ML', 'L', 'CC', 'CM3'];
-                    for (const word of words) {
-                        // Buscar patrón Número + Unidad (ej: 500ML, 20U, 1KG)
-                        const match = word.match(/^(\d+(?:\.\d+)?)([A-Z1-3]+)$/);
-                        if (match) {
-                            const value = parseFloat(match[1]);
-                            const unit = match[2];
-                            if (units.includes(unit)) return { value, unit };
-                        }
-                        // Buscar patrón X + Número (ej: X3, X6)
-                        const xMatch = word.match(/^X(\d+)$/);
-                        if (xMatch) return { value: parseInt(xMatch[1]), unit: 'X' };
-                    }
-                    return null;
-                }
-
-                const q1 = getQuantity(words1);
-                const q2 = getQuantity(words2);
-                
-                if (q1 && q2) {
-                    if (q1.value !== q2.value || q1.unit !== q2.unit) {
-                        // Excepción autorizada: 10u vs 12u en cigarrillos
-                        const isCigaretteException = (q1.unit === 'U' && q2.unit === 'U' && (q1.value + q2.value === 22) && Math.abs(q1.value - q2.value) === 2);
-                        if (!isCigaretteException) return null;
-                    }
-                } else if ((q1 && !q2) || (!q1 && q2)) {
-                    // Si uno tiene medida y el otro no, sospechar pero permitir (puede ser el genérico)
-                    // excepto si es una diferencia muy obvia de tamaño detectada por el prompt
-                }
-
                 return { p1, p2, reason: `[Auditoría IA] ${res.reason || 'Detección Semántica'}` }
             }).filter(Boolean);
 
-            // Filtrar inmediatamente por los pares ya ignorados
-            const filteredAiResults = mappedAiResults.filter(res => {
-                const pair = [String(res.p1.producto_id || res.p1.id), String(res.p2.producto_id || res.p2.id)].sort().join('|');
-                return !ignoredPairs.includes(pair);
-            });
-
-            setAiDuplicates(filteredAiResults);
+            // El filtrado por ignoredPairs y por isLikelyDuplicate se hace ahora en el useMemo global
+            setAiDuplicates(mappedAiResults);
             
             if (mappedAiResults.length > 0) {
                 toast.success(`La IA encontró ${mappedAiResults.length} duplicados ocultos usando contexto semántico.`, { id: loadingToast, duration: 6000 });
