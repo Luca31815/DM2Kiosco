@@ -49,12 +49,12 @@ const isLikelyDuplicate = (p1, p2, ignoredPairs = []) => {
         if (!words1.includes(f) && words2.includes(f)) return false;
     }
 
-    // Estructura y Capas (Separado para posible lógica futura)
-    const structures = ['SIMPLE', 'TRIPLE'];
-    for (const s of structures) {
-        if (words1.includes(s) && !words2.includes(s)) return false;
-        if (!words1.includes(s) && words2.includes(s)) return false;
-    }
+    // Estructura y Capas (Exclusión directa: Simple vs Triple)
+    const hasSimple1 = words1.includes('SIMPLE');
+    const hasTriple1 = words1.includes('TRIPLE');
+    const hasSimple2 = words2.includes('SIMPLE');
+    const hasTriple2 = words2.includes('TRIPLE');
+    if ((hasSimple1 && hasTriple2) || (hasTriple1 && hasSimple2)) return false; 
 
     // Formato de Packaging
     const formats = ['BOX', 'SOFT', 'COMUN', 'GRANDE', 'MEDIANA', 'CHICA'];
@@ -79,13 +79,15 @@ const isLikelyDuplicate = (p1, p2, ignoredPairs = []) => {
     const cost1 = parseFloat(p1.ultimo_costo_compra || 0);
     const cost2 = parseFloat(p2.ultimo_costo_compra || 0);
 
-    const priceDiff = Math.abs(price1 - price2) / Math.max(price1, price2 || 1);
-    const costDiff = cost1 > 0 && cost2 > 0 ? Math.abs(cost1 - cost2) / Math.max(cost1, cost2) : 1;
+    const pricesMatch = (price1 > 0 && price2 > 0) ? (Math.abs(price1 - price2) / Math.max(price1, price2) < 0.35) : false;
+    const costsMatch = (cost1 > 0 && cost2 > 0) ? (Math.abs(cost1 - cost2) / Math.max(cost1, cost2) < 0.05) : false;
     
-    const costsMatch = cost1 > 0 && cost2 > 0 && costDiff < 0.05;
-    const pricesMatch = priceDiff < 0.35;
-
-    return costsMatch || pricesMatch;
+    // Si falta información crítica para comparar en ambos frentes (precio y costo), 
+    // dejamos pasar como sospechoso (para no ocultar duplicados reales con datos incompletos)
+    if ((price1 === 0 || price2 === 0) && (cost1 === 0 || cost2 === 0)) return true;
+    
+    // Si tenemos datos suficientes en al menos uno, debe haber coincidencia
+    return pricesMatch || costsMatch;
 }
 
 const DuplicadosView = () => {
@@ -144,12 +146,11 @@ const DuplicadosView = () => {
 Analiza los siguientes GRUPOS SOSPECHOSOS de productos duplicados.
 
 PROHIBICIONES ABSOLUTAS (Si las rompes, la sugerencia es INVÁLIDA):
-1. DIFERENCIA DE SABOR/TIPO: Si los productos tienen sabores distintos (Manzana vs Pera, Lima vs Frutilla, Lima vs Cola, Placer vs Original), NO son duplicados.
-2. MARCAS: Prohibido mezclar marcas distintas (ej: Marlboro vs PM, Alfajor Shot vs Alfajor Jorgito).
-3. TAMAÑO/PRECIO: Si el precio es un 30% mayor o menor, NO son duplicados.
-4. ATRIBUTOS CRÍTICOS: Blanco y Negro son diferentes. Simple y Triple son diferentes. Box vs Común son diferentes.
-5. SINÓNIMOS (MISMO PRODUCTO): En alfajores, "NEGRO" y "CHOCOLATE" se consideran el mismo sabor.
-6. REGLA DE ORO (MAGNITUDES): Diferencias numéricas (12u vs 20u, 500ml vs 1L, 100g vs 150g) implican productos distintos.
+4. ATRIBUTOS CRÍTICOS: Blanco y Negro son diferentes. Box vs Común son diferentes.
+5. ESTRUCTURA: Solo descarta si uno es "SIMPLE" y el otro "TRIPLE". Si uno es "TRIPLE" y el otro NO especifica, trátalo como posible duplicado.
+6. PRECIOS/COSTOS: Si uno tiene venta $0 pero el costo coincide (error < 5%), es un duplicado probable. Prioriza el costo si está disponible.
+7. SINÓNIMOS (MISMO PRODUCTO): En alfajores, "NEGRO" y "CHOCOLATE" se consideran el mismo sabor.
+8. REGLA DE ORO (MAGNITUDES): Diferencias numéricas (12u vs 20u, 500ml vs 1L, 100g vs 150g) implican productos distintos.
 
 Tu misión es encontrar duplicados reales DENTRO de cada grupo.
 FORMATO DE SALIDA (JSON ESTRICTO):
