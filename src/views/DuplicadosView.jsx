@@ -69,7 +69,7 @@ const isLikelyDuplicate = (p1, p2, ignoredPairs = []) => {
     };
 
     // 1. Sabores, Variedades y Cigarrillos
-    const flavors = ['FRAMBUESA', 'CHOCOLATE', 'FRUTILLA', 'MENTA', 'MIEL', 'MENTOLADO', 'CONVERTIBLE', 'FUSION', 'ON', 'ICE', 'ORIGINAL', 'COMUN', 'BOX', 'ZERO', 'LIGHT', 'PLACER', 'PERA', 'MANZANA', 'LIMA', 'COLA', 'BLANCO', 'LIMON', 'AZUL', 'ROJO', 'VERDE', 'PECESITOS', 'PECECITOS', 'OSITOS', 'MORITAS', 'ORIGEN', 'ECONOMICO', 'SELECT', 'UVA', 'ANANA', 'AGUA CREAM', 'NARANJA', 'POMELO', 'CAFE', 'OCEANO', 'COCO', 'VAINILLA', 'DURAZNO', 'DULCE DE LECHE', 'MARACUYA', 'MULTIFRUTAL', 'MARMOLADO'];
+    const flavors = ['FRAMBUESA', 'CHOCOLATE', 'FRUTILLA', 'MENTA', 'MIEL', 'MENTOLADO', 'CONVERTIBLE', 'FUSION', 'ON', 'ICE', 'ORIGINAL', 'COMUN', 'BOX', 'ZERO', 'LIGHT', 'PLACER', 'PERA', 'MANZANA', 'LIMA', 'COLA', 'BLANCO', 'LIMON', 'AZUL', 'ROJO', 'VERDE', 'PECESITOS', 'PECECITOS', 'OSITOS', 'MORITAS', 'ORIGEN', 'ECONOMICO', 'SELECT', 'UVA', 'ANANA', 'AGUA CREAM', 'NARANJA', 'POMELO', 'CAFE', 'OCEANO', 'COCO', 'VAINILLA', 'DURAZNO', 'DULCE DE LECHE', 'MARACUYA', 'MULTIFRUTAL', 'MARMOLADO', 'JAMON SERRANO', 'BLACK', 'MARINE', 'PALITOS', 'DISCOS', 'QUESO', 'ASADO', 'MIXTO'];
     const attrs1 = findAllAttrs(name1Normalized, words1, flavors);
     const attrs2 = findAllAttrs(name2Normalized, words2, flavors);
     if (hasContradiction(attrs1, attrs2)) return false;
