@@ -38,15 +38,23 @@ const isLikelyDuplicate = (p1, p2, ignoredPairs = []) => {
     // Normalizar sinónimos (Negro = Chocolate) para evitar falsos negativos
     const normalize = (name) => name.replace(/\bNEGRO\b/g, 'CHOCOLATE');
     
-    const words1 = normalize(name1).split(/\s+/);
-    const words2 = normalize(name2).split(/\s+/);
+    const name1Normalized = normalize(name1);
+    const name2Normalized = normalize(name2);
+    const words1 = name1Normalized.split(/\s+/);
+    const words2 = name2Normalized.split(/\s+/);
 
     // C. Diferenciadores (Si uno lo tiene y el otro no, NO son duplicados)
+    // Función auxiliar para detectar un atributo (soporta palabras y frases)
+    const hasAttr = (name, words, attr) => {
+        if (attr.includes(' ')) return name.includes(attr); // Para frases como 'AGUA CREAM'
+        return words.includes(attr); // Para palabras sueltas
+    }
+
     // Sabores y Variantes
-    const flavors = ['FRAMBUESA', 'CHOCOLATE', 'FRUTILLA', 'MENTA', 'MIEL', 'MENTOLADO', 'CONVERTIBLE', 'ON', 'ORIGINAL', 'ZERO', 'LIGHT', 'PLACER', 'PERA', 'MANZANA', 'LIMA', 'COLA', 'BLANCO', 'LIMON', 'AZUL', 'ROJO', 'PECESITOS', 'OSITOS', 'MORITAS', 'ORIGEN', 'ECONOMICO', 'SELECT', 'UVA', 'ANANA'];
+    const flavors = ['FRAMBUESA', 'CHOCOLATE', 'FRUTILLA', 'MENTA', 'MIEL', 'MENTOLADO', 'CONVERTIBLE', 'ON', 'ORIGINAL', 'ZERO', 'LIGHT', 'PLACER', 'PERA', 'MANZANA', 'LIMA', 'COLA', 'BLANCO', 'LIMON', 'AZUL', 'ROJO', 'PECESITOS', 'OSITOS', 'MORITAS', 'ORIGEN', 'ECONOMICO', 'SELECT', 'UVA', 'ANANA', 'AGUA CREAM'];
     for (const f of flavors) {
-        if (words1.includes(f) && !words2.includes(f)) return false;
-        if (!words1.includes(f) && words2.includes(f)) return false;
+        if (hasAttr(name1Normalized, words1, f) && !hasAttr(name2Normalized, words2, f)) return false;
+        if (!hasAttr(name1Normalized, words1, f) && hasAttr(name2Normalized, words2, f)) return false;
     }
 
     // Estructura y Capas (Exclusión directa: Simple vs Triple)
@@ -56,18 +64,18 @@ const isLikelyDuplicate = (p1, p2, ignoredPairs = []) => {
     const hasTriple2 = words2.includes('TRIPLE');
     if ((hasSimple1 && hasTriple2) || (hasTriple1 && hasSimple2)) return false; 
 
-    // Marcas y Líneas Exclusivas (Si uno lo tiene y el otro no, NO son duplicados)
-    const brands = ['JORGITO', 'JORGELIN', 'RASTA', 'GULA', 'GUAYMALLEN', 'TERRABUSI', 'MILKA', 'SUCHARD', 'HAVANNA', 'CACHAFAZ', 'VICENTIN', 'CAPITAN', 'BLOCK', 'SPEED', 'MONSTER', 'FLYING', 'RED BULL'];
+    // Marcas y Líneas Exclusivas
+    const brands = ['JORGITO', 'JORGELIN', 'RASTA', 'GULA', 'GUAYMALLEN', 'TERRABUSI', 'MILKA', 'SUCHARD', 'HAVANNA', 'CACHAFAZ', 'VICENTIN', 'CAPITAN', 'BLOCK', 'SPEED', 'MONSTER', 'FLYING', 'RED BULL', 'SCHNEIDER', 'BRAHMA', 'KARITA'];
     for (const b of brands) {
-        if (words1.includes(b) && !words2.includes(b)) return false;
-        if (!words1.includes(b) && words2.includes(b)) return false;
+        if (hasAttr(name1Normalized, words1, b) && !hasAttr(name2Normalized, words2, b)) return false;
+        if (!hasAttr(name1Normalized, words1, b) && hasAttr(name2Normalized, words2, b)) return false;
     }
 
     // Formato de Packaging
     const formats = ['BOX', 'SOFT', 'COMUN', 'GRANDE', 'MEDIANA', 'CHICA'];
     for (const f of formats) {
-        if (words1.includes(f) && !words2.includes(f)) return false;
-        if (!words1.includes(f) && words2.includes(f)) return false;
+        if (hasAttr(name1Normalized, words1, f) && !hasAttr(name2Normalized, words2, f)) return false;
+        if (!hasAttr(name1Normalized, words1, f) && hasAttr(name2Normalized, words2, f)) return false;
     }
 
     // D. Regla de Oro: Magnitudes/Cantidades
@@ -153,8 +161,8 @@ const DuplicadosView = () => {
 Analiza los siguientes GRUPOS SOSPECHOSOS de productos duplicados.
 
 PROHIBICIONES ABSOLUTAS (Si las rompes, la sugerencia es INVÁLIDA):
-1. SABORES/VARIANTES: Manzana vs Pera, Limón vs Pomelo, Azul vs Rojo, Uva vs Ananá, Pecesitos vs Ositos vs Moritas, Origen vs Original vs Economico vs Select son todos DIFERENTES.
-2. MARCAS/LÍNEAS: Prohibido mezclar marcas distintas (ej: Monster vs Speed vs Block, Jorgito vs Jorgelín, Rasta vs Gula).
+1. SABORES/VARIANTES: Manzana vs Pera, Limón vs Pomelo, Azul vs Rojo, Uva vs Ananá, Agua Cream vs Agua, Pecesitos vs Ositos vs Moritas, Origen vs Original vs Economico vs Select son todos DIFERENTES.
+2. MARCAS/LÍNEAS: Prohibido mezclar marcas distintas (ej: Monster vs Speed vs Block, Schneider vs Brahma, Jorgito vs Jorgelín, Rasta vs Gula, Karita).
 3. ESTRUCTURA: Solo descarta si uno es "SIMPLE" y el otro "TRIPLE". Si uno es "TRIPLE" y el otro NO especifica, trátalo como posible duplicado.
 4. PRECIOS/COSTOS: Si uno tiene venta $0 pero el costo coincide (error < 5%), es un duplicado probable. Prioriza el costo si está disponible.
 5. SINÓNIMOS (MISMO PRODUCTO): En alfajores, "NEGRO" y "CHOCOLATE" se consideran el mismo sabor.
