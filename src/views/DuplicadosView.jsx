@@ -7,7 +7,7 @@ import { toast } from 'react-hot-toast'
 import * as api from '../services/api'
 import { useProductosDuplicadosTrigram, useProductos } from '../hooks/useData'
 import { useMemo } from 'react'
-import { checkDuplicateStatus } from '../utils/duplicateRules'
+import { checkDuplicateStatus, FLAVORS, BRANDS, FORMATS } from '../utils/duplicateRules'
 
 const DuplicadosView = () => {
     const navigate = useNavigate()
@@ -81,28 +81,29 @@ const DuplicadosView = () => {
             const prompt = `Actúa como un Auditor de Inventario Senior para Kioscos Argentinos.
 Analiza los siguientes GRUPOS SOSPECHOSOS de productos duplicados.
 
-PROHIBICIONES ABSOLUTAS (Si las rompes, la sugerencia es INVÁLIDA):
-1. SABORES/VARIANTES: Si comparten un atributo (ej: Original) pero uno tiene otro que el segundo no tiene y viceversa (ej: Original Comun vs Original Box), NO son duplicados. Pero si uno es una versión más simple del otro (ej: Fanta vs Fanta Naranja), SÍ pueden serlo.
-2. SINÓNIMOS: En alfajores, "NEGRO" y "CHOCOLATE" son lo mismo. En cigarrillos, "MENTOLADO" y "CONVERTIBLE" son lo mismo.
-3. MARCAS: Prohibido mezclar marcas distintas. Si uno tiene marca y el otro es genérico, SÍ pueden ser duplicados.
-4. ESTRUCTURA/CAPAS: Solo descarta contradicciones directas (Simple vs Triple). Si uno es Triple y el otro es genérico, trátalo como duplicado probable.
-5. PRECIOS/COSTOS: Si uno tiene venta $0 pero el costo coincide (error < 5%), es un duplicado probable.
-6. REGLA DE ORO (MAGNITUDES): Diferencias numéricas (12u vs 20u, 500ml vs 1L, 100g vs 150g) definen productos distintos.
+REGLAS DE NEGOCIO ESTRICTAS (DICCIONARIO):
+- SABORES/VARIEDADES PERMITIDAS: ${FLAVORS.slice(0, 40).join(', ')}... y similares.
+- MARCAS DE REFERENCIA: ${BRANDS.join(', ')}.
+- FORMATOS: ${FORMATS.join(', ')}.
 
-Tu misión es encontrar duplicados reales DENTRO de cada grupo.
+PROHIBICIONES ABSOLUTAS:
+1. CONTRADICCIÓN DE CATEGORÍA: Si comparten un grupo (ej: Alfajor) pero difieren en un atributo específico del diccionario (ej: Blanco vs Negro, Rojo vs Azul), son PRODUCTOS DISTINTOS. No los marques como duplicados.
+2. SINÓNIMOS ACEPTADOS: "NEGRO" = "CHOCOLATE", "MENTOLADO" = "CONVERTIBLE".
+3. REGLA DE MAGNITUDES: Diferencias numéricas (12u vs 20u, 500ml vs 1L) definen productos distintos. Ignorar diferencias menores a 2 unidades solo en cigarrillos.
+4. PRECIOS: Si el costo difiere por más del 10%, probablemente no sean el mismo producto aunque el nombre sea similar.
+
+Tu misión es encontrar duplicados reales. 
 FORMATO DE SALIDA (JSON ESTRICTO):
 {
   "duplicates": [
     { 
       "idKeep": "ID_DEL_NOMBRE_MAS_COMPLETO", 
       "idDelete": "ID_DEL_DUPLICADO", 
-      "reason": "Explicación breve (Marca idéntica, abreviatura, precio/costo similar)",
-      "validation": "Confirmación de sabor y precios (venta/costo) coincidentes"
+      "reason": "Explicación breve",
+      "validation": "Criterio de coincidencia"
     }
   ]
 }
-
-Si no hay duplicados seguros en un grupo, no devuelvas nada para ese grupo.
 
 GRUPOS A AUDITAR:
 ${suspiciousGroups}`;
