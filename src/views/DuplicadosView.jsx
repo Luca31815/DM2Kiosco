@@ -7,118 +7,7 @@ import { toast } from 'react-hot-toast'
 import * as api from '../services/api'
 import { useProductosDuplicadosTrigram, useProductos } from '../hooks/useData'
 import { useMemo } from 'react'
-
-// --- HELPERS DE VALIDACIÓN GLOBAL ---
-const getQuantity = (words) => {
-    const units = ['U', 'G', 'GR', 'GRS', 'KG', 'K', 'ML', 'L', 'CC', 'CM3'];
-    for (const word of words) {
-        const match = word.match(/^(\d+(?:\.\d+)?)([A-Z1-3]+)$/);
-        if (match) {
-            const value = parseFloat(match[1]);
-            const unit = match[2];
-            if (units.includes(unit)) return { value, unit };
-        }
-        const xMatch = word.match(/^X(\d+)$/);
-        if (xMatch) return { value: parseInt(xMatch[1]), unit: 'X' };
-    }
-    return null;
-}
-
-const isLikelyDuplicate = (p1, p2, ignoredPairs = []) => {
-    if (!p1 || !p2) return false;
-
-    // A. Filtrado por pares ignorados por el usuario
-    const pairKey = [String(p1.producto_id || p1.id), String(p2.producto_id || p2.id)].sort().join('|');
-    if (ignoredPairs.includes(pairKey)) return false;
-
-    // B. Normalización y Extracción de palabras
-    const name1 = p1.nombre.toUpperCase();
-    const name2 = p2.nombre.toUpperCase();
-    
-    // Normalizar sinónimos y géneros para evitar falsos negativos
-    const normalize = (name) => name
-        .replace(/\bNEGRO\b/g, 'CHOCOLATE')
-        .replace(/\bNEGRA\b/g, 'CHOCOLATE')
-        .replace(/\bROJA\b/g, 'ROJO')
-        .replace(/\bBLANCA\b/g, 'BLANCO')
-        .replace(/\bPEQUEÑO\b/g, 'CHICA')
-        .replace(/\bPEQUEÑA\b/g, 'CHICA')
-        .replace(/\bGRANDES\b/g, 'GRANDE')
-        .replace(/\bCHICAS\b/g, 'CHICA')
-        .replace(/\bCHICOS\b/g, 'CHICA')
-        .replace(/\bCONVERTIBLE\b/g, 'MENTOLADO');
-    
-    const name1Normalized = normalize(name1);
-    const name2Normalized = normalize(name2);
-    const words1 = name1Normalized.split(/\s+/);
-    const words2 = name2Normalized.split(/\s+/);
-
-    // C. Diferenciadores (Lógica: Solo descartar si hay CONTRADICCIÓN CRUZADA)
-    // No descartamos si uno es específico y el otro es genérico (ej: Fanta Naranja vs Fanta)
-    // PERO si ambos tienen atributos distintos del mismo grupo, sí descartamos (ej: Original Comun vs Original Box)
-    const findAllAttrs = (name, words, list) => list.filter(attr => {
-        if (attr.includes(' ')) return name.includes(attr);
-        return words.includes(attr);
-    });
-
-    const hasContradiction = (attrs1, attrs2) => {
-        if (attrs1.length === 0 || attrs2.length === 0) return false;
-        const onlyIn1 = attrs1.filter(a => !attrs2.includes(a));
-        const onlyIn2 = attrs2.filter(a => !attrs1.includes(a));
-        return onlyIn1.length > 0 && onlyIn2.length > 0;
-    };
-
-    // 1. Sabores, Variedades y Cigarrillos
-    const flavors = ['FRAMBUESA', 'CHOCOLATE', 'FRUTILLA', 'MENTA', 'MIEL', 'MENTOLADO', 'CONVERTIBLE', 'FUSION', 'ON', 'ICE', 'ORIGINAL', 'COMUN', 'BOX', 'ZERO', 'LIGHT', 'PLACER', 'PERA', 'MANZANA', 'LIMA', 'COLA', 'BLANCO', 'LIMON', 'AZUL', 'ROJO', 'VERDE', 'PECESITOS', 'PECECITOS', 'OSITOS', 'MORITAS', 'ORIGEN', 'ECONOMICO', 'SELECT', 'UVA', 'ANANA', 'AGUA CREAM', 'NARANJA', 'POMELO', 'CAFE', 'OCEANO', 'COCO', 'VAINILLA', 'DURAZNO', 'DULCE DE LECHE', 'MARACUYA', 'MULTIFRUTAL', 'MARMOLADO', 'JAMON SERRANO', 'BLACK', 'MARINE', 'PALITOS', 'DISCOS', 'QUESO', 'ASADO', 'MIXTO'];
-    const attrs1 = findAllAttrs(name1Normalized, words1, flavors);
-    const attrs2 = findAllAttrs(name2Normalized, words2, flavors);
-    if (hasContradiction(attrs1, attrs2)) return false;
-
-    // 2. Marcas y Líneas Exclusivas
-    const brands = ['JORGITO', 'JORGELIN', 'RASTA', 'GULA', 'GUAYMALLEN', 'TERRABUSI', 'MILKA', 'SUCHARD', 'HAVANNA', 'CACHAFAZ', 'VICENTIN', 'CAPITAN', 'BLOCK', 'SPEED', 'MONSTER', 'FLYING', 'RED BULL', 'SCHNEIDER', 'BRAHMA', 'KARITA', 'CALIPSO', 'DONCELLA', 'MASTER', 'MELBOURNE', 'AQUARIUS', 'LEVITE'];
-    const brandAttrs1 = findAllAttrs(name1Normalized, words1, brands);
-    const brandAttrs2 = findAllAttrs(name2Normalized, words2, brands);
-    if (hasContradiction(brandAttrs1, brandAttrs2)) return false;
-
-    // 3. Estructura y Capas (Simple vs Triple)
-    const hasSimple1 = words1.includes('SIMPLE');
-    const hasTriple1 = words1.includes('TRIPLE');
-    const hasSimple2 = words2.includes('SIMPLE');
-    const hasTriple2 = words2.includes('TRIPLE');
-    if ((hasSimple1 && hasTriple2) || (hasTriple1 && hasSimple2)) return false; 
-
-    // 4. Formato de Packaging y Tamaño
-    const formats = ['GRANDE', 'MEDIANA', 'CHICA', 'CHICO', 'MINI'];
-    const formatAttrs1 = findAllAttrs(name1Normalized, words1, formats);
-    const formatAttrs2 = findAllAttrs(name2Normalized, words2, formats);
-    if (hasContradiction(formatAttrs1, formatAttrs2)) return false;
-
-    // D. Regla de Oro: Magnitudes/Cantidades
-    const q1 = getQuantity(words1);
-    const q2 = getQuantity(words2);
-    if (q1 && q2) {
-        if (q1.value !== q2.value || q1.unit !== q2.unit) {
-            const isCigaretteException = (q1.unit === 'U' && q2.unit === 'U' && (q1.value + q2.value === 22) && Math.abs(q1.value - q2.value) === 2);
-            if (!isCigaretteException) return false;
-        }
-    }
-
-    // D. Validación de Precios/Costos (Opcional, pero ayuda a filtrar ruido de SQL)
-    const price1 = parseFloat(p1.ultimo_precio_venta || p1.precio_venta || 0);
-    const price2 = parseFloat(p2.ultimo_precio_venta || p2.precio_venta || 0);
-    const cost1 = parseFloat(p1.ultimo_costo_compra || 0);
-    const cost2 = parseFloat(p2.ultimo_costo_compra || 0);
-
-    const pricesMatch = (price1 > 0 && price2 > 0) ? (Math.abs(price1 - price2) / Math.max(price1, price2) < 0.35) : false;
-    const costsMatch = (cost1 > 0 && cost2 > 0) ? (Math.abs(cost1 - cost2) / Math.max(cost1, cost2) < 0.05) : false;
-    
-    // Si falta información crítica para comparar en ambos frentes (precio y costo), 
-    // dejamos pasar como sospechoso (para no ocultar duplicados reales con datos incompletos)
-    if ((price1 === 0 || price2 === 0) && (cost1 === 0 || cost2 === 0)) return true;
-    
-    // Si tenemos datos suficientes en al menos uno, debe haber coincidencia
-    return pricesMatch || costsMatch;
-}
+import { checkDuplicateStatus } from '../utils/duplicateRules'
 
 const DuplicadosView = () => {
     const navigate = useNavigate()
@@ -128,17 +17,34 @@ const DuplicadosView = () => {
     const [searchTerm, setSearchTerm] = useState('')
     const [mergingId, setMergingId] = useState(null)
     const [selections, setSelections] = useState({}) // { "id1_id2": 'p1' o 'p2' }
+    const [activeTab, setActiveTab] = useState('sugerencias') // 'sugerencias' o 'conflictos'
     
     // IA State
     const [aiDuplicates, setAiDuplicates] = useState([])
     const [isAiScanning, setIsAiScanning] = useState(false)
 
-    // Fusionar listas (SQL Trigrams + IA) con filtrado estricto unificado
-    const duplicados = useMemo(() => {
+    // Fusionar listas (SQL Trigrams + IA) y separar por estado de validación
+    const { duplicados, conflictos } = useMemo(() => {
         const combined = [...duplicadosSQL, ...aiDuplicates];
-        // Aplicar el filtro de seguridad a ambas listas para eliminar 12U vs 20U, etc.
-        return combined.filter(d => isLikelyDuplicate(d.p1, d.p2));
-    }, [duplicadosSQL, aiDuplicates]);
+        
+        const valid = [];
+        const rejected = [];
+
+        combined.forEach(d => {
+            const status = checkDuplicateStatus(d.p1, d.p2, ignoredPairs);
+            if (status.isDuplicate) {
+                valid.push(d);
+            } else if (status.reason && !status.reason.includes("Ignorado") && !status.reason.includes("incompletos")) {
+                rejected.push({ ...d, conflictReason: status.reason });
+            }
+        });
+
+        // Eliminar duplicados de ID en la lista de conflictos (si ya están en la de válidos)
+        const validIds = new Set(valid.map(v => `${v.p1.id}_${v.p2.id}`));
+        const uniqueConflicts = rejected.filter(r => !validIds.has(`${r.p1.id}_${r.p2.id}`));
+
+        return { duplicados: valid, conflictos: uniqueConflicts };
+    }, [duplicadosSQL, aiDuplicates, ignoredPairs]);
 
     const handleAiScan = async () => {
         if (!allProducts || allProducts.length === 0) return toast.error('El catálogo aún no cargó');
@@ -416,8 +322,22 @@ Producto 2: [${d.p2.producto_id || d.p2.id}] ${d.p2.nombre} ($${d.p2.ultimo_prec
                     </button>
                     <div className="flex items-center gap-2 px-4 py-3 md:py-2 bg-red-500/10 border border-red-500/20 rounded-xl justify-center">
                         <span className="text-xs font-black text-red-400 uppercase tracking-widest">{duplicados.length} Alertas</span>
-                    </div>
-                </div>
+                       {/* Tabs de Selección */}
+            <div className="flex items-center gap-2 p-1 bg-slate-900/50 border border-slate-800 rounded-2xl w-fit">
+                <button
+                    onClick={() => setActiveTab('sugerencias')}
+                    className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-2 ${activeTab === 'sugerencias' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'text-slate-500 hover:text-slate-300'}`}
+                >
+                    <CheckCircle2 className="h-4 w-4" />
+                    Sugerencias ({duplicados.length})
+                </button>
+                <button
+                    onClick={() => setActiveTab('conflictos')}
+                    className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-2 ${activeTab === 'conflictos' ? 'bg-amber-600 text-white shadow-lg shadow-amber-500/20' : 'text-slate-500 hover:text-slate-300'}`}
+                >
+                    <EyeOff className="h-4 w-4" />
+                    Conflictos Detectados ({conflictos.length})
+                </button>
             </div>
 
             {/* Búsqueda */}
@@ -425,7 +345,7 @@ Producto 2: [${d.p2.producto_id || d.p2.id}] ${d.p2.nombre} ($${d.p2.ultimo_prec
                 <Search className="h-5 w-5 text-slate-500" />
                 <input
                     type="text"
-                    placeholder="Buscar producto duplicado..."
+                    placeholder={`Buscar en ${activeTab === 'sugerencias' ? 'sugerencias' : 'conflictos'}...`}
                     className="bg-transparent border-none text-white outline-none w-full font-medium"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
@@ -437,111 +357,177 @@ Producto 2: [${d.p2.producto_id || d.p2.id}] ${d.p2.nombre} ($${d.p2.ultimo_prec
                 <div className="py-20 flex justify-center items-center">
                     <div className="h-8 w-8 rounded-full border-4 border-slate-700 border-t-red-500 animate-spin" />
                 </div>
-            ) : filteredDuplicados.length === 0 ? (
-                <div className="py-20 flex flex-col items-center justify-center text-center">
-                    <div className="h-20 w-20 rounded-full bg-emerald-500/10 flex items-center justify-center mb-6">
-                        <div className="h-4 w-4 rounded-full bg-emerald-400 shadow-[0_0_20px_rgba(52,211,153,0.8)] animate-pulse"></div>
+            ) : (activeTab === 'sugerencias' ? (
+                filteredDuplicados.length === 0 ? (
+                    <div className="py-20 flex flex-col items-center justify-center text-center text-slate-500 font-medium">
+                        No hay sugerencias que coincidan con la búsqueda.
                     </div>
-                    <h3 className="text-2xl font-black text-white mb-2">¡Catálogo Limpio!</h3>
-                    <p className="text-slate-400 font-medium max-w-md">No se encontraron conflictos ni productos redundantes en la base de datos.</p>
-                </div>
+                ) : (
+                    <div className="grid grid-cols-1 gap-4">
+                        {filteredDuplicados.map((d) => {
+                            const id1 = String(d.p1.producto_id || d.p1.id || '');
+                            const id2 = String(d.p2.producto_id || d.p2.id || '');
+                            const uniqueKey = `${id1}_${id2}`;
+                            return (
+                                <DuplicateCard 
+                                    key={uniqueKey} 
+                                    d={d} 
+                                    uniqueKey={uniqueKey} 
+                                    selections={selections}
+                                    setSelections={setSelections}
+                                    handleMergeSelection={handleMergeSelection}
+                                    ignoreSQL={ignoreSQL}
+                                    setAiDuplicates={setAiDuplicates}
+                                    mergingId={mergingId}
+                                    variants={itemVariants}
+                                />
+                            );
+                        })}
+                    </div>
+                )
             ) : (
-                <div className="grid grid-cols-1 gap-4">
-                    {filteredDuplicados.map((d, index) => {
-                        const id1 = String(d.p1.producto_id || d.p1.id || '');
-                        const id2 = String(d.p2.producto_id || d.p2.id || '');
-                        const uniqueKey = `${id1}_${id2}`
-                        return (
-                        <motion.div key={uniqueKey} variants={itemVariants} className="glass-panel rounded-2xl p-6 relative overflow-hidden group border border-transparent hover:border-red-500/20 transition-colors">
-                            <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none group-hover:bg-red-500/10 transition-colors" />
-                            
-                            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10">
-                                
-                                <div className="flex-1 w-full space-y-4">
-                                    <div className="flex items-center gap-3">
-                                        <div className="px-3 py-1 rounded-full bg-red-500/10 text-red-400 text-[10px] font-black uppercase tracking-widest border border-red-500/20">
-                                            {d.reason}
-                                        </div>
-                                        <div className="flex items-center gap-1.5 text-slate-400 text-sm font-bold">
-                                            <Tag className="h-4 w-4" />
-                                            ${parseFloat(d.p1.ultimo_precio_venta).toLocaleString('es-AR')}
-                                        </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        {/* Producto 1 */}
-                                        <div 
-                                            onClick={() => setSelections(prev => ({ ...prev, [uniqueKey]: 'p1' }))}
-                                            className={`p-4 rounded-xl border transition-all cursor-pointer ${selections[uniqueKey] === 'p1' ? 'bg-blue-600/20 border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.2)]' : 'bg-white/5 border-white/5 hover:border-white/10'}`}
-                                        >
-                                            <div className="flex items-start justify-between">
-                                                <div className="flex items-center gap-3 mb-2">
-                                                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors ${selections[uniqueKey] === 'p1' ? 'border-blue-500' : 'border-slate-500'}`}>
-                                                        {selections[uniqueKey] === 'p1' && <div className="w-2 h-2 rounded-full bg-blue-500" />}
-                                                    </div>
-                                                    <span className={`text-[10px] uppercase font-black tracking-widest ${selections[uniqueKey] === 'p1' ? 'text-blue-400' : 'text-slate-500'}`}>Producto A</span>
-                                                </div>
-                                            </div>
-                                            <p className="text-lg font-bold text-white leading-tight mt-2">{d.p1.nombre}</p>
-                                            <span className="text-[10px] font-black tabular-nums text-slate-500 mt-1 block">ID: {String(d.p1.producto_id || d.p1.id || '').split('-')[0]} | Stock: {d.p1.stock_actual || 0}</span>
-                                        </div>
-
-                                        {/* Producto 2 */}
-                                        <div 
-                                            onClick={() => setSelections(prev => ({ ...prev, [uniqueKey]: 'p2' }))}
-                                            className={`p-4 rounded-xl border transition-all cursor-pointer ${selections[uniqueKey] === 'p2' ? 'bg-blue-600/20 border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.2)]' : 'bg-white/5 border-white/5 hover:border-white/10'}`}
-                                        >
-                                            <div className="flex items-start justify-between">
-                                                <div className="flex items-center gap-3 mb-2">
-                                                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors ${selections[uniqueKey] === 'p2' ? 'border-blue-500' : 'border-slate-500'}`}>
-                                                        {selections[uniqueKey] === 'p2' && <div className="w-2 h-2 rounded-full bg-blue-500" />}
-                                                    </div>
-                                                    <span className={`text-[10px] uppercase font-black tracking-widest ${selections[uniqueKey] === 'p2' ? 'text-blue-400' : 'text-slate-500'}`}>Producto B</span>
-                                                </div>
-                                            </div>
-                                            <p className="text-lg font-bold text-white leading-tight mt-2">{d.p2.nombre}</p>
-                                            <span className="text-[10px] font-black tabular-nums text-slate-500 mt-1 block">ID: {String(d.p2.producto_id || d.p2.id || '').split('-')[0]} | Stock: {d.p2.stock_actual || 0}</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Acciones */}
-                                <div className="flex flex-col gap-2 shrink-0 w-full md:w-48 self-stretch md:self-auto justify-end">
-                                    <button 
-                                        onClick={() => handleMergeSelection(d)}
-                                        disabled={!selections[uniqueKey] || mergingId !== null}
-                                        className="w-full flex justify-center items-center gap-2 px-4 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:hover:bg-blue-600 text-white text-sm font-bold transition-transform active:scale-95 shadow-lg shadow-blue-500/20"
-                                        title="El producto no seleccionado cambiará su nombre al seleccionado"
-                                    >
-                                        {(mergingId === d.p1.producto_id || mergingId === d.p2.producto_id) ? <Loader2 className="h-4 w-4 animate-spin"/> : <CheckCircle2 className="h-4 w-4"/>} Fusionar aquí
-                                    </button>
-                                    <button 
-                                        onClick={() => {
-                                            ignoreSQL(id1, id2);
-                                            // También filtrar localmente de la IA para desaparecer de inmediato
-                                            setAiDuplicates(prev => prev.filter(item => {
-                                                const currentId1 = String(item.p1.producto_id || item.p1.id);
-                                                const currentId2 = String(item.p2.producto_id || item.p2.id);
-                                                return !(
-                                                    (currentId1 === id1 && currentId2 === id2) || 
-                                                    (currentId1 === id2 && currentId2 === id1)
-                                                );
-                                            }));
-                                        }}
-                                        className="w-full flex justify-center items-center gap-2 px-4 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-bold transition-transform active:scale-95 border border-white/5"
-                                        title="Ocultar esta alerta permanentemente"
-                                    >
-                                        Ignorar alerta
-                                    </button>
-                                </div>
-                            </div>
-                        </motion.div>
-                        );
-                    })}
-                </div>
-            )}
+                conflictos.filter(c => {
+                    const n1 = c.p1.nombre.toLowerCase();
+                    const n2 = c.p2.nombre.toLowerCase();
+                    return n1.includes(searchTerm.toLowerCase()) || n2.includes(searchTerm.toLowerCase());
+                }).length === 0 ? (
+                    <div className="py-20 flex flex-col items-center justify-center text-center text-slate-500 font-medium">
+                        No se detectaron conflictos activos para esta búsqueda.
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 gap-4">
+                        {conflictos.filter(c => {
+                            const n1 = c.p1.nombre.toLowerCase();
+                            const n2 = c.p2.nombre.toLowerCase();
+                            return n1.includes(searchTerm.toLowerCase()) || n2.includes(searchTerm.toLowerCase());
+                        }).map((c) => {
+                            const id1 = String(c.p1.producto_id || c.p1.id || '');
+                            const id2 = String(c.p2.producto_id || c.p2.id || '');
+                            const uniqueKey = `conflict_${id1}_${id2}`;
+                            return (
+                                <ConflictCard 
+                                    key={uniqueKey} 
+                                    d={c} 
+                                    variants={itemVariants}
+                                    ignoreSQL={ignoreSQL}
+                                />
+                            );
+                        })}
+                    </div>
+                )
+            ))}
         </motion.div>
-    )
-}
+    );
+};
 
-export default DuplicadosView
+const DuplicateCard = ({ d, uniqueKey, selections, setSelections, handleMergeSelection, ignoreSQL, setAiDuplicates, mergingId, variants }) => {
+    const id1 = String(d.p1.producto_id || d.p1.id || '');
+    const id2 = String(d.p2.producto_id || d.p2.id || '');
+
+    return (
+        <motion.div variants={variants} className="glass-panel rounded-2xl p-6 relative overflow-hidden group border border-transparent hover:border-red-500/20 transition-colors">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none group-hover:bg-red-500/10 transition-colors" />
+            
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10">
+                <div className="flex-1 w-full space-y-4">
+                    <div className="flex items-center gap-3">
+                        <div className="px-3 py-1 rounded-full bg-red-500/10 text-red-400 text-[10px] font-black uppercase tracking-widest border border-red-500/20">
+                            {d.reason || 'Sugerencia de Fusión'}
+                        </div>
+                        <div className="flex items-center gap-1.5 text-slate-400 text-sm font-bold">
+                            <Tag className="h-4 w-4" />
+                            ${parseFloat(d.p1.ultimo_precio_venta || d.p1.precio_venta || 0).toLocaleString('es-AR')}
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div 
+                            onClick={() => setSelections(prev => ({ ...prev, [uniqueKey]: 'p1' }))}
+                            className={`p-4 rounded-xl border transition-all cursor-pointer ${selections[uniqueKey] === 'p1' ? 'bg-blue-600/20 border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.2)]' : 'bg-white/5 border-white/5 hover:border-white/10'}`}
+                        >
+                            <p className="text-lg font-bold text-white leading-tight mt-2">{d.p1.nombre}</p>
+                            <span className="text-[10px] font-black tabular-nums text-slate-500 mt-1 block">ID: {id1.split('-')[0]} | Stock: {d.p1.stock_actual || 0}</span>
+                        </div>
+                        <div 
+                            onClick={() => setSelections(prev => ({ ...prev, [uniqueKey]: 'p2' }))}
+                            className={`p-4 rounded-xl border transition-all cursor-pointer ${selections[uniqueKey] === 'p2' ? 'bg-blue-600/20 border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.2)]' : 'bg-white/5 border-white/5 hover:border-white/10'}`}
+                        >
+                            <p className="text-lg font-bold text-white leading-tight mt-2">{d.p2.nombre}</p>
+                            <span className="text-[10px] font-black tabular-nums text-slate-500 mt-1 block">ID: {id2.split('-')[0]} | Stock: {d.p2.stock_actual || 0}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="flex flex-col gap-2 shrink-0 w-full md:w-48 self-stretch md:self-auto justify-end">
+                    <button 
+                        onClick={() => handleMergeSelection(d)}
+                        disabled={!selections[uniqueKey] || mergingId !== null}
+                        className="w-full flex justify-center items-center gap-2 px-4 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:hover:bg-blue-600 text-white text-sm font-bold transition-transform active:scale-95 shadow-lg shadow-blue-500/20"
+                    >
+                        {(mergingId === d.p1.producto_id || mergingId === d.p2.producto_id) ? <Loader2 className="h-4 w-4 animate-spin"/> : <CheckCircle2 className="h-4 w-4"/>} Fusionar aquí
+                    </button>
+                    <button 
+                        onClick={() => {
+                            ignoreSQL(id1, id2);
+                            setAiDuplicates(prev => prev.filter(item => {
+                                const cId1 = String(item.p1.producto_id || item.p1.id);
+                                const cId2 = String(item.p2.producto_id || item.p2.id);
+                                return !((cId1 === id1 && cId2 === id2) || (cId1 === id2 && cId2 === id1));
+                            }));
+                        }}
+                        className="w-full flex justify-center items-center gap-2 px-4 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-bold transition-transform active:scale-95 border border-white/5"
+                    >
+                        Ignorar alerta
+                    </button>
+                </div>
+            </div>
+        </motion.div>
+    );
+};
+
+const ConflictCard = ({ d, variants, ignoreSQL }) => {
+    const id1 = String(d.p1.producto_id || d.p1.id || '');
+    const id2 = String(d.p2.producto_id || d.p2.id || '');
+
+    return (
+        <motion.div variants={variants} className="glass-panel rounded-2xl p-6 relative overflow-hidden group border border-transparent hover:border-amber-500/20 transition-colors">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none group-hover:bg-amber-500/10 transition-colors" />
+            
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10">
+                <div className="flex-1 w-full space-y-4">
+                    <div className="flex items-center gap-3">
+                        <div className="px-3 py-1 rounded-full bg-amber-500/10 text-amber-400 text-[10px] font-black uppercase tracking-widest border border-amber-500/20 flex items-center gap-2">
+                            <EyeOff className="h-3 w-3" />
+                            Conflicto Detectado
+                        </div>
+                        <span className="text-slate-400 text-sm font-medium italic">
+                            {d.conflictReason}
+                        </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="p-4 rounded-xl bg-white/5 border border-white/5">
+                            <p className="text-lg font-bold text-white leading-tight">{d.p1.nombre}</p>
+                            <span className="text-[10px] font-black tabular-nums text-slate-500 mt-1 block">Venta: ${parseFloat(d.p1.ultimo_precio_venta || d.p1.precio_venta || 0).toLocaleString()}</span>
+                        </div>
+                        <div className="p-4 rounded-xl bg-white/5 border border-white/5">
+                            <p className="text-lg font-bold text-white leading-tight">{d.p2.nombre}</p>
+                            <span className="text-[10px] font-black tabular-nums text-slate-500 mt-1 block">Venta: ${parseFloat(d.p2.ultimo_precio_venta || d.p2.precio_venta || 0).toLocaleString()}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="flex flex-col gap-2 shrink-0 w-full md:w-48 self-stretch md:self-auto justify-end">
+                    <button 
+                        onClick={() => ignoreSQL(id1, id2)}
+                        className="w-full flex justify-center items-center gap-2 px-4 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-bold transition-transform active:scale-95 border border-white/5"
+                    >
+                        Ignorar Conflicto
+                    </button>
+                </div>
+            </div>
+        </motion.div>
+    );
+};
+
+export default DuplicadosView;

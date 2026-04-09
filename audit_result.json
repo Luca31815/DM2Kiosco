@@ -1,0 +1,330 @@
+{
+  "faltantes": [
+    {
+      "origen": "VENTA",
+      "ejemplo": "YERBA MAÑANITA 500G",
+      "total_ops": 7,
+      "nombre_norm": "YERBA MANANITA 500G"
+    },
+    {
+      "origen": "COMPRA",
+      "ejemplo": "YERBA MAÑANITA 500G",
+      "total_ops": 7,
+      "nombre_norm": "YERBA MANANITA 500G"
+    },
+    {
+      "origen": "RESERVA",
+      "ejemplo": "YERBA MAÑANITA 500G",
+      "total_ops": 7,
+      "nombre_norm": "YERBA MANANITA 500G"
+    },
+    {
+      "origen": "VENTA",
+      "ejemplo": "LEÑA",
+      "total_ops": 4,
+      "nombre_norm": "LENA"
+    },
+    {
+      "origen": "COMPRA",
+      "ejemplo": "LEÑA",
+      "total_ops": 4,
+      "nombre_norm": "LENA"
+    },
+    {
+      "origen": "VENTA",
+      "ejemplo": "MUÑECOS LLAVEROS",
+      "total_ops": 4,
+      "nombre_norm": "MUNECOS LLAVEROS"
+    },
+    {
+      "origen": "VENTA",
+      "ejemplo": "Alfajor Jorgelin Negro",
+      "total_ops": 3,
+      "nombre_norm": "ALFAJOR JORGELIN NEGRO"
+    },
+    {
+      "origen": "VENTA",
+      "ejemplo": "Snack Conitos 3D Mega Tube Original Grande 85g",
+      "total_ops": 3,
+      "nombre_norm": "SNACK CONITOS 3D MEGA TUBE ORIGINAL GRANDE 85G"
+    },
+    {
+      "origen": "RESERVA",
+      "ejemplo": "Snack Conitos 3D Mega Tube Original Grande 85g",
+      "total_ops": 3,
+      "nombre_norm": "SNACK CONITOS 3D MEGA TUBE ORIGINAL GRANDE 85G"
+    },
+    {
+      "origen": "VENTA",
+      "ejemplo": "SNACK Papas Fritas Lays",
+      "total_ops": 3,
+      "nombre_norm": "SNACK PAPAS FRITAS LAYS"
+    },
+    {
+      "origen": "VENTA",
+      "ejemplo": "Snack Papas Fritas Lays",
+      "total_ops": 3,
+      "nombre_norm": "SNACK PAPAS FRITAS LAYS"
+    },
+    {
+      "origen": "VENTA",
+      "ejemplo": "actron 400",
+      "total_ops": 1,
+      "nombre_norm": "ACTRON 400"
+    },
+    {
+      "origen": "COMPRA",
+      "ejemplo": "Alfajor Capitan del Espacio Negro",
+      "total_ops": 1,
+      "nombre_norm": "ALFAJOR CAPITAN DEL ESPACIO NEGRO"
+    },
+    {
+      "origen": "VENTA",
+      "ejemplo": "Alfajor Dubai",
+      "total_ops": 1,
+      "nombre_norm": "ALFAJOR DUBAI"
+    },
+    {
+      "origen": "VENTA",
+      "ejemplo": "Alfajor Guaymallen",
+      "total_ops": 1,
+      "nombre_norm": "ALFAJOR GUAYMALLEN"
+    },
+    {
+      "origen": "VENTA",
+      "ejemplo": "Alfajor Guaymallen Fruta",
+      "total_ops": 1,
+      "nombre_norm": "ALFAJOR GUAYMALLEN FRUTA"
+    },
+    {
+      "origen": "VENTA",
+      "ejemplo": "Alfajor Rasta Triple",
+      "total_ops": 1,
+      "nombre_norm": "ALFAJOR RASTA TRIPLE"
+    },
+    {
+      "origen": "COMPRA",
+      "ejemplo": "alikal",
+      "total_ops": 1,
+      "nombre_norm": "ALIKAL"
+    },
+    {
+      "origen": "VENTA",
+      "ejemplo": "Bolsa de Carbón Chica",
+      "total_ops": 1,
+      "nombre_norm": "BOLSA DE CARBON CHICA"
+    },
+    {
+      "origen": "VENTA",
+      "ejemplo": "Caramelos Butter Toffe",
+      "total_ops": 1,
+      "nombre_norm": "CARAMELOS BUTTER TOFFE"
+    },
+    {
+      "origen": "VENTA",
+      "ejemplo": "Cerveza Brahma Lata 473ml",
+      "total_ops": 1,
+      "nombre_norm": "CERVEZA BRAHMA LATA 473ML"
+    },
+    {
+      "origen": "VENTA",
+      "ejemplo": "Chicle Beldent Negro",
+      "total_ops": 1,
+      "nombre_norm": "CHICLE BELDENT NEGRO"
+    },
+    {
+      "origen": "VENTA",
+      "ejemplo": "Chocolate Cadbury Frutilla",
+      "total_ops": 1,
+      "nombre_norm": "CHOCOLATE CADBURY FRUTILLA"
+    },
+    {
+      "origen": "VENTA",
+      "ejemplo": "Chocolate Paraguitas",
+      "total_ops": 1,
+      "nombre_norm": "CHOCOLATE PARAGUITAS"
+    },
+    {
+      "origen": "VENTA",
+      "ejemplo": "Chupetin Bolita",
+      "total_ops": 1,
+      "nombre_norm": "CHUPETIN BOLITA"
+    },
+    {
+      "origen": "VENTA",
+      "ejemplo": "CIGARRILLOS LUCKY ORIGINAL COMÚN 12U",
+      "total_ops": 1,
+      "nombre_norm": "CIGARRILLOS LUCKY ORIGINAL COMUN 12U"
+    },
+    {
+      "origen": "COMPRA",
+      "ejemplo": "Cigarrillos Lucky Strike Económico 20U",
+      "total_ops": 1,
+      "nombre_norm": "CIGARRILLOS LUCKY STRIKE ECONOMICO 20U"
+    },
+    {
+      "origen": "VENTA",
+      "ejemplo": "Cigarrillos Lucky Strike Mentolado Box 12U",
+      "total_ops": 1,
+      "nombre_norm": "CIGARRILLOS LUCKY STRIKE MENTOLADO BOX 12U"
+    },
+    {
+      "origen": "VENTA",
+      "ejemplo": "Cigarrillos Marlboro Craft Común Mentolado 20u",
+      "total_ops": 1,
+      "nombre_norm": "CIGARRILLOS MARLBORO CRAFT COMUN MENTOLADO 20U"
+    },
+    {
+      "origen": "COMPRA",
+      "ejemplo": "Cigarrillos Marlboro Uva 20U",
+      "total_ops": 1,
+      "nombre_norm": "CIGARRILLOS MARLBORO UVA 20U"
+    },
+    {
+      "origen": "COMPRA",
+      "ejemplo": "Comida",
+      "total_ops": 1,
+      "nombre_norm": "COMIDA"
+    },
+    {
+      "origen": "VENTA",
+      "ejemplo": "Comida para Perros",
+      "total_ops": 1,
+      "nombre_norm": "COMIDA PARA PERROS"
+    },
+    {
+      "origen": "COMPRA",
+      "ejemplo": "diclofenac",
+      "total_ops": 1,
+      "nombre_norm": "DICLOFENAC"
+    },
+    {
+      "origen": "VENTA",
+      "ejemplo": "GALLETITAS HOGAREÑAS SALVADO",
+      "total_ops": 1,
+      "nombre_norm": "GALLETITAS HOGARENAS SALVADO"
+    },
+    {
+      "origen": "VENTA",
+      "ejemplo": "Galletitas Pepas Trichoc",
+      "total_ops": 1,
+      "nombre_norm": "GALLETITAS PEPAS TRICHOC"
+    },
+    {
+      "origen": "VENTA",
+      "ejemplo": "Gaseosa Coca Cola 500ml",
+      "total_ops": 1,
+      "nombre_norm": "GASEOSA COCA COLA 500ML"
+    },
+    {
+      "origen": "VENTA",
+      "ejemplo": "Gaseosa Coca-Cola Original 2L",
+      "total_ops": 1,
+      "nombre_norm": "GASEOSA COCA-COLA ORIGINAL 2L"
+    },
+    {
+      "origen": "VENTA",
+      "ejemplo": "Gaseosa Coca-Cola Original 354ml",
+      "total_ops": 1,
+      "nombre_norm": "GASEOSA COCA-COLA ORIGINAL 354ML"
+    },
+    {
+      "origen": "VENTA",
+      "ejemplo": "Gaseosa Manaos Lima",
+      "total_ops": 1,
+      "nombre_norm": "GASEOSA MANAOS LIMA"
+    },
+    {
+      "origen": "VENTA",
+      "ejemplo": "Gaseosa Seven Up 2L",
+      "total_ops": 1,
+      "nombre_norm": "GASEOSA SEVEN UP 2L"
+    },
+    {
+      "origen": "VENTA",
+      "ejemplo": "Golosina Chocolate Paraguitas",
+      "total_ops": 1,
+      "nombre_norm": "GOLOSINA CHOCOLATE PARAGUITAS"
+    },
+    {
+      "origen": "VENTA",
+      "ejemplo": "Golosina Paragüitas",
+      "total_ops": 1,
+      "nombre_norm": "GOLOSINA PARAGUITAS"
+    },
+    {
+      "origen": "VENTA",
+      "ejemplo": "Gomitas Moritas",
+      "total_ops": 1,
+      "nombre_norm": "GOMITAS MORITAS"
+    },
+    {
+      "origen": "VENTA",
+      "ejemplo": "Higiene Maquina De Afeitar Dos Filos",
+      "total_ops": 1,
+      "nombre_norm": "HIGIENE MAQUINA DE AFEITAR DOS FILOS"
+    },
+    {
+      "origen": "VENTA",
+      "ejemplo": "HIGIENE PAÑUELOS DESCARTABLES",
+      "total_ops": 1,
+      "nombre_norm": "HIGIENE PANUELOS DESCARTABLES"
+    },
+    {
+      "origen": "COMPRA",
+      "ejemplo": "Lavandina Ayudin 1L",
+      "total_ops": 1,
+      "nombre_norm": "LAVANDINA AYUDIN 1L"
+    },
+    {
+      "origen": "VENTA",
+      "ejemplo": "Levite de Manzana",
+      "total_ops": 1,
+      "nombre_norm": "LEVITE DE MANZANA"
+    },
+    {
+      "origen": "VENTA",
+      "ejemplo": "Pastilla Mentho Plus Menta",
+      "total_ops": 1,
+      "nombre_norm": "PASTILLA MENTHO PLUS MENTA"
+    },
+    {
+      "origen": "VENTA",
+      "ejemplo": "Pastillas Mentitas",
+      "total_ops": 1,
+      "nombre_norm": "PASTILLAS MENTITAS"
+    },
+    {
+      "origen": "VENTA",
+      "ejemplo": "Profilactico Prime Azul",
+      "total_ops": 1,
+      "nombre_norm": "PROFILACTICO PRIME AZUL"
+    },
+    {
+      "origen": "VENTA",
+      "ejemplo": "Snack Papas Fritas Nikitos",
+      "total_ops": 1,
+      "nombre_norm": "SNACK PAPAS FRITAS NIKITOS"
+    },
+    {
+      "origen": "VENTA",
+      "ejemplo": "Snack Pipas",
+      "total_ops": 1,
+      "nombre_norm": "SNACK PIPAS"
+    },
+    {
+      "origen": "RESERVA",
+      "ejemplo": "Snack Pochoclo",
+      "total_ops": 1,
+      "nombre_norm": "SNACK POCHOCLO"
+    },
+    {
+      "origen": "COMPRA",
+      "ejemplo": "te vent3",
+      "total_ops": 1,
+      "nombre_norm": "TE VENT3"
+    }
+  ],
+  "ejecutado_en": "2026-03-30T04:49:23.62345+00:00",
+  "total_faltantes": 54
+}
