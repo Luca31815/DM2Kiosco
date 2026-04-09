@@ -45,24 +45,32 @@ const isLikelyDuplicate = (p1, p2, ignoredPairs = []) => {
     const words1 = name1Normalized.split(/\s+/);
     const words2 = name2Normalized.split(/\s+/);
 
-    // C. Diferenciadores (Lógica: Solo descartar si hay CONTRADICCIÓN)
+    // C. Diferenciadores (Lógica: Solo descartar si hay CONTRADICCIÓN CRUZADA)
     // No descartamos si uno es específico y el otro es genérico (ej: Fanta Naranja vs Fanta)
-    const findAttr = (name, words, list) => list.find(attr => {
+    // PERO si ambos tienen atributos distintos del mismo grupo, sí descartamos (ej: Original Comun vs Original Box)
+    const findAllAttrs = (name, words, list) => list.filter(attr => {
         if (attr.includes(' ')) return name.includes(attr);
         return words.includes(attr);
     });
 
+    const hasContradiction = (attrs1, attrs2) => {
+        if (attrs1.length === 0 || attrs2.length === 0) return false;
+        const onlyIn1 = attrs1.filter(a => !attrs2.includes(a));
+        const onlyIn2 = attrs2.filter(a => !attrs1.includes(a));
+        return onlyIn1.length > 0 && onlyIn2.length > 0;
+    };
+
     // 1. Sabores, Variedades y Cigarrillos
     const flavors = ['FRAMBUESA', 'CHOCOLATE', 'FRUTILLA', 'MENTA', 'MIEL', 'MENTOLADO', 'CONVERTIBLE', 'FUSION', 'ON', 'ICE', 'ORIGINAL', 'COMUN', 'BOX', 'ZERO', 'LIGHT', 'PLACER', 'PERA', 'MANZANA', 'LIMA', 'COLA', 'BLANCO', 'LIMON', 'AZUL', 'ROJO', 'VERDE', 'PECESITOS', 'OSITOS', 'MORITAS', 'ORIGEN', 'ECONOMICO', 'SELECT', 'UVA', 'ANANA', 'AGUA CREAM', 'NARANJA', 'POMELO'];
-    const flavor1 = findAttr(name1Normalized, words1, flavors);
-    const flavor2 = findAttr(name2Normalized, words2, flavors);
-    if (flavor1 && flavor2 && flavor1 !== flavor2) return false;
+    const attrs1 = findAllAttrs(name1Normalized, words1, flavors);
+    const attrs2 = findAllAttrs(name2Normalized, words2, flavors);
+    if (hasContradiction(attrs1, attrs2)) return false;
 
     // 2. Marcas y Líneas Exclusivas
     const brands = ['JORGITO', 'JORGELIN', 'RASTA', 'GULA', 'GUAYMALLEN', 'TERRABUSI', 'MILKA', 'SUCHARD', 'HAVANNA', 'CACHAFAZ', 'VICENTIN', 'CAPITAN', 'BLOCK', 'SPEED', 'MONSTER', 'FLYING', 'RED BULL', 'SCHNEIDER', 'BRAHMA', 'KARITA', 'CALIPSO', 'DONCELLA', 'MASTER', 'MELBOURNE', 'AQUARIUS', 'LEVITE'];
-    const brand1 = findAttr(name1Normalized, words1, brands);
-    const brand2 = findAttr(name2Normalized, words2, brands);
-    if (brand1 && brand2 && brand1 !== brand2) return false;
+    const brandAttrs1 = findAllAttrs(name1Normalized, words1, brands);
+    const brandAttrs2 = findAllAttrs(name2Normalized, words2, brands);
+    if (hasContradiction(brandAttrs1, brandAttrs2)) return false;
 
     // 3. Estructura y Capas (Simple vs Triple)
     const hasSimple1 = words1.includes('SIMPLE');
@@ -73,9 +81,9 @@ const isLikelyDuplicate = (p1, p2, ignoredPairs = []) => {
 
     // 4. Formato de Packaging y Tamaño
     const formats = ['GRANDE', 'MEDIANA', 'CHICA'];
-    const format1 = findAttr(name1Normalized, words1, formats);
-    const format2 = findAttr(name2Normalized, words2, formats);
-    if (format1 && format2 && format1 !== format2) return false;
+    const formatAttrs1 = findAllAttrs(name1Normalized, words1, formats);
+    const formatAttrs2 = findAllAttrs(name2Normalized, words2, formats);
+    if (hasContradiction(formatAttrs1, formatAttrs2)) return false;
 
     // D. Regla de Oro: Magnitudes/Cantidades
     const q1 = getQuantity(words1);
@@ -160,9 +168,9 @@ const DuplicadosView = () => {
 Analiza los siguientes GRUPOS SOSPECHOSOS de productos duplicados.
 
 PROHIBICIONES ABSOLUTAS (Si las rompes, la sugerencia es INVÁLIDA):
-1. SABORES/VARIANTES: Si AMBOS tienen sabores distintos (ej: Manzana vs Pera, Común vs Mentolado), NO son duplicados. Pero si uno tiene sabor y el otro NO especifica, SÍ pueden ser duplicados.
-2. SINÓNIMOS (MISMO PRODUCTO): En alfajores, "NEGRO" y "CHOCOLATE" son lo mismo. En cigarrillos, "MENTOLADO" y "CONVERTIBLE" son lo mismo.
-3. MARCAS: Prohibido mezclar marcas distintas (ej: Monster vs Speed). Si uno tiene marca y el otro es genérico, SÍ pueden ser duplicados.
+1. SABORES/VARIANTES: Si comparten un atributo (ej: Original) pero uno tiene otro que el segundo no tiene y viceversa (ej: Original Comun vs Original Box), NO son duplicados. Pero si uno es una versión más simple del otro (ej: Fanta vs Fanta Naranja), SÍ pueden serlo.
+2. SINÓNIMOS: En alfajores, "NEGRO" y "CHOCOLATE" son lo mismo. En cigarrillos, "MENTOLADO" y "CONVERTIBLE" son lo mismo.
+3. MARCAS: Prohibido mezclar marcas distintas. Si uno tiene marca y el otro es genérico, SÍ pueden ser duplicados.
 4. ESTRUCTURA/CAPAS: Solo descarta contradicciones directas (Simple vs Triple). Si uno es Triple y el otro es genérico, trátalo como duplicado probable.
 5. PRECIOS/COSTOS: Si uno tiene venta $0 pero el costo coincide (error < 5%), es un duplicado probable.
 6. REGLA DE ORO (MAGNITUDES): Diferencias numéricas (12u vs 20u, 500ml vs 1L, 100g vs 150g) definen productos distintos.
