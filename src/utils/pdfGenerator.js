@@ -1,5 +1,6 @@
 import jsPDF from 'jspdf'
-import 'jspdf-autotable'
+import autoTable from 'jspdf-autotable'
+
 
 /**
  * Genera un PDF con la lista de productos
@@ -36,7 +37,7 @@ export const generateProductsPDF = (products, filterLabel = '') => {
         `$${p.ultimo_precio_venta?.toLocaleString() || '0'}`
     ])
 
-    doc.autoTable({
+    autoTable(doc, {
         head: [tableColumn],
         body: tableRows,
         startY: filterLabel ? 42 : 35,

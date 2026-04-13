@@ -177,7 +177,8 @@ const ProductosView = () => {
                 filterValue: filterValue,
                 sortColumn: sortColumn,
                 sortOrder: sortOrder,
-                pageSize: 5000 // Suficiente para un listado completo
+                page: 1,      // Página explícita
+                pageSize: 1000 // Límite más seguro para producción
             })
 
             if (result.data && result.data.length > 0) {
