@@ -1,13 +1,15 @@
 import React, { useState } from 'react'
 import DataTable from '../components/DataTable'
 import { useProductos, usePredictiveStock } from '../hooks/useData'
-import { Edit2, Check, X, Loader2, Package, TrendingUp, TrendingDown, Clock, Search, Timer, Trash2, PackagePlus, DollarSign } from 'lucide-react'
+import { Edit2, Check, X, Loader2, Package, TrendingUp, TrendingDown, Clock, Search, Timer, Trash2, PackagePlus, DollarSign, FileText } from 'lucide-react'
 import * as api from '../services/api'
 import { useSWRConfig } from 'swr'
 import ProductAutocomplete from '../components/ProductAutocomplete'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'react-hot-toast'
 import ProductDetailExpansion from '../components/ProductDetailExpansion'
+import { generateProductsPDF } from '../utils/pdfGenerator'
+
 
 const ProductosView = () => {
     const [sortColumn, setSortColumn] = useState('nombre')
@@ -23,6 +25,8 @@ const ProductosView = () => {
     const [isCleaning, setIsCleaning] = useState(false)
     const [isSyncing, setIsSyncing] = useState(false)
     const [isSyncingPrecios, setIsSyncingPrecios] = useState(false)
+    const [isExporting, setIsExporting] = useState(false)
+
 
     const options = React.useMemo(() => ({
         sortColumn,
@@ -161,6 +165,35 @@ const ProductosView = () => {
             setIsSyncingPrecios(false)
         }
     }
+
+    const handleExportPDF = async () => {
+        const loadingToast = toast.loading('Generando PDF...')
+        setIsExporting(true)
+        try {
+            // Obtenemos TODOS los productos que coinciden con el filtro actual
+            // Pasamos pageSize high para asegurar que traemos todo el listado filtrado
+            const result = await api.getProductos({
+                filterColumn: 'nombre',
+                filterValue: filterValue,
+                sortColumn: sortColumn,
+                sortOrder: sortOrder,
+                pageSize: 5000 // Suficiente para un listado completo
+            })
+
+            if (result.data && result.data.length > 0) {
+                generateProductsPDF(result.data, filterValue)
+                toast.success('PDF generado correctamente', { id: loadingToast })
+            } else {
+                toast.error('No hay productos para exportar', { id: loadingToast })
+            }
+        } catch (error) {
+            console.error('Error exporting PDF:', error)
+            toast.error('Error al generar PDF', { id: loadingToast })
+        } finally {
+            setIsExporting(false)
+        }
+    }
+
 
     const columns = [
         {
@@ -348,6 +381,16 @@ const ProductosView = () => {
                         {isSyncingPrecios ? 'Sincronizando...' : 'Sincronizar Precios'}
                     </button>
                     <button
+                        onClick={handleExportPDF}
+                        disabled={isExporting}
+                        className="flex-1 sm:flex-none px-5 py-2.5 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-blue-500/20 transition-all flex items-center justify-center gap-2 group"
+                        title="Exportar la lista actual de productos a PDF"
+                    >
+                        {isExporting ? <Loader2 size={14} className="animate-spin" /> : <FileText size={14} className="group-hover:scale-110 transition-transform" />}
+                        {isExporting ? 'Exportando...' : 'Exportar PDF'}
+                    </button>
+                    <button
+
                         onClick={handleSyncFaltantes}
                         disabled={isSyncing}
                         className="flex-1 sm:flex-none px-5 py-2.5 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-amber-500/20 transition-all flex items-center justify-center gap-2 group"
