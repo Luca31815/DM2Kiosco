@@ -156,6 +156,49 @@ const SynonymManagerModal = ({ isOpen, onClose }) => {
                     </div>
                 </div>
 
+                {/* Bulk Actions Bar */}
+                {view === 'conflicts' && !loading && (
+                    <AnimatePresence>
+                        {Object.entries(
+                            conflicts.reduce((acc, c) => {
+                                acc[c.nombre_oficial] = acc[c.nombre_oficial] || [];
+                                acc[c.nombre_oficial].push(c);
+                                return acc;
+                            }, {})
+                        ).filter(([_, group]) => group.length > 1).map(([dest, group]) => (
+                            <motion.div 
+                                key={`bulk-${dest}`}
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: 'auto', opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                className="px-6 py-3 bg-amber-500/10 border-b border-amber-500/20 flex items-center justify-between gap-4"
+                            >
+                                <div className="flex items-center gap-3">
+                                    <div className="p-1.5 bg-amber-500/20 rounded-lg">
+                                        <AlertTriangle size={14} className="text-amber-500" />
+                                    </div>
+                                    <span className="text-xs font-bold text-slate-300">
+                                        Hay <b className="text-amber-400">{group.length}</b> conflictos apuntando a <b className="text-white">"{dest}"</b>
+                                    </span>
+                                </div>
+                                <button 
+                                    onClick={async () => {
+                                        if (confirm(`¿Resolver los ${group.length} conflictos de "${dest}" en lote?`)) {
+                                            for (const c of group) {
+                                                await handleResolve(c);
+                                            }
+                                        }
+                                    }}
+                                    className="px-4 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-900 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-amber-500/20 flex items-center gap-2 active:scale-95"
+                                >
+                                    <Check size={14} strokeWidth={3} />
+                                    Resolver Grupo
+                                </button>
+                            </motion.div>
+                        ))}
+                    </AnimatePresence>
+                )}
+
                 {/* Table Content */}
                 <div className="flex-1 overflow-auto custom-scrollbar">
                     {loading ? (
