@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import * as api from '../services/api'
 import { Loader2, Tag, TrendingUp, TrendingDown, Clock, Calendar, AlertCircle, Bookmark } from 'lucide-react'
 import { motion } from 'framer-motion'
+import SynonymTable from './SynonymTable'
 
 const ProductDetailExpansion = ({ product }) => {
     const [details, setDetails] = useState(null)
