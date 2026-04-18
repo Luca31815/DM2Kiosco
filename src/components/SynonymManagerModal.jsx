@@ -43,12 +43,12 @@ const SynonymManagerModal = ({ isOpen, onClose }) => {
         }
     }
 
-    const handleResolve = async (conflict) => {
+    const handleResolve = async (conflict, skipConfirm = false) => {
         setResolvingId(conflict.alias)
         try {
             if (conflict.tipo_conflicto === 'COLISION') {
                 // Fusión de productos (Estilo duplicados)
-                if (!confirm(`¿Resolver COLISIÓN? El producto real "${conflict.alias}" será FUSIONADO con "${conflict.nombre_oficial}". Unificaremos stocks e historiales.`)) {
+                if (!skipConfirm && !confirm(`¿Resolver COLISIÓN? El producto real "${conflict.alias}" será FUSIONADO con "${conflict.nombre_oficial}". Unificaremos stocks e historiales.`)) {
                     setResolvingId(null)
                     return
                 }
@@ -60,23 +60,23 @@ const SynonymManagerModal = ({ isOpen, onClose }) => {
                 }
                 const res = await api.actualizarProducto(data)
                 if (res.success) {
-                    toast.success('Fusión completada con éxito')
-                    loadData()
+                    toast.success(`Fusión "${conflict.alias}" -> "${conflict.nombre_oficial}" ok`)
+                    if (!skipConfirm) loadData()
                 } else throw new Error(res.error)
 
             } else if (conflict.tipo_conflicto === 'HUERFANO' && conflict.flatten_target) {
                 // Aplanamiento automático (A -> B moved to C)
-                if (!confirm(`¿Vincular a nuevo destino? El producto oficial desapareció, pero detectamos que fue fusionado con "${conflict.flatten_target}".`)) {
+                if (!skipConfirm && !confirm(`¿Vincular a nuevo destino? El producto oficial desapareció, pero detectamos que fue fusionado con "${conflict.flatten_target}".`)) {
                     setResolvingId(null)
                     return
                 }
                 await api.registrarSinonimo(conflict.alias, conflict.flatten_target)
-                toast.success('Vinculación actualizada (Aplanado)')
-                loadData()
+                toast.success(`Redirección "${conflict.alias}" -> "${conflict.flatten_target}" ok`)
+                if (!skipConfirm) loadData()
             } else if (conflict.tipo_conflicto === 'REDUNDANTE') {
                 await api.borrarSinonimo(conflict.alias)
                 toast.success('Redundancia eliminada')
-                loadData()
+                if (!skipConfirm) loadData()
             }
         } catch (err) {
             toast.error('Error al resolver: ' + err.message)
@@ -183,10 +183,11 @@ const SynonymManagerModal = ({ isOpen, onClose }) => {
                                 </div>
                                 <button 
                                     onClick={async () => {
-                                        if (confirm(`¿Resolver los ${group.length} conflictos de "${dest}" en lote?`)) {
+                                        if (confirm(`¿Resolver los ${group.length} conflictos de "${dest}" en lote sin confirmaciones individuales?`)) {
                                             for (const c of group) {
-                                                await handleResolve(c);
+                                                await handleResolve(c, true);
                                             }
+                                            loadData();
                                         }
                                     }}
                                     className="px-4 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-900 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-amber-500/20 flex items-center gap-2 active:scale-95"
