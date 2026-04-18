@@ -1,12 +1,14 @@
-import React, { useState, useEffect } from 'react'
-import { X, Search, AlertTriangle, CheckCircle2, Trash2, Loader2, Info, Filter } from 'lucide-react'
+import React, { useState, useEffect, useMemo } from 'react'
+import { X, Search, AlertTriangle, CheckCircle2, Trash2, Loader2, Info, Filter, RefreshCcw, Check, Sparkles } from 'lucide-react'
 import * as api from '../services/api'
 import { motion, AnimatePresence } from 'framer-motion'
+import { toast } from 'react-hot-toast'
 
 const SynonymManagerModal = ({ isOpen, onClose }) => {
     const [synonyms, setSynonyms] = useState([])
     const [conflicts, setConflicts] = useState([])
     const [loading, setLoading] = useState(true)
+    const [resolvingId, setResolvingId] = useState(null)
     const [filter, setFilter] = useState('')
     const [view, setView] = useState('all') // 'all' | 'conflicts'
 
@@ -35,15 +37,61 @@ const SynonymManagerModal = ({ isOpen, onClose }) => {
             await api.borrarSinonimo(alias)
             setSynonyms(s => s.filter(item => item.alias !== alias))
             setConflicts(c => c.filter(item => item.alias !== alias))
+            toast.success('Sinónimo eliminado')
         } catch (err) {
-            console.error('Error deleting:', err)
+            toast.error('Error al eliminar')
         }
     }
 
-    const filtered = (view === 'all' ? synonyms : conflicts).filter(s => 
-        s.alias.toLowerCase().includes(filter.toLowerCase()) || 
-        s.nombre_oficial.toLowerCase().includes(filter.toLowerCase())
-    )
+    const handleResolve = async (conflict) => {
+        setResolvingId(conflict.alias)
+        try {
+            if (conflict.tipo_conflicto === 'COLISION') {
+                // Fusión de productos (Estilo duplicados)
+                if (!confirm(`¿Resolver COLISIÓN? El producto real "${conflict.alias}" será FUSIONADO con "${conflict.nombre_oficial}". Unificaremos stocks e historiales.`)) {
+                    setResolvingId(null)
+                    return
+                }
+
+                const data = {
+                    producto_id: conflict.alias_id,
+                    nombre: conflict.nombre_oficial,
+                    p_guardar_alias: true
+                }
+                const res = await api.actualizarProducto(data)
+                if (res.success) {
+                    toast.success('Fusión completada con éxito')
+                    loadData()
+                } else throw new Error(res.error)
+
+            } else if (conflict.tipo_conflicto === 'HUERFANO' && conflict.flatten_target) {
+                // Aplanamiento automático (A -> B moved to C)
+                if (!confirm(`¿Vincular a nuevo destino? El producto oficial desapareció, pero detectamos que fue fusionado con "${conflict.flatten_target}".`)) {
+                    setResolvingId(null)
+                    return
+                }
+                await api.registrarSinonimo(conflict.alias, conflict.flatten_target)
+                toast.success('Vinculación actualizada (Aplanado)')
+                loadData()
+            } else if (conflict.tipo_conflicto === 'REDUNDANTE') {
+                await api.borrarSinonimo(conflict.alias)
+                toast.success('Redundancia eliminada')
+                loadData()
+            }
+        } catch (err) {
+            toast.error('Error al resolver: ' + err.message)
+        } finally {
+            setResolvingId(null)
+        }
+    }
+
+    const filtered = useMemo(() => {
+        const source = (view === 'all' ? synonyms : conflicts)
+        return source.filter(s => 
+            s.alias.toLowerCase().includes(filter.toLowerCase()) || 
+            s.nombre_oficial.toLowerCase().includes(filter.toLowerCase())
+        )
+    }, [view, synonyms, conflicts, filter])
 
     if (!isOpen) return null
 
@@ -61,17 +109,17 @@ const SynonymManagerModal = ({ isOpen, onClose }) => {
                 initial={{ opacity: 0, scale: 0.9, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                className="relative w-full max-w-4xl bg-slate-900 border border-white/10 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]"
+                className="relative w-full max-w-5xl bg-slate-900 border border-white/10 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]"
             >
                 {/* Header */}
                 <div className="p-6 border-b border-white/5 flex justify-between items-center bg-white/[0.02]">
                     <div className="flex items-center gap-4">
                         <div className="p-3 bg-blue-500/10 rounded-2xl">
-                            <Filter className="h-6 w-6 text-blue-400" />
+                            <Sparkles className="h-6 w-6 text-blue-400" />
                         </div>
                         <div>
-                            <h3 className="text-xl font-black text-white tracking-tight text-shadow-glow">Gestión de Sinónimos</h3>
-                            <p className="text-slate-500 text-xs font-medium">Administra las variantes de nombres y resuelve conflictos.</p>
+                            <h3 className="text-xl font-black text-white tracking-tight text-shadow-glow">Diccionario de Inteligencia</h3>
+                            <p className="text-slate-500 text-xs font-medium uppercase tracking-widest">Auditoría y Resolución de Conflictos</p>
                         </div>
                     </div>
                     <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-xl transition-colors text-slate-400">
@@ -86,7 +134,7 @@ const SynonymManagerModal = ({ isOpen, onClose }) => {
                             onClick={() => setView('all')}
                             className={`px-4 py-2 rounded-lg text-xs font-black transition-all ${view === 'all' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'text-slate-500 hover:text-slate-300'}`}
                         >
-                            TODOS ({synonyms.length})
+                            DICCIONARIO ({synonyms.length})
                         </button>
                         <button 
                             onClick={() => setView('conflicts')}
@@ -103,7 +151,7 @@ const SynonymManagerModal = ({ isOpen, onClose }) => {
                             placeholder="Buscar alias o producto oficial..."
                             value={filter}
                             onChange={(e) => setFilter(e.target.value)}
-                            className="w-full bg-slate-800/40 border border-white/5 rounded-xl pl-11 pr-4 py-2 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/40 transition-all"
+                            className="w-full bg-slate-800/40 border border-white/5 rounded-xl pl-11 pr-4 py-2 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/40 transition-all font-medium"
                         />
                     </div>
                 </div>
@@ -113,21 +161,21 @@ const SynonymManagerModal = ({ isOpen, onClose }) => {
                     {loading ? (
                         <div className="flex flex-col items-center justify-center py-20 gap-4">
                             <Loader2 className="h-8 w-8 text-blue-500 animate-spin" />
-                            <span className="text-slate-500 font-bold tracking-widest text-[10px] uppercase">Analizando diccionario...</span>
+                            <span className="text-slate-500 font-bold tracking-widest text-[10px] uppercase">Ejecutando auditoría recursiva...</span>
                         </div>
                     ) : filtered.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-20 text-slate-600 opacity-50">
                             <Info className="h-10 w-10 mb-2" />
-                            <span className="text-sm italic">No se encontraron sinónimos bajo este filtro.</span>
+                            <span className="text-sm italic">No se encontraron incidencias en el catálogo.</span>
                         </div>
                     ) : (
                         <table className="w-full text-left text-sm">
                             <thead className="bg-white/[0.01] sticky top-0 backdrop-blur-md border-b border-white/5">
                                 <tr className="text-[10px] font-black uppercase tracking-widest text-slate-500">
                                     <th className="px-6 py-4">Variante (Alias)</th>
-                                    <th className="px-6 py-4">Apunta a (Oficial)</th>
-                                    <th className="px-6 py-4">Estado</th>
-                                    <th className="px-6 py-4 text-right">Acción</th>
+                                    <th className="px-6 py-4">Destino (Nombre Oficial)</th>
+                                    <th className="px-6 py-4">Estado / Conflicto</th>
+                                    <th className="px-6 py-4 text-right">Resolución</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-white/5">
@@ -138,35 +186,63 @@ const SynonymManagerModal = ({ isOpen, onClose }) => {
                                             key={s.alias}
                                             initial={{ opacity: 0, y: 5 }}
                                             animate={{ opacity: 1, y: 0 }}
-                                            transition={{ delay: idx * 0.01 }}
+                                            transition={{ delay: idx * 0.005 }}
                                             className="group hover:bg-white/[0.02] transition-colors"
                                         >
                                             <td className="px-6 py-4 font-black text-slate-200 uppercase tracking-tight">{s.alias}</td>
-                                            <td className="px-6 py-4 text-slate-400 font-medium">{s.nombre_oficial}</td>
+                                            <td className="px-6 py-4">
+                                                <div className="flex flex-col">
+                                                    <span className="text-slate-400 font-medium">{s.nombre_oficial}</span>
+                                                    {conflict?.flatten_target && (
+                                                        <span className="text-[10px] text-blue-400 font-bold flex items-center gap-1 mt-0.5">
+                                                            <RefreshCcw size={10} className="animate-spin-slow" />
+                                                            Sugerencia: Re-vincular a {conflict.flatten_target}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </td>
                                             <td className="px-6 py-4">
                                                 {conflict ? (
-                                                    <div className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
-                                                        conflict.tipo_conflicto === 'COLISION' ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20' :
-                                                        conflict.tipo_conflicto === 'HUERFANO' ? 'bg-rose-500/10 text-rose-500 border border-rose-500/20' :
+                                                    <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider ${
+                                                        conflict.tipo_conflicto === 'COLISION' ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20 shadow-[0_0_10px_rgba(245,158,11,0.1)]' :
+                                                        conflict.tipo_conflicto === 'HUERFANO' ? 'bg-rose-500/10 text-rose-500 border border-rose-500/20 shadow-[0_0_10px_rgba(244,63,94,0.1)]' :
                                                         'bg-slate-500/10 text-slate-500 border border-white/10'
                                                     }`}>
                                                         <AlertTriangle className="h-2.5 w-2.5" />
                                                         {conflict.tipo_conflicto}
                                                     </div>
                                                 ) : (
-                                                    <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 text-[9px] font-black uppercase tracking-wider">
+                                                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 text-[9px] font-black uppercase tracking-wider shadow-[0_0_10px_rgba(16,185,129,0.1)]">
                                                         <CheckCircle2 className="h-2.5 w-2.5" />
-                                                        OK
+                                                        ESTABLE
                                                     </div>
                                                 )}
                                             </td>
                                             <td className="px-6 py-4 text-right">
-                                                <button 
-                                                    onClick={() => handleDelete(s.alias)}
-                                                    className="p-2 text-slate-600 hover:text-rose-400 hover:bg-rose-400/10 rounded-xl transition-all opacity-0 group-hover:opacity-100"
-                                                >
-                                                    <Trash2 size={16} />
-                                                </button>
+                                                <div className="flex items-center justify-end gap-2">
+                                                    {conflict && (
+                                                        <button 
+                                                            disabled={resolvingId === conflict.alias}
+                                                            onClick={() => handleResolve(conflict)}
+                                                            className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95 flex items-center gap-2 ${
+                                                                conflict.tipo_conflicto === 'COLISION' ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/20' :
+                                                                (conflict.tipo_conflicto === 'HUERFANO' && conflict.flatten_target) ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' :
+                                                                'bg-slate-800 text-slate-400 hover:text-white'
+                                                            }`}
+                                                        >
+                                                            {resolvingId === conflict.alias ? <Loader2 size={12} className="animate-spin" /> : <RefreshCcw size={12} />}
+                                                            {conflict.tipo_conflicto === 'COLISION' ? 'Fusionar' : 
+                                                             (conflict.flatten_target ? 'Aplanar' : 'Corregir')}
+                                                        </button>
+                                                    )}
+                                                    <button 
+                                                        onClick={() => handleDelete(s.alias)}
+                                                        title="Eliminar de forma permanente"
+                                                        className="p-2 text-slate-600 hover:text-rose-400 hover:bg-rose-400/10 rounded-xl transition-all opacity-0 group-hover:opacity-100"
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                </div>
                                             </td>
                                         </motion.tr>
                                     )
@@ -183,9 +259,9 @@ const SynonymManagerModal = ({ isOpen, onClose }) => {
                     </div>
                     <div className="space-y-1">
                         <p className="text-[10px] text-slate-400 leading-relaxed italic">
-                            <b>COLISIÓN:</b> El alias existe también como un producto real. Puede causar ambigüedad. <br/>
-                            <b>HUÉRFANO:</b> El producto oficial al que apunta ya no existe. El alias es inútil. <br/>
-                            <b>REDUNDANTE:</b> El alias es idéntico al nombre oficial.
+                            <b>COLISIÓN:</b> El alias es un producto real. La **Fusión** unifica stock e historial. <br/>
+                            <b>HUÉRFANO:</b> El destino no existe. El **Aplanamiento** lo vincula al nuevo destino oficial si fue movido. <br/>
+                            <b>ESTABLE:</b> El sinónimo apunta directamente a un producto del catálogo sin saltos intermedios.
                         </p>
                     </div>
                 </div>
