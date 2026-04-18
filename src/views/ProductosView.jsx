@@ -435,16 +435,6 @@ const ProductosView = () => {
                         Diccionario
                     </button>
                     
-                    <div className="relative flex-1 sm:w-80 group">
-                        <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-500 h-4 w-4 group-focus-within:text-blue-400 transition-colors" />
-                        <input
-                            type="text"
-                            placeholder="Buscar producto por nombre..."
-                            className="pl-11 pr-4 py-2.5 bg-slate-800/50 border border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/50 text-slate-200 placeholder-slate-500 w-full outline-none backdrop-blur-md transition-all"
-                            value={filterValue}
-                            onChange={(e) => handleFilter(e.target.value)}
-                        />
-                    </div>
                 </div>
             </div>
 

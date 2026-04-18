@@ -7,18 +7,7 @@ import { useAuth } from '../context/AuthContext'
 
 const Layout = ({ children }) => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false)
-    const [isSearchOpen, setIsSearchOpen] = useState(false)
 
-    useEffect(() => {
-        const handleKeyDown = (e) => {
-            if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-                e.preventDefault()
-                setIsSearchOpen(true)
-            }
-        }
-        window.addEventListener('keydown', handleKeyDown)
-        return () => window.removeEventListener('keydown', handleKeyDown)
-    }, [])
 
     return (
         <div className="flex bg-slate-950 min-h-screen relative overflow-hidden font-outfit">
@@ -32,7 +21,6 @@ const Layout = ({ children }) => {
                 style: { background: '#1e293b', color: '#f1f5f9', border: '1px solid #334155' }
             }} />
 
-            <CommandPalette isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
 
             <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
@@ -49,16 +37,6 @@ const Layout = ({ children }) => {
                         <LogoTrigger />
                     </div>
 
-                    <button
-                        onClick={() => setIsSearchOpen(true)}
-                        className="flex items-center gap-3 px-4 py-2 bg-slate-900 border border-white/5 rounded-xl text-slate-400 hover:text-white hover:border-white/10 transition-all active:scale-95 group"
-                    >
-                        <Search className="h-4 w-4 group-hover:text-blue-400 transition-colors" />
-                        <span className="text-sm font-medium pr-8">Buscar...</span>
-                        <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-800 border border-white/5 text-[10px] font-black uppercase">
-                            <Command className="h-3 w-3" /> K
-                        </div>
-                    </button>
                 </div>
 
                 <div className="p-4 md:p-8 pt-20 md:pt-24 overflow-y-auto overflow-x-hidden custom-scrollbar">
