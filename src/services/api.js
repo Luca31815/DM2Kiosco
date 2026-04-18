@@ -163,15 +163,29 @@ export const buscarProductosSimilares = async (query) => {
 
 export const registrarSinonimo = async (variante, canonical) => {
     if (isDemo()) throw new Error('Acción deshabilitada en el modo Demo');
-    const { data, error } = await supabase.rpc('fn_registrar_sinonimo', { 
-        p_variante: variante, 
-        p_canonical: canonical 
+    const { data, error } = await supabase.rpc('fn_insertar_sinonimo_transitivo', { 
+        p_alias: variante, 
+        p_nombre_oficial: canonical 
     })
     if (error) {
-        console.error('Error calling fn_registrar_sinonimo:', error)
+        console.error('Error calling fn_insertar_sinonimo_transitivo:', error)
         throw error
     }
     return data
+}
+
+export const borrarSinonimo = async (alias) => {
+    if (isDemo()) throw new Error('Acción deshabilitada en el modo Demo');
+    const { error } = await supabase
+        .from('productos_sinonimos')
+        .delete()
+        .eq('alias', alias)
+    
+    if (error) {
+        console.error('Error deleting synonym:', error)
+        throw error
+    }
+    return true
 }
 
 export const getProductIntelligence = async (nombre) => {
@@ -199,6 +213,19 @@ export const getProductosSinonimos = async () => {
     return data || []
 }
 
+export const getConflictosSinonimos = async () => {
+    if (isDemo()) return []
+    const { data, error } = await supabase
+        .from('v_conflictos_sinonimos')
+        .select('*')
+    
+    if (error) {
+        console.error('Error fetching v_conflictos_sinonimos:', error)
+        return []
+    }
+    return data || []
+}
+
 export const getDuplicadosTrigram = async () => {
     if (isDemo()) return []
     const { data, error } = await supabase.rpc('fn_buscar_duplicados_trigram')
@@ -216,7 +243,8 @@ export const actualizarProducto = async (data) => {
         p_nuevo_nombre: data.nombre,
         p_nuevo_precio_venta: data.ultimo_precio_venta,
         p_nuevo_costo_compra: data.ultimo_costo_compra,
-        p_nuevo_stock: data.stock_actual
+        p_nuevo_stock: data.stock_actual,
+        p_guardar_alias: data.p_guardar_alias ?? true
     })
     if (error) {
         console.error('Error calling actualizar_producto_global_v2:', error)

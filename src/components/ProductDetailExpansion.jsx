@@ -46,25 +46,27 @@ const ProductDetailExpansion = ({ product }) => {
         >
             {/* Columna Izquierda: Sinónimos y Info General */}
             <div className="space-y-6">
-                <div className="bg-slate-900/40 rounded-2xl p-5 border border-white/5 space-y-4">
+                <div className="bg-slate-900/40 rounded-2xl p-5 border border-white/5 space-y-6">
                     <h4 className="text-xs font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">
                         <Bookmark className="h-3 w-3" />
-                        Información de Aprendizaje
+                        Gestión de Sinónimos
                     </h4>
                     
-                    <div>
-                        <span className="text-[10px] text-slate-500 font-bold uppercase block mb-2">Sinónimos Registrados</span>
-                        {hasSinonimos ? (
-                            <div className="flex flex-wrap gap-2">
-                                {details.sinonimos.map((s, i) => (
-                                    <span key={i} className="px-2.5 py-1 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-lg text-[10px] font-black uppercase">
-                                        {s}
-                                    </span>
-                                ))}
-                            </div>
-                        ) : (
-                            <span className="text-xs text-slate-600 italic">No hay sinónimos vinculados todavía.</span>
-                        )}
+                    <SynonymTable 
+                        product={product} 
+                        initialSinonimos={details.sinonimos || []} 
+                        onUpdate={(newList) => setDetails({ ...details, sinonimos: newList })}
+                    />
+
+                    {/* Alerta de UX para errores de carga */}
+                    <div className="bg-amber-500/5 border border-amber-500/10 rounded-xl p-3 flex gap-3 items-start">
+                        <AlertCircle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+                        <div className="space-y-1">
+                            <span className="text-[10px] font-black uppercase text-amber-500/80 block">Aviso de carga</span>
+                            <p className="text-[10px] text-slate-500 leading-relaxed italic">
+                                Si esto es un error de carga (ej: pusiste Agua Chica pero era Grande), <b>borrá y recargá</b> la operación en lugar de crear un sinónimo para evitar confusiones futuras.
+                            </p>
+                        </div>
                     </div>
 
                     <div className="pt-2 border-t border-white/5">

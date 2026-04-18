@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import DataTable from '../components/DataTable'
 import { useProductos, usePredictiveStock } from '../hooks/useData'
-import { Edit2, Check, X, Loader2, Package, TrendingUp, TrendingDown, Clock, Search, Timer, Trash2, PackagePlus, DollarSign, FileText } from 'lucide-react'
+import { Edit2, Check, X, Loader2, Package, TrendingUp, TrendingDown, Clock, Search, Timer, Trash2, PackagePlus, DollarSign, FileText, Bookmark } from 'lucide-react'
 import * as api from '../services/api'
 import { useSWRConfig } from 'swr'
 import ProductAutocomplete from '../components/ProductAutocomplete'
@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'react-hot-toast'
 import ProductDetailExpansion from '../components/ProductDetailExpansion'
 import { generateProductsPDF } from '../utils/pdfGenerator'
+import SynonymManagerModal from '../components/SynonymManagerModal'
 
 
 const ProductosView = () => {
@@ -26,6 +27,7 @@ const ProductosView = () => {
     const [isSyncing, setIsSyncing] = useState(false)
     const [isSyncingPrecios, setIsSyncingPrecios] = useState(false)
     const [isExporting, setIsExporting] = useState(false)
+    const [isSynonymModalOpen, setIsSynonymModalOpen] = useState(false)
 
 
     const options = React.useMemo(() => ({
@@ -55,7 +57,7 @@ const ProductosView = () => {
 
     const handleEditStart = (product) => {
         setEditingId(product.producto_id)
-        setEditForm({ ...product })
+        setEditForm({ ...product, p_guardar_alias: true })
     }
 
     const handleSave = async () => {
@@ -205,12 +207,27 @@ const ProductosView = () => {
             render: (val, row) => (
                 <div className="flex flex-col">
                     {editingId === row.producto_id ? (
-                        <div className="min-w-[200px]">
+                        <div className="min-w-[200px] flex flex-col gap-2 py-1">
                             <ProductAutocomplete
                                 value={editForm.nombre}
                                 onChange={v => setEditForm({ ...editForm, nombre: v })}
                                 className="bg-slate-800/50 border-white/10"
                             />
+                            {editForm.nombre?.trim().toUpperCase() !== row.nombre && (
+                                <label className="flex items-center gap-2 cursor-pointer group select-none">
+                                    <div className="relative">
+                                        <input 
+                                            type="checkbox"
+                                            checked={editForm.p_guardar_alias}
+                                            onChange={e => setEditForm({ ...editForm, p_guardar_alias: e.target.checked })}
+                                            className="sr-only"
+                                        />
+                                        <div className={`w-8 h-4 rounded-full transition-colors ${editForm.p_guardar_alias ? 'bg-blue-500' : 'bg-slate-700'}`}></div>
+                                        <div className={`absolute top-0.5 left-0.5 w-3 h-3 bg-white rounded-full transition-transform ${editForm.p_guardar_alias ? 'translate-x-4' : 'translate-x-0'}`}></div>
+                                    </div>
+                                    <span className="text-[10px] font-bold text-slate-500 group-hover:text-blue-400 transition-colors uppercase tracking-tight">Guardar como alias</span>
+                                </label>
+                            )}
                         </div>
                     ) : (
                         <span className="font-bold text-slate-200">{val}</span>
@@ -409,6 +426,15 @@ const ProductosView = () => {
                         {isCleaning ? 'Limpiando...' : 'Limpiar Catálogo'}
                     </button>
                     
+                    <button
+                        onClick={() => setIsSynonymModalOpen(true)}
+                        className="flex-1 sm:flex-none px-5 py-2.5 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-indigo-500/20 transition-all flex items-center justify-center gap-2 group"
+                        title="Gestionar el diccionario de sinónimos y resolver conflictos de nombres"
+                    >
+                        <Bookmark className="h-4 w-4 group-hover:scale-110 transition-transform" />
+                        Diccionario
+                    </button>
+                    
                     <div className="relative flex-1 sm:w-80 group">
                         <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-500 h-4 w-4 group-focus-within:text-blue-400 transition-colors" />
                         <input
@@ -440,6 +466,11 @@ const ProductosView = () => {
                 renderExpandedRow={(product) => (
                     <ProductDetailExpansion product={product} />
                 )}
+            />
+
+            <SynonymManagerModal 
+                isOpen={isSynonymModalOpen} 
+                onClose={() => setIsSynonymModalOpen(false)} 
             />
         </motion.div>
     )
