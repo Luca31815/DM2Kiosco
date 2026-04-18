@@ -40,11 +40,11 @@ BEGIN
         'reservas', (
             SELECT COALESCE(jsonb_agg(r), '[]'::jsonb) 
             FROM (
-                SELECT rd.id as item_ref, rs.fecha_registro, rd.precio_unitario 
+                SELECT rd.id as item_ref, rs.fecha_creacion as fecha_registro, rd.precio_unitario 
                 FROM public.reservas_detalles rd
                 INNER JOIN public.reservas rs ON rd.reserva_id = rs.reserva_id
                 WHERE public.normalizar_texto(rd.producto) = v_nombre_norm 
-                ORDER BY rs.fecha_registro DESC LIMIT 20
+                ORDER BY rs.fecha_creacion DESC LIMIT 20
             ) r
         ),
         'ultima_actividad', (
@@ -54,7 +54,7 @@ BEGIN
                 UNION ALL
                 SELECT c."Fecha" as f FROM public.compras_detalles cd JOIN public.compras c ON cd.compra_id = c.compra_id WHERE public.normalizar_texto(cd.producto) = v_nombre_norm
                 UNION ALL
-                SELECT rs.fecha_registro as f FROM public.reservas_detalles rd JOIN public.reservas rs ON rd.reserva_id = rs.reserva_id WHERE public.normalizar_texto(rd.producto) = v_nombre_norm
+                SELECT rs.fecha_creacion as f FROM public.reservas_detalles rd JOIN public.reservas rs ON rd.reserva_id = rs.reserva_id WHERE public.normalizar_texto(rd.producto) = v_nombre_norm
             ) u
         )
     ) INTO v_res;
