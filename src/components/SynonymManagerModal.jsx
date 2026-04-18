@@ -77,6 +77,15 @@ const SynonymManagerModal = ({ isOpen, onClose }) => {
                 await api.borrarSinonimo(conflict.alias)
                 toast.success('Redundancia eliminada')
                 if (!skipConfirm) loadData()
+            } else if (conflict.tipo_conflicto === 'HUERFANO') {
+                // Caso huérfano sin sugerencia automática
+                if (!skipConfirm && !confirm(`¿Eliminar sinónimo muerto? El destino "${conflict.nombre_oficial}" no existe y no hay sugerencias de aplanamiento.`)) {
+                    setResolvingId(null)
+                    return
+                }
+                await api.borrarSinonimo(conflict.alias)
+                toast.success('Sinónimo huérfano eliminado')
+                if (!skipConfirm) loadData()
             }
         } catch (err) {
             toast.error('Error al resolver: ' + err.message)
