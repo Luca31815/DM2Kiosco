@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
-import { LayoutDashboard, ShoppingCart, Calendar, Package, TrendingUp, FileBarChart, History, Clock, X, BarChart3, ShieldCheck, AlertTriangle } from 'lucide-react'
+import { LayoutDashboard, ShoppingCart, Calendar, Package, TrendingUp, FileBarChart, History, Clock, X, BarChart3, ShieldCheck, AlertTriangle, Users } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 const Sidebar = ({ isOpen, onClose }) => {
@@ -9,6 +9,7 @@ const Sidebar = ({ isOpen, onClose }) => {
         { to: '/', label: 'Dashboard', icon: LayoutDashboard },
         { to: '/ventas', label: 'Ventas', icon: TrendingUp },
         { to: '/compras', label: 'Compras', icon: ShoppingCart },
+        { to: '/proveedores', label: 'Proveedores', icon: Users },
         { to: '/reservas', label: 'Reservas', icon: Calendar },
         { to: '/productos', label: 'Productos', icon: Package },
         { to: '/retiros', label: 'Gestión de Caja', icon: TrendingUp },

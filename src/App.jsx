@@ -12,6 +12,7 @@ import HistorialView from './views/HistorialView'
 import HomeView from './views/HomeView'
 import SystemView from './views/SystemView'
 import RetirosView from './views/RetirosView'
+import ProveedoresView from './views/ProveedoresView'
 
 import RentabilidadProductosView from './views/RentabilidadProductosView'
 import AnalisisHorariosView from './views/AnalisisHorariosView'
@@ -33,7 +34,8 @@ function App() {
           <Route path="/analisis-horarios" element={<AnalisisHorariosView />} />
           <Route path="/historial" element={<HistorialView />} />
           <Route path="/sistema" element={<SystemView />} />
-          <Route path="/retiros" element={<RetirosView />} />
+           <Route path="/retiros" element={<RetirosView />} />
+          <Route path="/proveedores" element={<ProveedoresView />} />
           <Route path="/duplicados" element={<DuplicadosView />} />
         </Routes>
       </Layout>

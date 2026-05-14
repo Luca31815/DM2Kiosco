@@ -33,3 +33,16 @@ export const MOCK_HISTORIAL = [
     { id: 1, fecha: '2026-02-23T10:05:00Z', mensaje: 'Venta registrada: Juan Pérez - $15.500', tipo: 'bot' },
     { id: 2, fecha: '2026-02-23T09:32:00Z', mensaje: 'Venta registrada: María García - $8.200', tipo: 'bot' },
 ];
+
+export const MOCK_PROVEEDORES = [
+    { nombre: 'DISTRIBUIDORA NORTE', ultima_compra: '2026-02-21T11:00:00Z', total_compras_registradas: 15 },
+    { nombre: 'GOLOMAX S.A.', ultima_compra: '2026-02-20T15:30:00Z', total_compras_registradas: 8 },
+    { nombre: 'BEBIDAS DEL SUR', ultima_compra: '2026-02-18T10:00:00Z', total_compras_registradas: 12 },
+];
+
+export const MOCK_HISTORIAL_COMPRAS = [
+    { producto: 'Gaseosa Coca-Cola Original 2.25L', proveedor: 'DISTRIBUIDORA NORTE', fecha: '2026-02-21T11:00:00Z', costo: 2200, cantidad: 24 },
+    { producto: 'Gaseosa Coca-Cola Original 2.25L', proveedor: 'DISTRIBUIDORA NORTE', fecha: '2026-01-15T10:00:00Z', costo: 1950, cantidad: 24 },
+    { producto: 'Gaseosa Coca-Cola Original 2.25L', proveedor: 'BEBIDAS DEL SUR', fecha: '2026-02-18T10:00:00Z', costo: 2100, cantidad: 12 },
+    { producto: 'Alfajor Jorgito Chocolate', proveedor: 'GOLOMAX S.A.', fecha: '2026-02-20T15:30:00Z', costo: 450, cantidad: 60 },
+];

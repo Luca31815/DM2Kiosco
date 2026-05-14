@@ -393,7 +393,7 @@ export function useReporteVentasPeriodico(options = {}) {
     }
 }
 
-export function useRetiros(options = {}) {
+export const useRetiros = (options = {}) => {
     const { isDemoMode } = useAuth()
     const { data, error, isLoading } = useSWR(
         !isDemoMode ? ['retiros', options] : null,
@@ -402,6 +402,51 @@ export function useRetiros(options = {}) {
     )
 
     if (isDemoMode) return { data: [], count: 0, loading: false }
+
+    return {
+        data: data?.data || [],
+        count: data?.count || 0,
+        loading: isLoading,
+        error
+    }
+}
+
+export function useProveedores(options = {}) {
+    const { isDemoMode } = useAuth()
+    const { data, error, isLoading } = useSWR(
+        !isDemoMode ? ['proveedores', options] : null,
+        () => api.getProveedores(options),
+        SWR_OPTIONS
+    )
+
+    if (isDemoMode) return { data: mock.MOCK_PROVEEDORES, count: mock.MOCK_PROVEEDORES.length, loading: false }
+
+    return {
+        data: data?.data || [],
+        count: data?.count || 0,
+        loading: isLoading,
+        error
+    }
+}
+
+export function useHistorialCompras(options = {}) {
+    const { isDemoMode } = useAuth()
+    const { data, error, isLoading } = useSWR(
+        (!isDemoMode && (options.filterValue || options.producto)) ? ['historial_compras_detallado', options] : null,
+        () => api.getHistorialCompras(options),
+        SWR_OPTIONS
+    )
+
+    if (isDemoMode) {
+        let filtered = mock.MOCK_HISTORIAL_COMPRAS
+        if (options.filterColumn === 'proveedor' && options.filterValue) {
+            filtered = filtered.filter(h => h.proveedor === options.filterValue)
+        }
+        if (options.filterColumn === 'producto' && options.filterValue) {
+            filtered = filtered.filter(h => h.producto === options.filterValue)
+        }
+        return { data: filtered, count: filtered.length, loading: false }
+    }
 
     return {
         data: data?.data || [],

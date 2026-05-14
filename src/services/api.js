@@ -136,6 +136,9 @@ export const getHitosVentas = (options) => fetchTableData('vista_hitos_ventas', 
 
 export const getReporteVentasPeriodico = (options) => fetchTableData('vista_reporte_ventas_periodico', options)
 
+export const getProveedores = (options) => fetchTableData('vista_proveedores_consolidada', options)
+export const getHistorialCompras = (options) => fetchTableData('vista_historial_compras_detallado', options)
+
 export const getMovimientosDinero = (id) => fetchDetails('movimientos_dinero', 'referencia_id', id)
 export const getMovimientosStock = (id) => fetchDetails('stock_movimientos', 'referencia_id', id)
 
