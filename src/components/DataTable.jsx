@@ -1,6 +1,44 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, memo } from 'react'
 import { ChevronDown, ChevronUp, Search, Loader2, Download, ChevronLeft, ChevronRight } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+
+const DataTableRow = memo(({ row, rowIndex, columns, compact, renderExpandedRow, isExpanded, toggleRow, rowKey }) => {
+    return (
+        <React.Fragment>
+            <motion.tr
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                onClick={() => toggleRow(row[rowKey] !== undefined ? row[rowKey] : rowIndex)}
+                className={`hover:bg-white/10 transition-all group ${renderExpandedRow ? 'cursor-pointer' : ''} ${isExpanded ? 'bg-white/10' : ''}`}
+                style={{ transform: 'translateZ(0)' }}
+            >
+                {columns.map((col) => (
+                    <td key={col.key} className={`text-slate-300 group-hover:text-white transition-colors font-medium ${compact ? 'px-4 py-2 text-[11px]' : 'px-6 py-3.5'} ${col.wrap ? 'whitespace-normal break-words' : 'whitespace-nowrap'}`}>
+                        {(() => {
+                            try {
+                                return col.render ? col.render(row[col.key], row) : row[col.key] || '-'
+                            } catch (err) {
+                                console.error(`Error rendering column ${col.key}:`, err)
+                                return <span className="text-red-500/50 text-[10px] italic">Error</span>
+                            }
+                        })()}
+                    </td>
+                ))}
+            </motion.tr>
+            {renderExpandedRow && isExpanded && (
+                <motion.tr
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="bg-blue-600/5"
+                >
+                    <td colSpan={columns.length} className="px-6 py-6 border-l-2 border-blue-500 shadow-inner overflow-hidden">
+                        {renderExpandedRow(row)}
+                    </td>
+                </motion.tr>
+            )}
+        </React.Fragment>
+    )
+})
 
 const DataTable = ({
     data,
@@ -164,40 +202,17 @@ const DataTable = ({
                                 </motion.tr>
                             ) : (
                                 paginatedData.map((row, rowIndex) => (
-                                    <React.Fragment key={row[rowKey] || rowIndex}>
-                                        <motion.tr
-                                            initial={{ opacity: 0, y: 10 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            transition={{ delay: rowIndex * 0.01 }}
-                                            onClick={() => toggleRow(row[rowKey] !== undefined ? row[rowKey] : rowIndex)}
-                                            className={`hover:bg-white/10 transition-all group ${renderExpandedRow ? 'cursor-pointer' : ''} ${expandedRow === (row[rowKey] !== undefined ? row[rowKey] : rowIndex) ? 'bg-white/10' : ''}`}
-                                        >
-                                            {columns.map((col) => (
-                                                <td key={`${rowIndex}-${col.key}`} className={`text-slate-300 group-hover:text-white transition-colors font-medium ${compact ? 'px-4 py-2 text-[11px]' : 'px-6 py-3.5'} ${col.wrap ? 'whitespace-normal break-words' : 'whitespace-nowrap'}`}>
-                                                    {(() => {
-                                                        try {
-                                                            return col.render ? col.render(row[col.key], row) : row[col.key] || '-'
-                                                        } catch (err) {
-                                                            console.error(`Error rendering column ${col.key}:`, err)
-                                                            return <span className="text-red-500/50 text-[10px] italic">Error</span>
-                                                        }
-                                                    })()}
-                                                </td>
-                                            ))}
-                                        </motion.tr>
-                                        {renderExpandedRow && expandedRow === (row[rowKey] !== undefined ? row[rowKey] : rowIndex) && (
-                                            <motion.tr
-                                                initial={{ opacity: 0, height: 0 }}
-                                                animate={{ opacity: 1, height: 'auto' }}
-                                                exit={{ opacity: 0, height: 0 }}
-                                                className="bg-blue-600/5"
-                                            >
-                                                <td colSpan={columns.length} className="px-6 py-6 border-l-2 border-blue-500 shadow-inner overflow-hidden">
-                                                    {renderExpandedRow(row)}
-                                                </td>
-                                            </motion.tr>
-                                        )}
-                                    </React.Fragment>
+                                    <DataTableRow 
+                                        key={row[rowKey] || rowIndex}
+                                        row={row}
+                                        rowIndex={rowIndex}
+                                        columns={columns}
+                                        compact={compact}
+                                        renderExpandedRow={renderExpandedRow}
+                                        isExpanded={expandedRow === (row[rowKey] !== undefined ? row[rowKey] : rowIndex)}
+                                        toggleRow={toggleRow}
+                                        rowKey={rowKey}
+                                    />
                                 ))
                             )}
                         </AnimatePresence>

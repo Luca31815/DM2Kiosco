@@ -217,11 +217,10 @@ const ProveedoresView = () => {
                                             const isNew = p.tendencia === 'NUEVO'
 
                                             return (
-                                                <motion.button
-                                                    whileHover={{ y: -4, backgroundColor: 'rgba(255,255,255,0.08)' }}
+                                                <button
                                                     key={p.producto}
                                                     onClick={() => setSelectedProduct(p.producto)}
-                                                    className={`p-4 rounded-2xl border transition-all text-left group ${
+                                                    className={`p-4 rounded-2xl border transition-all text-left group glass-card ${
                                                         selectedProduct === p.producto 
                                                         ? 'bg-white/10 border-blue-500/50 shadow-lg shadow-blue-500/10' 
                                                         : 'bg-white/5 border-white/5'
