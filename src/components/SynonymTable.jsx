@@ -9,11 +9,20 @@ const SynonymTable = ({ product, initialSinonimos = [], onUpdate }) => {
     const [loading, setLoading] = useState(null) // 'adding' | 'deleting-alias' | null
 
     const handleAdd = async () => {
-        if (!newAlias.trim()) return
+        const normalizedAlias = newAlias.trim().toUpperCase()
+        if (!normalizedAlias) return
+        
+        // Evitar duplicados visuales en el estado local
+        if (sinonimos.includes(normalizedAlias)) {
+            setNewAlias('')
+            setLoading(null)
+            return
+        }
+
         setLoading('adding')
         try {
-            await api.registrarSinonimo(newAlias, product.nombre)
-            const updated = [...sinonimos, newAlias.trim().toUpperCase()]
+            await api.registrarSinonimo(normalizedAlias, product.nombre)
+            const updated = [...sinonimos, normalizedAlias]
             setSinonimos(updated)
             setNewAlias('')
             if (onUpdate) onUpdate(updated)

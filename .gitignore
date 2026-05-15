@@ -37,3 +37,4 @@ escaped_*.json
 *.txt
 *.cjs
 *.log
+*.root_backup

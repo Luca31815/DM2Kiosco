@@ -4,10 +4,13 @@ import * as api from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import * as mock from '../services/mockData'
 
-// Global SWR config or helper could go here
+// Global SWR config for better performance
 const SWR_OPTIONS = {
     refreshInterval: 60000, // 1 minute auto-refresh
-    revalidateOnFocus: false, // Optional: prevent aggressive revalidation on window focus
+    revalidateOnFocus: false, // Don't revalidate when switching tabs
+    revalidateOnReconnect: true,
+    dedupingInterval: 10000, // Deduplicate requests for 10 seconds
+    shouldRetryOnError: false,
 }
 
 export function useVentas(options = {}) {
@@ -420,6 +423,24 @@ export function useProveedores(options = {}) {
     )
 
     if (isDemoMode) return { data: mock.MOCK_PROVEEDORES, count: mock.MOCK_PROVEEDORES.length, loading: false }
+
+    return {
+        data: data?.data || [],
+        count: data?.count || 0,
+        loading: isLoading,
+        error
+    }
+}
+
+export function useResumenProductosProveedor(options = {}) {
+    const { isDemoMode } = useAuth()
+    const { data, error, isLoading } = useSWR(
+        (!isDemoMode && options.filterValue) ? ['resumen_productos_proveedor', options] : null,
+        () => api.getResumenProductosProveedor(options),
+        SWR_OPTIONS
+    )
+
+    if (isDemoMode) return { data: [], count: 0, loading: false }
 
     return {
         data: data?.data || [],

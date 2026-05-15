@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react'
-import { useProveedores, useHistorialCompras } from '../hooks/useData'
+import { useProveedores, useHistorialCompras, useResumenProductosProveedor } from '../hooks/useData'
 import { 
     Users, 
     Search, 
@@ -16,10 +16,22 @@ import {
     ExternalLink
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { 
+    LineChart, 
+    Line, 
+    XAxis, 
+    YAxis, 
+    CartesianGrid, 
+    Tooltip, 
+    ResponsiveContainer,
+    AreaChart,
+    Area
+} from 'recharts'
 
 const ProveedoresView = () => {
     const [selectedSupplier, setSelectedSupplier] = useState(null)
     const [searchSupplier, setSearchSupplier] = useState('')
+    const [searchProduct, setSearchProduct] = useState('')
     const [selectedProduct, setSelectedProduct] = useState(null)
 
     // 1. Fetch Suppliers
@@ -29,44 +41,28 @@ const ProveedoresView = () => {
         pageSize: 100
     })
 
-    // 2. Fetch Products for selected supplier
-    const { data: historialProveedor, loading: loadingHistorial } = useHistorialCompras({
+    // 2. Fetch Aggregated Products for selected supplier (Optimized)
+    const { data: productosProveedor, loading: loadingProductos } = useResumenProductosProveedor({
         filterColumn: 'proveedor',
         filterValue: selectedSupplier?.nombre,
         pageSize: 1000
     })
 
-    // 3. Fetch Price Comparison for selected product
+    // 3. Filter products by search term
+    const filteredProducts = useMemo(() => {
+        if (!productosProveedor) return []
+        if (!searchProduct) return productosProveedor
+        return productosProveedor.filter(p => 
+            p.producto.toLowerCase().includes(searchProduct.toLowerCase())
+        )
+    }, [productosProveedor, searchProduct])
+
+    // 4. Fetch Price Comparison for selected product (remains the same for detailed comparison)
     const { data: comparativaPrecios, loading: loadingComparativa } = useHistorialCompras({
         filterColumn: 'producto',
         filterValue: selectedProduct,
         pageSize: 1000
     })
-
-    // Grouping logic for products of a supplier
-    const productosAgrupados = useMemo(() => {
-        if (!historialProveedor) return []
-        const groups = {}
-        historialProveedor.forEach(h => {
-            if (!groups[h.producto]) {
-                groups[h.producto] = {
-                    nombre: h.producto,
-                    compras: [],
-                    ultimoCosto: 0,
-                    costoMinimo: Infinity,
-                    costoMaximo: -Infinity
-                }
-            }
-            groups[h.producto].compras.push(h)
-            if (new Date(h.fecha) > new Date(groups[h.producto].ultimaFecha || 0)) {
-                groups[h.producto].ultimoCosto = h.costo
-                groups[h.producto].ultimaFecha = h.fecha
-            }
-            groups[h.producto].costoMinimo = Math.min(groups[h.producto].costoMinimo, h.costo)
-            groups[h.producto].costoMaximo = Math.max(groups[h.producto].costoMaximo, h.costo)
-        })
-        return Object.values(groups).sort((a, b) => b.ultimaFecha.localeCompare(a.ultimaFecha))
-    }, [historialProveedor])
 
     // Grouping logic for price comparison
     const comparativaAgrupada = useMemo(() => {
@@ -89,6 +85,20 @@ const ProveedoresView = () => {
             }
         })
         return Object.values(groups).sort((a, b) => a.ultimoCosto - b.ultimoCosto)
+    }, [comparativaPrecios])
+
+    // Data for the trend chart
+    const chartData = useMemo(() => {
+        if (!comparativaPrecios) return []
+        // Sort all historical purchases for this product by date
+        return [...comparativaPrecios]
+            .sort((a, b) => new Date(a.fecha) - new Date(b.fecha))
+            .map(c => ({
+                fecha: new Date(c.fecha).toLocaleDateString(undefined, { day: '2-digit', month: '2-digit' }),
+                fullFecha: new Date(c.fecha).toLocaleDateString(),
+                costo: c.costo,
+                proveedor: c.proveedor
+            }))
     }, [comparativaPrecios])
 
     return (
@@ -164,7 +174,7 @@ const ProveedoresView = () => {
                             <div className="flex gap-4">
                                 <div className="bg-white/5 rounded-2xl p-4 border border-white/5 min-w-[140px]">
                                     <div className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Productos</div>
-                                    <div className="text-2xl font-black text-white">{productosAgrupados.length}</div>
+                                    <div className="text-2xl font-black text-white">{productosProveedor.length}</div>
                                 </div>
                                 <div className="bg-white/5 rounded-2xl p-4 border border-white/5 min-w-[140px]">
                                     <div className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Operaciones</div>
@@ -175,33 +185,44 @@ const ProveedoresView = () => {
 
                         {/* Product Grid/List */}
                         <div className="flex-1 glass-panel rounded-3xl bg-white/5 border-white/5 overflow-hidden flex flex-col">
-                            <div className="p-6 border-b border-white/5 flex justify-between items-center bg-white/5">
+                            <div className="p-6 border-b border-white/5 flex flex-col md:flex-row justify-between items-center bg-white/5 gap-4">
                                 <h3 className="font-black text-white flex items-center gap-3">
                                     <Package className="text-blue-500" /> Productos Comprados
                                 </h3>
-                                <div className="text-[10px] font-bold text-slate-500 bg-white/5 px-3 py-1 rounded-full uppercase tracking-tighter">
-                                    Click en producto para comparar precios
+                                <div className="flex items-center gap-4 w-full md:w-auto">
+                                    <div className="relative flex-1 md:w-64">
+                                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3 text-slate-500" />
+                                        <input 
+                                            type="text" 
+                                            placeholder="Filtrar productos..."
+                                            className="w-full pl-9 pr-4 py-1.5 bg-slate-900/50 border border-white/10 rounded-lg text-xs focus:ring-1 focus:ring-blue-500/50 outline-none text-white"
+                                            value={searchProduct}
+                                            onChange={(e) => setSearchProduct(e.target.value)}
+                                        />
+                                    </div>
+                                    <div className="hidden sm:block text-[10px] font-bold text-slate-500 bg-white/5 px-3 py-1 rounded-full uppercase tracking-tighter">
+                                        Click para comparar
+                                    </div>
                                 </div>
                             </div>
 
                             <div className="flex-1 overflow-y-auto custom-scrollbar p-6">
-                                {loadingHistorial ? (
+                                {loadingProductos ? (
                                     <div className="h-full flex items-center justify-center"><Loader2 className="animate-spin text-blue-500 size-12" /></div>
                                 ) : (
                                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                                        {productosAgrupados.map(p => {
-                                            const lastPurchase = p.compras[0]
-                                            const prevPurchase = p.compras[1]
-                                            const isIncrease = prevPurchase && lastPurchase.costo > prevPurchase.costo
-                                            const isDecrease = prevPurchase && lastPurchase.costo < prevPurchase.costo
+                                        {filteredProducts.map(p => {
+                                            const isIncrease = p.tendencia === 'AUMENTO'
+                                            const isDecrease = p.tendencia === 'BAJA'
+                                            const isNew = p.tendencia === 'NUEVO'
 
                                             return (
                                                 <motion.button
                                                     whileHover={{ y: -4, backgroundColor: 'rgba(255,255,255,0.08)' }}
-                                                    key={p.nombre}
-                                                    onClick={() => setSelectedProduct(p.nombre)}
+                                                    key={p.producto}
+                                                    onClick={() => setSelectedProduct(p.producto)}
                                                     className={`p-4 rounded-2xl border transition-all text-left group ${
-                                                        selectedProduct === p.nombre 
+                                                        selectedProduct === p.producto 
                                                         ? 'bg-white/10 border-blue-500/50 shadow-lg shadow-blue-500/10' 
                                                         : 'bg-white/5 border-white/5'
                                                     }`}
@@ -211,29 +232,38 @@ const ProveedoresView = () => {
                                                             <Package size={18} />
                                                         </div>
                                                         <div className="text-right">
-                                                            <div className="text-xl font-black text-white tabular-nums">${p.ultimoCosto}</div>
-                                                            <div className="text-[10px] text-slate-500 font-bold uppercase">{new Date(p.ultimaFecha).toLocaleDateString()}</div>
+                                                            <div className="text-xl font-black text-white tabular-nums">${p.ultimo_costo}</div>
+                                                            <div className="text-[10px] text-slate-500 font-bold uppercase">{new Date(p.ultima_fecha).toLocaleDateString()}</div>
                                                         </div>
                                                     </div>
                                                     
-                                                    <h4 className="font-bold text-slate-200 text-sm mb-4 line-clamp-2 min-h-[40px] group-hover:text-white">{p.nombre}</h4>
+                                                    <h4 className="font-bold text-slate-200 text-sm mb-4 line-clamp-2 min-h-[40px] group-hover:text-white">{p.producto}</h4>
                                                     
                                                     <div className="flex items-center justify-between pt-4 border-t border-white/5">
-                                                        <div className="flex items-center gap-1.5">
-                                                            {isIncrease ? (
-                                                                <div className="flex items-center text-red-400 text-[10px] font-black bg-red-400/10 px-2 py-0.5 rounded-full uppercase">
-                                                                    <ArrowUpRight size={12} className="mr-0.5" /> Aumento
+                                                        <div className="flex flex-col gap-1.5">
+                                                            <div className="flex items-center gap-1.5">
+                                                                {isIncrease ? (
+                                                                    <div className="flex items-center text-red-400 text-[10px] font-black bg-red-400/10 px-2 py-0.5 rounded-full uppercase">
+                                                                        <ArrowUpRight size={12} className="mr-0.5" /> {p.variacion_porcentual}%
+                                                                    </div>
+                                                                ) : isDecrease ? (
+                                                                    <div className="flex items-center text-green-400 text-[10px] font-black bg-green-400/10 px-2 py-0.5 rounded-full uppercase">
+                                                                        <ArrowDownRight size={12} className="mr-0.5" /> {p.variacion_porcentual}%
+                                                                    </div>
+                                                                ) : isNew ? (
+                                                                    <div className="text-blue-400 text-[10px] font-black bg-blue-400/10 px-2 py-0.5 rounded-full uppercase">Nuevo</div>
+                                                                ) : (
+                                                                    <div className="text-slate-500 text-[10px] font-bold uppercase">Estable</div>
+                                                                )}
+                                                            </div>
+                                                            {p.costo_min_mercado < p.ultimo_costo && (
+                                                                <div className="flex items-center text-purple-400 text-[9px] font-bold uppercase tracking-tighter">
+                                                                    <DollarSign size={10} className="mr-0.5" /> Mejorable: ${p.costo_min_mercado}
                                                                 </div>
-                                                            ) : isDecrease ? (
-                                                                <div className="flex items-center text-green-400 text-[10px] font-black bg-green-400/10 px-2 py-0.5 rounded-full uppercase">
-                                                                    <ArrowDownRight size={12} className="mr-0.5" /> Baja
-                                                                </div>
-                                                            ) : (
-                                                                <div className="text-slate-500 text-[10px] font-bold uppercase">Estable</div>
                                                             )}
                                                         </div>
                                                         <div className="flex items-center gap-1 text-[10px] font-bold text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity uppercase tracking-tighter">
-                                                            Comparar <ArrowRight size={10} />
+                                                            Analizar <ArrowRight size={10} />
                                                         </div>
                                                     </div>
                                                 </motion.button>
@@ -282,29 +312,95 @@ const ProveedoresView = () => {
                             </div>
 
                             <div className="flex-1 overflow-y-auto custom-scrollbar p-8 space-y-10">
+                                {/* Price Trend Chart */}
+                                <section className="space-y-4">
+                                    <h3 className="text-xs font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">
+                                        <TrendingUp size={14} className="text-blue-500" /> Evolución de Costos
+                                    </h3>
+                                    <div className="h-64 glass-panel p-4 rounded-3xl bg-white/5 border-white/5">
+                                        {loadingComparativa ? (
+                                            <div className="h-full flex items-center justify-center"><Loader2 className="animate-spin text-blue-500" /></div>
+                                        ) : (
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <AreaChart data={chartData}>
+                                                    <defs>
+                                                        <linearGradient id="colorCosto" x1="0" y1="0" x2="0" y2="1">
+                                                            <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
+                                                            <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                                                        </linearGradient>
+                                                    </defs>
+                                                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                                                    <XAxis 
+                                                        dataKey="fecha" 
+                                                        stroke="#64748b" 
+                                                        fontSize={10} 
+                                                        tickLine={false} 
+                                                        axisLine={false}
+                                                    />
+                                                    <YAxis 
+                                                        stroke="#64748b" 
+                                                        fontSize={10} 
+                                                        tickLine={false} 
+                                                        axisLine={false}
+                                                        tickFormatter={(value) => `$${value}`}
+                                                    />
+                                                    <Tooltip 
+                                                        contentStyle={{ 
+                                                            backgroundColor: '#0f172a', 
+                                                            border: '1px solid rgba(255,255,255,0.1)',
+                                                            borderRadius: '12px',
+                                                            fontSize: '12px'
+                                                        }}
+                                                        itemStyle={{ color: '#fff', fontWeight: 'bold' }}
+                                                        labelStyle={{ color: '#64748b', marginBottom: '4px' }}
+                                                    />
+                                                    <Area 
+                                                        type="monotone" 
+                                                        dataKey="costo" 
+                                                        stroke="#3b82f6" 
+                                                        strokeWidth={3}
+                                                        fillOpacity={1} 
+                                                        fill="url(#colorCosto)" 
+                                                        name="Costo"
+                                                    />
+                                                </AreaChart>
+                                            </ResponsiveContainer>
+                                        )}
+                                    </div>
+                                </section>
+
+                                {/* Price History for CURRENT supplier */}
                                 {/* Price History for CURRENT supplier */}
                                 <section className="space-y-4">
                                     <h3 className="text-xs font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">
                                         <History size={14} className="text-blue-500" /> Historial con {selectedSupplier.nombre}
                                     </h3>
                                     <div className="space-y-2">
-                                        {productosAgrupados.find(p => p.nombre === selectedProduct)?.compras.map((c, i) => (
-                                            <div key={i} className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5">
-                                                <div className="flex items-center gap-4">
-                                                    <div className="size-10 bg-slate-800 rounded-xl flex items-center justify-center">
-                                                        <Calendar size={18} className="text-slate-500" />
+                                        {productosProveedor.find(p => p.producto === selectedProduct)?.total_compras > 0 ? (
+                                            /* Si queremos el historial detallado aquí, seguimos usando historialProveedor o similar */
+                                            /* Por simplicidad en esta refactorización, mantendremos la lógica de búsqueda en la comparativa que ya trae los datos detallados */
+                                            comparativaPrecios
+                                                ?.filter(c => c.proveedor === selectedSupplier.nombre)
+                                                .map((c, i) => (
+                                                    <div key={i} className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5">
+                                                        <div className="flex items-center gap-4">
+                                                            <div className="size-10 bg-slate-800 rounded-xl flex items-center justify-center">
+                                                                <Calendar size={18} className="text-slate-500" />
+                                                            </div>
+                                                            <div>
+                                                                <div className="text-sm font-bold text-white">{new Date(c.fecha).toLocaleDateString()}</div>
+                                                                <div className="text-[10px] text-slate-500 uppercase font-black">ID: {c.compra_id}</div>
+                                                            </div>
+                                                        </div>
+                                                        <div className="text-right">
+                                                            <div className="text-lg font-black text-blue-400">${c.costo}</div>
+                                                            <div className="text-[10px] text-slate-600 font-bold">{c.cantidad} unidades</div>
+                                                        </div>
                                                     </div>
-                                                    <div>
-                                                        <div className="text-sm font-bold text-white">{new Date(c.fecha).toLocaleDateString()}</div>
-                                                        <div className="text-[10px] text-slate-500 uppercase font-black">ID: {c.compra_id}</div>
-                                                    </div>
-                                                </div>
-                                                <div className="text-right">
-                                                    <div className="text-lg font-black text-blue-400">${c.costo}</div>
-                                                    <div className="text-[10px] text-slate-600 font-bold">{c.cantidad} unidades</div>
-                                                </div>
-                                            </div>
-                                        ))}
+                                                ))
+                                        ) : (
+                                            <p className="text-slate-500 text-sm">No hay historial disponible.</p>
+                                        )}
                                     </div>
                                 </section>
 
@@ -349,7 +445,7 @@ const ProveedoresView = () => {
                                                             />
                                                         </div>
                                                         <span className="text-[10px] font-black text-slate-500 tabular-nums">
-                                                            {Math.round((g.ultimoCosto / (productosAgrupados.find(p => p.nombre === selectedProduct)?.ultimoCosto || 1) - 1) * 100)}%
+                                                            {Math.round((g.ultimoCosto / (productosProveedor.find(p => p.producto === selectedProduct)?.ultimo_costo || 1) - 1) * 100)}%
                                                         </span>
                                                     </div>
                                                 </div>

@@ -12,7 +12,7 @@ const isDemo = () => {
 export const fetchTableData = async (tableName, options = {}) => {
     if (isDemo()) return { data: [], count: 0 }; // Failsafe
 
-    const { sortColumn, sortOrder, filterColumn, filterValue, page, pageSize, dateRange, dateColumn, select = '*' } = options
+    const { sortColumn, sortOrder, filterColumn, filterValue, page, pageSize = 20, dateRange, dateColumn, select = '*' } = options
 
     let query = supabase.from(tableName).select(select, { count: 'exact' })
 
@@ -104,7 +104,11 @@ export const getSystemAlerts = async () => {
     return { data }
 }
 
-export const getVentas = (options) => fetchTableData('vista_ventas_search', { sortColumn: 'fecha', sortOrder: 'desc', ...options })
+export const getVentas = (options) => {
+    // Si no estamos filtrando por producto, usamos la vista LITE que es mucho más rápida
+    const tableName = options.filterColumn === 'lista_productos' ? 'vista_ventas_search' : 'vista_ventas_lite'
+    return fetchTableData(tableName, { sortColumn: 'fecha', sortOrder: 'desc', ...options })
+}
 export const getVentasDetalles = (id) => fetchDetails('ventas_detalles', 'venta_id', id)
 
 export const getCompras = (options) => fetchTableData('vista_compras_search', options)
@@ -137,10 +141,14 @@ export const getHitosVentas = (options) => fetchTableData('vista_hitos_ventas', 
 export const getReporteVentasPeriodico = (options) => fetchTableData('vista_reporte_ventas_periodico', options)
 
 export const getProveedores = (options) => fetchTableData('vista_proveedores_consolidada', options)
+export const getResumenProductosProveedor = (options) => fetchTableData('vista_resumen_productos_proveedor', options)
 export const getHistorialCompras = (options) => fetchTableData('vista_historial_compras_detallado', options)
 
 export const getMovimientosDinero = (id) => fetchDetails('movimientos_dinero', 'referencia_id', id)
 export const getMovimientosStock = (id) => fetchDetails('stock_movimientos', 'referencia_id', id)
+
+// --- MONITOREO Y SISTEMA ---
+export const getAuditLogs = (options) => fetchTableData('vista_auditoria_reciente', { sortColumn: 'fecha', sortOrder: 'desc', ...options })
 
 export const corregirOperacion = async (data) => {
     if (isDemo()) throw new Error('Acción deshabilitada en el modo Demo');
@@ -288,8 +296,6 @@ export const crearRetiro = async (retiro) => {
     return data[0]
 }
 
-// --- MONITOREO Y SISTEMA ---
-export const getAuditLogs = (options) => fetchTableData('logs_auditoria', { sortColumn: 'fecha', sortOrder: 'desc', ...options })
 export const getN8nErrors = (options) => fetchTableData('logs_errores_n8n', { sortColumn: 'fecha', sortOrder: 'desc', ...options })
 export const getPredictiveStock = (options) => fetchTableData('vista_prediccion_stock', options)
 
