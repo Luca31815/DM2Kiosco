@@ -265,7 +265,7 @@ const ProveedoresView = () => {
                                                             Analizar <ArrowRight size={10} />
                                                         </div>
                                                     </div>
-                                                </motion.button>
+                                                </button>
                                             )
                                         })}
                                     </div>
