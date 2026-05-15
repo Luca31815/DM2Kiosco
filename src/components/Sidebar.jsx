@@ -1,8 +1,9 @@
+import React, { memo } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { LayoutDashboard, ShoppingCart, Calendar, Package, TrendingUp, FileBarChart, History, Clock, X, BarChart3, ShieldCheck, AlertTriangle, Users } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
-const Sidebar = ({ isOpen, onClose }) => {
+const Sidebar = memo(({ isOpen, onClose }) => {
     const location = useLocation()
 
     const links = [
@@ -31,14 +32,17 @@ const Sidebar = ({ isOpen, onClose }) => {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-40"
+                        className="fixed inset-0 bg-slate-950/80 z-40" /* Quitamos el blur del overlay */
                         onClick={onClose}
                     />
                 )}
             </AnimatePresence>
 
             {/* Sidebar Drawer */}
-            <div className={`fixed top-0 left-0 h-full w-72 glass-panel z-50 flex flex-col transform transition-transform duration-500 ease-in-out ${isOpen ? 'translate-x-0 shadow-blue-500/10' : '-translate-x-full'}`}>
+            <div 
+                className={`fixed top-0 left-0 h-full w-72 bg-slate-900 border-r border-white/5 z-50 flex flex-col transform transition-transform duration-300 ease-out ${isOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}`}
+                style={{ transform: isOpen ? 'translateX(0) translateZ(0)' : 'translateX(-100%) translateZ(0)' }}
+            >
                 <div className="p-8 border-b border-white/5 flex justify-between items-center bg-white/5">
                     <h1 className="text-2xl font-black tracking-tight text-white flex items-center gap-3">
                         <div className="p-2 bg-blue-600 rounded-xl shadow-lg shadow-blue-600/30">
@@ -51,7 +55,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                     </button>
                 </div>
 
-                <nav className="flex-1 p-6 space-y-1.5 overflow-y-auto custom-scrollbar">
+                <nav className="flex-1 p-6 space-y-1 overflow-y-auto custom-scrollbar">
                     {links.map((link) => {
                         const Icon = link.icon
                         const isActive = location.pathname === link.to
@@ -60,18 +64,15 @@ const Sidebar = ({ isOpen, onClose }) => {
                                 key={link.to}
                                 to={link.to}
                                 onClick={onClose}
-                                className={`flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all relative group ${isActive
+                                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all relative group ${isActive
                                     ? 'bg-blue-600/10 text-blue-400'
                                     : 'hover:bg-white/5 text-slate-400 hover:text-white'
                                     }`}
                             >
                                 {isActive && (
-                                    <motion.div
-                                        layoutId="sidebar-active"
-                                        className="absolute left-0 w-1 h-6 bg-blue-500 rounded-r-full"
-                                    />
+                                    <div className="absolute left-0 w-1 h-6 bg-blue-500 rounded-r-full" />
                                 )}
-                                <Icon className={`h-5 w-5 transition-transform group-hover:scale-110 ${isActive ? 'text-blue-500' : ''}`} />
+                                <Icon className={`h-5 w-5 transition-transform ${isActive ? 'text-blue-500' : 'group-hover:scale-105'}`} />
                                 <span className="font-semibold text-sm">{link.label}</span>
                             </Link>
                         )
@@ -84,6 +85,8 @@ const Sidebar = ({ isOpen, onClose }) => {
             </div>
         </>
     )
-}
+})
+
+Sidebar.displayName = 'Sidebar'
 
 export default Sidebar

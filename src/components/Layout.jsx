@@ -11,10 +11,10 @@ const Layout = ({ children }) => {
 
     return (
         <div className="flex bg-slate-950 min-h-screen relative overflow-hidden font-outfit">
-            {/* Animated Background Mesh */}
-            <div className="absolute inset-0 z-0 pointer-events-none">
-                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/10 rounded-full blur-[120px] animate-mesh" />
-                <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-600/10 rounded-full blur-[120px] animate-mesh" style={{ animationDelay: '-10s' }} />
+            {/* Animated Background Mesh - Optimizada */}
+            <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/5 rounded-full blur-[120px]" style={{ transform: 'translateZ(0)' }} />
+                <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-600/5 rounded-full blur-[120px]" style={{ transform: 'translateZ(0)' }} />
             </div>
 
             <Toaster position="top-right" toastOptions={{
@@ -24,7 +24,7 @@ const Layout = ({ children }) => {
 
             <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
-            <main className="flex-1 flex flex-col min-w-0 transition-all duration-300 relative z-10">
+            <main className="flex-1 flex flex-col min-w-0 relative z-10">
                 {/* Top Bar for Toggle */}
                 <div className="p-4 border-b border-white/5 flex items-center justify-between bg-slate-950/40 backdrop-blur-md fixed top-0 left-0 right-0 z-30">
                     <div className="flex items-center">
