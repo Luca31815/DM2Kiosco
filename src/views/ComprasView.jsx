@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import DataTable from '../components/DataTable'
 import { useCompras, useComprasDetalles, useMovimientosDinero, useMovimientosStock } from '../hooks/useData'
 import { Loader2, Edit2, Check, X, Search, Package, Receipt, CreditCard } from 'lucide-react'

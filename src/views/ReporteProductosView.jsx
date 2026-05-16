@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useMemo } from 'react'
 import DataTable from '../components/DataTable'
 import { useReporteVentasPeriodico, usePredictiveStock } from '../hooks/useData'
 import { BarChart3, Search, ChevronLeft, ChevronRight, BrainCircuit, AlertTriangle } from 'lucide-react'
