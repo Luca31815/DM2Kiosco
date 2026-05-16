@@ -5,11 +5,9 @@ import { motion, AnimatePresence } from 'framer-motion'
 const DataTableRow = memo(({ row, rowIndex, columns, compact, renderExpandedRow, isExpanded, toggleRow, rowKey }) => {
     return (
         <React.Fragment>
-            <motion.tr
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
+            <tr
                 onClick={() => toggleRow(row[rowKey] !== undefined ? row[rowKey] : rowIndex)}
-                className={`hover:bg-white/10 transition-all group ${renderExpandedRow ? 'cursor-pointer' : ''} ${isExpanded ? 'bg-white/10' : ''}`}
+                className={`hover:bg-white/10 transition-colors duration-75 group ${renderExpandedRow ? 'cursor-pointer' : ''} ${isExpanded ? 'bg-white/10' : ''}`}
                 style={{ transform: 'translateZ(0)' }}
             >
                 {columns.map((col) => (
@@ -24,7 +22,7 @@ const DataTableRow = memo(({ row, rowIndex, columns, compact, renderExpandedRow,
                         })()}
                     </td>
                 ))}
-            </motion.tr>
+            </tr>
             {renderExpandedRow && isExpanded && (
                 <motion.tr
                     initial={{ opacity: 0 }}
