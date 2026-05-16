@@ -152,7 +152,7 @@ export const getAuditLogs = (options) => fetchTableData('vista_auditoria_recient
 
 export const corregirOperacion = async (data) => {
     if (isDemo()) throw new Error('Acción deshabilitada en el modo Demo');
-    const { data: result, error } = await supabase.rpc('corregir_operacion_v19', { p_input: data })
+    const { data: result, error } = await supabase.rpc('corregir_operacion_v20', { p_input: data })
     if (error) {
         console.error('Error calling corregir_operacion_v19:', error)
         throw error
