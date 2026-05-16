@@ -1,7 +1,21 @@
 // middleware.js - Versión ultra-compatible para Vercel Edge
 export const config = {
     // Forzamos que corra en la raíz y rutas principales
-    matcher: ['/', '/index.html', '/ventas', '/productos', '/reportes'],
+    matcher: [
+        '/', 
+        '/index.html', 
+        '/ventas', 
+        '/productos', 
+        '/reportes', 
+        '/proveedores', 
+        '/compras', 
+        '/reservas', 
+        '/retiros', 
+        '/duplicados',
+        '/historial',
+        '/analisis-horarios',
+        '/system'
+    ],
 };
 
 export default function middleware(request) {
