@@ -217,20 +217,20 @@ const VentasView = () => {
 
     const { data, count, loading } = useVentas(options)
 
-    const searchColumns = [
+    const searchColumns = React.useMemo(() => [
         { key: 'cliente', label: 'Cliente' },
         { key: 'lista_productos', label: 'Producto' },
         { key: 'venta_id', label: 'ID Venta' },
         { key: 'notas', label: 'Notas' }
-    ]
+    ], [])
 
-    const columns = [
+    const columns = React.useMemo(() => [
         { key: 'venta_id', label: 'ID', width: 'w-40', render: (val) => <span className="font-black text-slate-500 truncate block">#{val}</span> },
         { key: 'fecha', label: 'Fecha', width: 'w-56', render: (val) => <span className="font-semibold text-slate-400">{val ? new Date(val).toLocaleString() : '-'}</span> },
         { key: 'cliente', label: 'Cliente', width: 'w-1/4', wrap: true, render: (val) => <span className="font-bold text-slate-200">{val || 'N/A'}</span> },
         { key: 'total_venta', label: 'Total', width: 'w-32', render: (val) => <span className="font-black text-blue-400 text-lg tabular-nums">${val?.toLocaleString() || '0'}</span> },
         { key: 'notas', label: 'Notas', width: 'w-1/3', wrap: true, render: (val) => <span className="text-xs italic text-slate-500">{val || '-'}</span> },
-    ]
+    ], [])
 
     const handleSort = (column) => {
         setPage(1) // Reset a página 1 al ordenar

@@ -11,11 +11,8 @@ const Layout = ({ children }) => {
 
     return (
         <div className="flex bg-slate-950 min-h-screen relative overflow-hidden font-outfit">
-            {/* Animated Background Mesh - Optimizada */}
-            <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
-                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/5 rounded-full blur-[120px]" style={{ transform: 'translateZ(0)' }} />
-                <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-600/5 rounded-full blur-[120px]" style={{ transform: 'translateZ(0)' }} />
-            </div>
+            {/* Background estático y liviano */}
+            <div className="absolute inset-0 z-0 pointer-events-none bg-slate-950" />
 
             <Toaster position="top-right" toastOptions={{
                 style: { background: '#1e293b', color: '#f1f5f9', border: '1px solid #334155' }

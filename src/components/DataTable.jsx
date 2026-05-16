@@ -136,7 +136,7 @@ const DataTable = ({
                                 <input
                                     type="text"
                                     placeholder="Buscar en tabla..."
-                                    className="pl-11 pr-4 py-2.5 bg-slate-800/50 border border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/50 text-slate-200 placeholder-slate-500 w-full sm:w-80 outline-none backdrop-blur-md transition-all"
+                                    className="pl-11 pr-4 py-2.5 bg-slate-800/50 border border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/50 text-slate-200 placeholder-slate-500 w-full sm:w-80 outline-none transition-all"
                                     value={filterValue}
                                     onChange={(e) => handleFilterChange(e.target.value)}
                                 />
@@ -182,8 +182,7 @@ const DataTable = ({
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-white/5">
-                        <AnimatePresence mode='wait'>
-                            {isLoading ? (
+                        {isLoading ? (
                                 <motion.tr initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                                     <td colSpan={columns.length} className="px-6 py-20 text-center">
                                         <div className="flex flex-col items-center gap-3">
@@ -213,7 +212,6 @@ const DataTable = ({
                                     />
                                 ))
                             )}
-                        </AnimatePresence>
                     </tbody>
                 </table>
             </div>

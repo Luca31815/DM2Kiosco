@@ -37,43 +37,20 @@
 
 @layer components {
   .glass-panel {
-    @apply bg-slate-900/90 border border-slate-800/50 shadow-2xl;
-    transform: translateZ(0);
+    @apply bg-slate-900 border border-slate-800/50 shadow-2xl;
   }
 
   .glass-card {
-    @apply bg-white/5 border border-white/10;
+    @apply bg-slate-800/40 border border-white/5;
     transition: background-color 0.1s ease-out;
-    transform: translateZ(0);
-    will-change: background-color;
   }
 
   .glass-card:hover {
-    @apply bg-white/10;
+    @apply bg-slate-800/80;
   }
 
   .premium-gradient {
-    @apply bg-gradient-to-tr from-blue-600/5 via-purple-600/5 to-transparent;
+    @apply bg-blue-600/5;
     pointer-events: none;
-    transform: translateZ(0);
   }
-}
-
-/* Background Mesh Animation */
-@keyframes mesh-pulse {
-  0% {
-    transform: translate(0, 0) scale(1);
-  }
-
-  50% {
-    transform: translate(5%, 5%) scale(1.1);
-  }
-
-  100% {
-    transform: translate(0, 0) scale(1);
-  }
-}
-
-.animate-mesh {
-  animation: mesh-pulse 20s ease-in-out infinite;
 }
