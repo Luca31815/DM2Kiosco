@@ -61,7 +61,7 @@ const ReportesView = () => {
         }
     }
 
-    const getColumns = () => {
+    const columns = useMemo(() => {
         const common = [
             { key: 'cant_ventas', label: 'Ventas (#)', render: (val) => <span className="font-bold text-slate-400">{val}</span> },
             { key: 'cant_compras', label: 'Compras (#)', render: (val) => <span className="font-bold text-slate-500">{val}</span> },
@@ -96,7 +96,7 @@ const ReportesView = () => {
             ]
         }
         return common
-    }
+    }, [reportType])
 
     const totals = data.reduce((acc, curr) => ({
         ventas: acc.ventas + Number(curr.cant_ventas || 0),
@@ -127,11 +127,9 @@ const ReportesView = () => {
     }, [data])
 
     const KPICard = ({ title, value, subValue, trend, icon: Icon, colorClass, gradient }) => (
-        <motion.div
-            whileHover={{ y: -5 }}
-            className="relative overflow-hidden p-6 rounded-3xl border border-white/10 backdrop-blur-md bg-slate-900/40 group"
+        <div
+            className="relative overflow-hidden p-6 rounded-3xl border border-white/10 bg-slate-900 group"
         >
-            <div className={`absolute top-0 right-0 w-32 h-32 -mr-16 -mt-16 rounded-full blur-3xl opacity-20 ${gradient}`} />
             <div className="relative z-10">
                 <div className="flex justify-between items-start mb-4">
                     <div className={`p-3 rounded-2xl bg-white/5 border border-white/10 ${colorClass}`}>
@@ -152,7 +150,7 @@ const ReportesView = () => {
                     {subValue && <span className="text-[10px] font-bold text-slate-500 mt-1 uppercase tracking-wider">{subValue}</span>}
                 </div>
             </div>
-        </motion.div>
+        </div>
     )
 
     const { data: topProductsData, loading: loadingTop } = useReporteVentasPeriodico({
@@ -283,11 +281,7 @@ const ReportesView = () => {
     )
 
     return (
-        <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="space-y-8 pb-32"
-        >
+        <div className="space-y-8 pb-32">
             <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6">
                 <div>
                     <h2 className="text-4xl font-black text-white tracking-tight flex items-center gap-3">
@@ -300,7 +294,7 @@ const ReportesView = () => {
                 </div>
 
                 <div className="flex flex-wrap gap-4 items-center w-full xl:w-auto">
-                    <div className="flex bg-slate-900/50 p-1 rounded-xl border border-white/5 backdrop-blur-md">
+                    <div className="flex bg-slate-900 p-1 rounded-xl border border-white/5">
                         {['diario', 'semanal', 'mensual'].map((type) => (
                             <button
                                 key={type}
@@ -313,7 +307,7 @@ const ReportesView = () => {
                     </div>
 
                     {reportType !== 'mensual' && (
-                        <div className="flex items-center gap-2 bg-slate-900/50 p-1.5 rounded-xl border border-white/5">
+                        <div className="flex items-center gap-2 bg-slate-900 p-1.5 rounded-xl border border-white/5">
                             <Calendar className="h-4 w-4 text-slate-500 ml-2" />
                             <input
                                 type="date"
@@ -375,14 +369,14 @@ const ReportesView = () => {
 
             {/* Charts Section */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2 bg-slate-900/40 rounded-3xl border border-white/5 p-6 backdrop-blur-md h-[350px]">
+                <div className="lg:col-span-2 bg-slate-900 rounded-3xl border border-white/5 p-6 h-[350px]">
                     <div className="flex items-center justify-between mb-6">
                         <h3 className="text-sm font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">
                             <TrendingUp className="h-4 w-4 text-emerald-400" />
                             Flujo de Caja
                         </h3>
                     </div>
-                    <ResponsiveContainer width="100%" height="100%">
+                    <ResponsiveContainer width="100%" height="100%" debounce={50}>
                         <AreaChart data={chartData}>
                             <defs>
                                 <linearGradient id="colorIngresos" x1="0" y1="0" x2="0" y2="1">
@@ -414,9 +408,7 @@ const ReportesView = () => {
                     </ResponsiveContainer>
                 </div>
 
-                <div className="bg-slate-900/40 rounded-3xl border border-white/5 p-6 backdrop-blur-md h-[350px] flex flex-col group relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-48 h-48 -mr-24 -mt-24 rounded-full blur-[80px] bg-blue-500/20 group-hover:bg-blue-500/30 transition-all duration-500" />
-                    
+                <div className="bg-slate-900 rounded-3xl border border-white/5 p-6 h-[350px] flex flex-col group relative overflow-hidden">
                     <h3 className="text-sm font-black uppercase tracking-widest text-slate-500 flex items-center gap-2 mb-6 relative z-10">
                         <TrendingUp className="h-4 w-4 text-emerald-400" />
                         Top 5 Ganancia Real
@@ -426,7 +418,7 @@ const ReportesView = () => {
                         {loadingTop ? (
                             <div className="animate-spin h-8 w-8 text-blue-500 mx-auto mt-20" />
                         ) : (
-                            <ResponsiveContainer width="100%" height="100%">
+                            <ResponsiveContainer width="100%" height="100%" debounce={50}>
                                     <BarChart
                                         layout="vertical"
                                         data={aggregatedTopData}
@@ -468,10 +460,10 @@ const ReportesView = () => {
                 </div>
             </div>
 
-            <div className="bg-slate-900/20 rounded-[2.5rem] border border-white/5 overflow-hidden shadow-2xl backdrop-blur-sm">
+            <div className="bg-slate-900 rounded-[2.5rem] border border-white/5 overflow-hidden shadow-2xl">
                 <DataTable
                     data={data}
-                    columns={getColumns()}
+                    columns={columns}
                     isLoading={loading}
                     onSort={handleSort}
                     sortColumn={sortColumn}
@@ -488,10 +480,8 @@ const ReportesView = () => {
 
             {/* Floating Summary Bar */}
             <div className="fixed bottom-6 left-0 right-0 z-50 flex justify-center pointer-events-none px-4">
-                <motion.div
-                    initial={{ y: 100 }}
-                    animate={{ y: 0 }}
-                    className="bg-slate-900/90 backdrop-blur-xl border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] rounded-2xl p-4 md:px-8 md:py-4 flex flex-col md:flex-row items-center justify-between w-full max-w-4xl pointer-events-auto gap-4 md:gap-12"
+                <div
+                    className="bg-slate-950 border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] rounded-2xl p-4 md:px-8 md:py-4 flex flex-col md:flex-row items-center justify-between w-full max-w-4xl pointer-events-auto gap-4 md:gap-12"
                 >
                     <div className="flex items-center gap-12 w-full md:w-auto justify-around">
                         <div className="flex flex-col">
@@ -514,9 +504,9 @@ const ReportesView = () => {
                             <span className="text-xl font-black text-slate-300 tabular-nums">{totals.ventas + totals.compras}</span>
                         </div>
                     </div>
-                </motion.div>
+                </div>
             </div>
-        </motion.div>
+        </div>
     )
 }
 

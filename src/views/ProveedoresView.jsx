@@ -428,7 +428,7 @@ const ProveedoresView = () => {
                                                         </div>
                                                         <div className="text-right">
                                                             <div className="text-2xl font-black text-purple-400">${g.ultimoCosto}</div>
-                                                            {g.ultimoCosto < (productosAgrupados.find(p => p.nombre === selectedProduct)?.ultimoCosto || 0) ? (
+                                                            {g.ultimoCosto < (productosProveedor.find(p => p.producto === selectedProduct)?.ultimo_costo || 0) ? (
                                                                 <div className="text-[10px] font-black text-green-500 bg-green-500/10 px-2 py-0.5 rounded-full inline-block uppercase">Más Barato</div>
                                                             ) : (
                                                                 <div className="text-[10px] font-black text-red-500 bg-red-500/10 px-2 py-0.5 rounded-full inline-block uppercase">Más Caro</div>
