@@ -290,12 +290,7 @@ Producto 2: [${d.p2.producto_id || d.p2.id}] ${d.p2.nombre} ($${d.p2.ultimo_prec
     }
 
     return (
-        <motion.div
-            initial="hidden"
-            animate="visible"
-            variants={containerVariants}
-            className="space-y-8"
-        >
+        <div className="space-y-8">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div>
                     <h2 className="text-4xl font-black text-white tracking-tight flex items-center gap-3">
@@ -339,7 +334,7 @@ Producto 2: [${d.p2.producto_id || d.p2.id}] ${d.p2.nombre} ($${d.p2.ultimo_prec
             </div>
 
             {/* Tabs de Selección */}
-            <div className="flex items-center gap-2 p-1 bg-slate-900/50 border border-slate-800 rounded-2xl w-fit">
+            <div className="flex items-center gap-2 p-1 bg-slate-900 border border-slate-800 rounded-2xl w-fit">
                 <button
                     onClick={() => setActiveTab('sugerencias')}
                     className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-2 ${activeTab === 'sugerencias' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'text-slate-500 hover:text-slate-300'}`}
@@ -357,7 +352,7 @@ Producto 2: [${d.p2.producto_id || d.p2.id}] ${d.p2.nombre} ($${d.p2.ultimo_prec
             </div>
 
             {/* Búsqueda */}
-            <div className="glass-panel p-4 rounded-2xl flex items-center gap-4">
+            <div className="bg-slate-900 p-4 rounded-2xl flex items-center gap-4 border border-white/5">
                 <Search className="h-5 w-5 text-slate-500" />
                 <input
                     type="text"
@@ -441,7 +436,7 @@ const DuplicateCard = ({ d, uniqueKey, selections, setSelections, handleMergeSel
     const id2 = String(d.p2.producto_id || d.p2.id || '');
 
     return (
-        <motion.div variants={variants} className="glass-panel rounded-2xl p-6 relative overflow-hidden group border border-transparent hover:border-red-500/20 transition-colors">
+        <div className="bg-slate-900 rounded-2xl p-6 relative overflow-hidden group border border-white/5 hover:border-red-500/20 transition-colors">
             <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none group-hover:bg-red-500/10 transition-colors" />
             
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10">
@@ -506,7 +501,7 @@ const ConflictCard = ({ d, variants, ignoreSQL }) => {
     const id2 = String(d.p2.producto_id || d.p2.id || '');
 
     return (
-        <motion.div variants={variants} className="glass-panel rounded-2xl p-6 relative overflow-hidden group border border-transparent hover:border-amber-500/20 transition-colors">
+        <div className="bg-slate-900 rounded-2xl p-6 relative overflow-hidden group border border-white/5 hover:border-amber-500/20 transition-colors">
             <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none group-hover:bg-amber-500/10 transition-colors" />
             
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10">

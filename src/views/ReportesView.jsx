@@ -98,13 +98,13 @@ const ReportesView = () => {
         return common
     }, [reportType])
 
-    const totals = data.reduce((acc, curr) => ({
+    const totals = useMemo(() => data.reduce((acc, curr) => ({
         ventas: acc.ventas + Number(curr.cant_ventas || 0),
         compras: acc.compras + Number(curr.cant_compras || 0),
         ingresos: acc.ingresos + Number(curr.ingresos || 0),
         egresos: acc.egresos + Number(curr.egresos || 0),
         balance: acc.balance + Number(curr.saldo || 0),
-    }), { ventas: 0, compras: 0, ingresos: 0, egresos: 0, balance: 0 })
+    }), { ventas: 0, compras: 0, ingresos: 0, egresos: 0, balance: 0 }), [data])
 
     const ticketPromedio = totals.ventas > 0 ? totals.ingresos / totals.ventas : 0
 
@@ -126,9 +126,9 @@ const ReportesView = () => {
         }
     }, [data])
 
-    const KPICard = ({ title, value, subValue, trend, icon: Icon, colorClass, gradient }) => (
+    const KPICard = ({ title, value, subValue, trend, icon: Icon, colorClass }) => (
         <div
-            className="relative overflow-hidden p-6 rounded-3xl border border-white/10 bg-slate-900 group"
+            className="relative overflow-hidden p-6 rounded-3xl border border-white/10 bg-slate-900 shadow-xl"
         >
             <div className="relative z-10">
                 <div className="flex justify-between items-start mb-4">
@@ -233,8 +233,8 @@ const ReportesView = () => {
     }
 
     const renderExpandedRow = (item) => (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animate-in fade-in slide-in-from-top-2 duration-300">
-            <div className="bg-slate-900/60 p-5 rounded-2xl border border-white/5 space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="bg-slate-800/40 p-5 rounded-2xl border border-white/5 space-y-4">
                 <h5 className="text-xs font-black uppercase tracking-widest text-blue-400 flex items-center gap-2">
                     <Activity className="h-4 w-4" /> Resumen Día
                 </h5>
@@ -250,14 +250,14 @@ const ReportesView = () => {
                 </div>
             </div>
             
-            <div className="bg-slate-900/60 p-5 rounded-2xl border border-white/5 lg:col-span-2">
+            <div className="bg-slate-800/40 p-5 rounded-2xl border border-white/5 lg:col-span-2">
                 <h5 className="text-xs font-black uppercase tracking-widest text-emerald-400 flex items-center gap-2 mb-4">
                     <Tag className="h-4 w-4" /> Top Productos del Día
                 </h5>
                 <DayMix item={item} type={reportType} />
             </div>
 
-            <div className="bg-slate-900/60 p-5 rounded-2xl border border-white/5 space-y-4">
+            <div className="bg-slate-800/40 p-5 rounded-2xl border border-white/5 space-y-4">
                 <h5 className="text-xs font-black uppercase tracking-widest text-rose-400 flex items-center gap-2">
                     <Clock className="h-4 w-4" /> Flujo Caja
                 </h5>

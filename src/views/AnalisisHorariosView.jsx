@@ -181,7 +181,7 @@ const AnalisisHorariosView = () => {
         }
 
         return (
-            <div className="bg-slate-900/20 rounded-[2.5rem] border border-white/5 p-8 overflow-x-auto backdrop-blur-sm">
+            <div className="bg-slate-900 rounded-[2.5rem] border border-white/5 p-8 overflow-x-auto">
                 <div className="min-w-[800px]">
                     <div className="grid grid-cols-5 gap-4 mb-8">
                         <div />
@@ -198,14 +198,13 @@ const AnalisisHorariosView = () => {
                                 {slots.map(s => {
                                     const val = Number(row[s.key] || 0)
                                     return (
-                                        <motion.div
+                                        <div
                                             key={s.key}
-                                            whileHover={{ scale: 1.02, y: -2 }}
-                                            className={`h-20 rounded-2xl flex flex-col justify-center items-center font-black text-2xl transition-all duration-500 border ${getColor(val)}`}
+                                            className={`h-20 rounded-2xl flex flex-col justify-center items-center font-black text-2xl border ${getColor(val)}`}
                                         >
                                             {val}
                                             <span className="text-[9px] opacity-60 uppercase mt-1 tracking-widest">vnts</span>
-                                        </motion.div>
+                                        </div>
                                     )
                                 })}
                             </div>
@@ -228,7 +227,7 @@ const AnalisisHorariosView = () => {
         }
     }
 
-    const getColumns = () => {
+    const columns = useMemo(() => {
         if (analysisMode === 'hitos') {
             return [
                 {
@@ -297,7 +296,7 @@ const AnalisisHorariosView = () => {
                         const lastPos = row.lastSaleTime ? getPos(row.lastSaleTime) : -1
 
                         return (
-                            <div className="relative w-full h-18 bg-white/5 rounded-xl border border-white/5 overflow-hidden backdrop-blur-sm">
+                            <div className="relative w-full h-18 bg-white/5 rounded-xl border border-white/5 overflow-hidden">
                                 {Array.from({ length: totalH + 1 }).map((_, i) => (
                                     <div
                                         key={i}
@@ -335,10 +334,10 @@ const AnalisisHorariosView = () => {
                                         style={{ left: `${lastPos}%` }}
                                     >
                                         <div className="w-px h-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.6)]"></div>
-                                        <div className="absolute top-7 bg-blue-600 border border-blue-400/50 text-[10px] font-black text-white px-2 py-0.5 rounded-lg shadow-xl transform -translate-x-1/2 backdrop-blur-md group-hover:scale-110 transition-transform">
+                                        <div className="absolute top-7 bg-blue-600 border border-blue-400/50 text-[10px] font-black text-white px-2 py-0.5 rounded-lg shadow-xl transform -translate-x-1/2">
                                             {row.total_ventas} v.
                                         </div>
-                                        <div className="w-3 h-3 rounded-full bg-blue-400 border-2 border-blue-600 mt-[-1.5px] shadow-[0_0_12px_rgba(59,130,246,0.9)] group-hover:scale-125 transition-transform"></div>
+                                        <div className="w-3 h-3 rounded-full bg-blue-400 border-2 border-blue-600 mt-[-1.5px] shadow-[0_0_12px_rgba(59,130,246,0.9)]"></div>
                                     </div>
                                 )}
                             </div>
@@ -394,14 +393,10 @@ const AnalisisHorariosView = () => {
             ]
         }
         return commonColumns
-    }
+    }, [analysisMode, viewType, minHour, maxHour])
 
     return (
-        <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="space-y-8"
-        >
+        <div className="space-y-8">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                 <div>
                     <h2 className="text-4xl font-black text-white tracking-tight flex items-center gap-4">
@@ -416,7 +411,7 @@ const AnalisisHorariosView = () => {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-4">
-                    <div className="flex glass-panel p-1 border-white/10 rounded-xl">
+                    <div className="flex bg-slate-900 p-1 border border-white/10 rounded-xl">
                         <button
                             onClick={() => setAnalysisMode('horarios')}
                             className={`px-4 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${analysisMode === 'horarios' ? 'bg-purple-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
@@ -438,7 +433,7 @@ const AnalisisHorariosView = () => {
                     </div>
 
                     {analysisMode === 'horarios' && (
-                        <div className="flex glass-panel p-1 border-white/10 rounded-xl">
+                        <div className="flex bg-slate-900 p-1 border border-white/10 rounded-xl">
                             {['diario', 'semanal', 'mensual'].map((type) => (
                                 <button
                                     key={type}
@@ -452,7 +447,7 @@ const AnalisisHorariosView = () => {
                     )}
 
                     {analysisMode === 'hitos' && (
-                        <div className="flex glass-panel p-1 border-white/10 rounded-xl gap-1">
+                        <div className="flex bg-slate-900 p-1 border border-white/10 rounded-xl gap-1">
                             <button
                                 onClick={() => setPage(p => p + 1)}
                                 className="px-3 py-2 rounded-lg text-[10px] font-black text-slate-400 hover:bg-white/5 transition-all"
@@ -505,21 +500,17 @@ const AnalisisHorariosView = () => {
                         const avgTime = count > 0 ? `${displayH.toString().padStart(2, '0')}:${displayM.toString().padStart(2, '0')}` : '--:--'
 
                         return (
-                            <motion.div
+                            <div
                                 key={n}
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: i * 0.1 }}
-                                className="glass-card p-6 rounded-2xl flex flex-col items-center group relative overflow-hidden"
+                                className="bg-slate-900 p-6 rounded-2xl flex flex-col items-center group relative overflow-hidden border border-white/5"
                             >
-                                <div className="absolute top-0 right-0 w-16 h-16 bg-yellow-500/5 rounded-full blur-2xl group-hover:bg-yellow-500/10 transition-colors" />
-                                <span className="text-[10px] text-slate-500 uppercase tracking-widest font-black group-hover:text-slate-400 transition-colors">Hito {n} Ventas</span>
-                                <span className="text-4xl font-black text-yellow-500 mt-2 tabular-nums group-hover:scale-110 transition-transform">{avgTime} <span className="text-sm font-medium text-slate-600">hs</span></span>
+                                <span className="text-[10px] text-slate-500 uppercase tracking-widest font-black">Hito {n} Ventas</span>
+                                <span className="text-4xl font-black text-yellow-500 mt-2 tabular-nums">{avgTime} <span className="text-sm font-medium text-slate-600">hs</span></span>
                                 <div className="mt-4 flex items-center gap-2">
                                     <div className="h-1.5 w-1.5 rounded-full bg-yellow-500 animate-pulse" />
                                     <span className="text-[9px] text-slate-500 font-bold uppercase tracking-widest italic leading-none">Promedio en {count} días</span>
                                 </div>
-                            </motion.div>
+                            </div>
                         )
                     })}
                 </div>
@@ -530,7 +521,7 @@ const AnalisisHorariosView = () => {
             ) : (
                 <DataTable
                     data={currentData}
-                    columns={getColumns()}
+                    columns={columns}
                     isLoading={loading}
                     onSort={handleSort}
                     sortColumn={sortColumn}
@@ -538,7 +529,7 @@ const AnalisisHorariosView = () => {
                     onFilter={setFilterValue}
                 />
             )}
-        </motion.div>
+        </div>
     )
 }
 

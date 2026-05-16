@@ -13,8 +13,16 @@ import {
     ArrowUpRight,
     ArrowDownRight,
     Info,
-    ExternalLink
+    ExternalLink,
+    SearchCode,
+    Filter,
+    GitMerge,
+    ChevronDown,
+    AlertTriangle
 } from 'lucide-react'
+import ProductAutocomplete from '../components/ProductAutocomplete'
+import * as api from '../services/api'
+import { mutate } from 'swr'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
     LineChart, 
@@ -101,11 +109,45 @@ const ProveedoresView = () => {
             }))
     }, [comparativaPrecios])
 
+    const [isMergeModalOpen, setIsMergeModalOpen] = useState(false)
+    const [targetSupplierName, setTargetSupplierName] = useState('')
+    const [isMergingProgress, setIsMergingProgress] = useState(false)
+
+    const handleMerge = async () => {
+        if (!selectedSupplier || !targetSupplierName) return
+        
+        if (!window.confirm(`¿Estás SEGURO de que quieres fusionar "${selectedSupplier.nombre}" con "${targetSupplierName}"? Esta acción no se puede deshacer y todos los registros de "${selectedSupplier.nombre}" pasarán a llamarse "${targetSupplierName}".`)) {
+            return
+        }
+
+        setIsMergingProgress(true)
+        try {
+            const result = await api.fusionarProveedores(selectedSupplier.nombre, targetSupplierName)
+            alert(result.mensaje || 'Fusión completada con éxito')
+            
+            // Cleanup and Refresh
+            setIsMergeModalOpen(false)
+            setTargetSupplierName('')
+            setSelectedSupplier(null) // Unselect because the old one no longer exists
+            
+            // Trigger SWR revalidations
+            mutate('proveedores')
+            mutate('resumen_productos_proveedor')
+        } catch (error) {
+            alert('Error al fusionar proveedores: ' + error.message)
+        } finally {
+            setIsMergingProgress(false)
+        }
+    }
+        if (!productName) return
+        setSelectedProduct(productName)
+    }
+
     return (
         <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-180px)]">
             {/* Left Panel: Supplier List */}
             <div className="w-full lg:w-80 flex flex-col gap-4">
-                <div className="glass-panel p-4 rounded-2xl bg-white/5 border-white/5 space-y-4">
+                <div className="p-4 rounded-2xl bg-slate-900 border border-white/5 space-y-4 shadow-xl">
                     <h3 className="text-xs font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">
                         <Users className="size-4" /> Proveedores
                     </h3>
@@ -114,14 +156,14 @@ const ProveedoresView = () => {
                         <input 
                             type="text" 
                             placeholder="Buscar proveedor..."
-                            className="w-full pl-10 pr-4 py-2 bg-slate-900/50 border border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/50 outline-none text-white"
+                            className="w-full pl-10 pr-4 py-2 bg-slate-800 border border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/50 outline-none text-white transition-all"
                             value={searchSupplier}
                             onChange={(e) => setSearchSupplier(e.target.value)}
                         />
                     </div>
                 </div>
 
-                <div className="flex-1 glass-panel rounded-2xl bg-white/5 border-white/5 overflow-hidden flex flex-col">
+                <div className="flex-1 bg-slate-900 rounded-2xl border border-white/5 overflow-hidden flex flex-col shadow-xl">
                     <div className="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-1">
                         {loadingProveedores ? (
                             <div className="p-8 flex justify-center"><Loader2 className="animate-spin text-blue-500" /></div>
@@ -150,33 +192,54 @@ const ProveedoresView = () => {
 
             {/* Right Panel: Content */}
             <div className="flex-1 flex flex-col gap-6 overflow-hidden">
+                {/* Global Search Bar - Persistent */}
+                <div className="bg-slate-900 p-4 rounded-3xl border border-white/5 flex flex-col sm:flex-row items-center gap-4 shadow-xl">
+                    <div className="flex items-center gap-3 px-4 py-2 bg-blue-500/10 rounded-2xl border border-blue-500/20">
+                        <SearchCode className="size-5 text-blue-400" />
+                        <span className="text-xs font-black text-blue-400 uppercase tracking-widest">Búsqueda Global</span>
+                    </div>
+                    <div className="flex-1 w-full">
+                        <ProductAutocomplete 
+                            placeholder="Buscar producto en cualquier proveedor para comparar precios..."
+                            onChange={handleGlobalSearch}
+                            className="bg-slate-800 border-white/5"
+                        />
+                    </div>
+                </div>
+
                 {!selectedSupplier ? (
-                    <div className="flex-1 glass-panel rounded-3xl border border-white/5 bg-white/5 flex flex-col items-center justify-center text-center p-12">
-                        <div className="size-20 bg-blue-600/20 rounded-full flex items-center justify-center mb-6 animate-bounce">
+                    <div className="flex-1 bg-slate-900 rounded-3xl border border-white/5 flex flex-col items-center justify-center text-center p-12 shadow-2xl">
+                        <div className="size-20 bg-blue-600/10 rounded-full flex items-center justify-center mb-6">
                             <Users className="size-10 text-blue-500" />
                         </div>
                         <h2 className="text-2xl font-black text-white mb-2">Seleccioná un Proveedor</h2>
-                        <p className="text-slate-500 max-w-xs">Elegí un proveedor de la lista de la izquierda para ver su historial de productos y comparar precios.</p>
+                        <p className="text-slate-500 max-w-xs">Elegí un proveedor de la lista o usá la <b>Búsqueda Global</b> para comparar precios directamente.</p>
                     </div>
                 ) : (
                     <>
                         {/* Supplier Header Info */}
-                        <div className="glass-panel p-6 rounded-3xl bg-white/5 border-white/5 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                        <div className="bg-slate-900 p-6 rounded-3xl border border-white/5 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 shadow-xl">
                             <div>
                                 <div className="flex items-center gap-3 mb-1">
-                                    <div className="size-3 rounded-full bg-green-500 animate-pulse" />
+                                    <div className="size-3 rounded-full bg-green-500" />
                                     <h2 className="text-3xl font-black text-white tracking-tight">{selectedSupplier.nombre}</h2>
                                 </div>
                                 <p className="text-slate-500 text-sm font-medium">
                                     Última compra: <span className="text-slate-300">{new Date(selectedSupplier.ultima_compra).toLocaleDateString()}</span>
                                 </p>
                             </div>
-                            <div className="flex gap-4">
-                                <div className="bg-white/5 rounded-2xl p-4 border border-white/5 min-w-[140px]">
+                            <div className="flex flex-wrap gap-4">
+                                <button 
+                                    onClick={() => setIsMergeModalOpen(true)}
+                                    className="flex items-center gap-2 px-4 py-2 bg-amber-500/10 border border-amber-500/20 rounded-2xl text-amber-500 hover:bg-amber-500/20 transition-all text-xs font-black uppercase tracking-widest"
+                                >
+                                    <GitMerge size={14} /> Fusionar Proveedor
+                                </button>
+                                <div className="bg-slate-800 rounded-2xl p-4 border border-white/5 min-w-[140px]">
                                     <div className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Productos</div>
-                                    <div className="text-2xl font-black text-white">{productosProveedor.length}</div>
+                                    <div className="text-2xl font-black text-white">{productosProveedor?.length || 0}</div>
                                 </div>
-                                <div className="bg-white/5 rounded-2xl p-4 border border-white/5 min-w-[140px]">
+                                <div className="bg-slate-800 rounded-2xl p-4 border border-white/5 min-w-[140px]">
                                     <div className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Operaciones</div>
                                     <div className="text-2xl font-black text-white">{selectedSupplier.total_compras_registradas}</div>
                                 </div>
@@ -184,8 +247,8 @@ const ProveedoresView = () => {
                         </div>
 
                         {/* Product Grid/List */}
-                        <div className="flex-1 glass-panel rounded-3xl bg-white/5 border-white/5 overflow-hidden flex flex-col">
-                            <div className="p-6 border-b border-white/5 flex flex-col md:flex-row justify-between items-center bg-white/5 gap-4">
+                        <div className="flex-1 bg-slate-900 rounded-3xl border border-white/5 overflow-hidden flex flex-col shadow-xl">
+                            <div className="p-6 border-b border-white/5 flex flex-col md:flex-row justify-between items-center bg-slate-800/50 gap-4">
                                 <h3 className="font-black text-white flex items-center gap-3">
                                     <Package className="text-blue-500" /> Productos Comprados
                                 </h3>
@@ -220,10 +283,10 @@ const ProveedoresView = () => {
                                                 <button
                                                     key={p.producto}
                                                     onClick={() => setSelectedProduct(p.producto)}
-                                                    className={`p-4 rounded-2xl border transition-all text-left group glass-card ${
+                                                    className={`p-4 rounded-2xl border transition-all text-left group ${
                                                         selectedProduct === p.producto 
-                                                        ? 'bg-white/10 border-blue-500/50 shadow-lg shadow-blue-500/10' 
-                                                        : 'bg-white/5 border-white/5'
+                                                        ? 'bg-blue-600 border-blue-400 shadow-lg shadow-blue-500/20' 
+                                                        : 'bg-slate-800/50 border-white/5 hover:border-blue-500/30'
                                                     }`}
                                                 >
                                                     <div className="flex justify-between items-start mb-3">
@@ -280,18 +343,11 @@ const ProveedoresView = () => {
             <AnimatePresence>
                 {selectedProduct && (
                     <>
-                        <motion.div 
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
+                        <div 
                             onClick={() => setSelectedProduct(null)}
-                            className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[60]"
+                            className="fixed inset-0 bg-slate-950/80 z-[60]"
                         />
-                        <motion.div 
-                            initial={{ x: '100%' }}
-                            animate={{ x: 0 }}
-                            exit={{ x: '100%' }}
-                            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                        <div 
                             className="fixed top-0 right-0 h-full w-full max-w-xl bg-slate-900 border-l border-white/10 z-[70] shadow-2xl flex flex-col"
                         >
                             <div className="p-8 border-b border-white/5 flex justify-between items-start bg-slate-950/40">
@@ -316,7 +372,7 @@ const ProveedoresView = () => {
                                     <h3 className="text-xs font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">
                                         <TrendingUp size={14} className="text-blue-500" /> Evolución de Costos
                                     </h3>
-                                    <div className="h-64 glass-panel p-4 rounded-3xl bg-white/5 border-white/5">
+                                    <div className="h-64 bg-slate-800/50 p-4 rounded-3xl border border-white/5">
                                         {loadingComparativa ? (
                                             <div className="h-full flex items-center justify-center"><Loader2 className="animate-spin text-blue-500" /></div>
                                         ) : (
@@ -411,7 +467,7 @@ const ProveedoresView = () => {
                                     {loadingComparativa ? (
                                         <div className="flex justify-center p-8"><Loader2 className="animate-spin text-purple-500" /></div>
                                     ) : comparativaAgrupada.length <= 1 ? (
-                                        <div className="p-8 text-center bg-white/5 rounded-3xl border border-dashed border-white/10">
+                                        <div className="p-8 text-center bg-slate-800/50 rounded-3xl border border-dashed border-white/10">
                                             <Info className="size-8 text-slate-600 mx-auto mb-3" />
                                             <p className="text-slate-500 text-sm">No hay registros de este producto con otros proveedores.</p>
                                         </div>
@@ -461,7 +517,80 @@ const ProveedoresView = () => {
                                     Cerrar Análisis
                                 </button>
                             </div>
-                        </motion.div>
+                        </div>
+                    </>
+                )}
+            </AnimatePresence>
+
+            {/* Merge Supplier Modal */}
+            <AnimatePresence>
+                {isMergeModalOpen && (
+                    <>
+                        <div 
+                            onClick={() => !isMergingProgress && setIsMergeModalOpen(false)}
+                            className="fixed inset-0 bg-slate-950/80 z-[100]"
+                        />
+                        <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-slate-900 rounded-3xl border border-white/10 z-[110] shadow-2xl p-8 space-y-6">
+                            <div className="flex items-center gap-4 text-amber-500">
+                                <div className="size-12 rounded-2xl bg-amber-500/10 flex items-center justify-center">
+                                    <GitMerge size={24} />
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-black text-white">Fusionar Proveedor</h3>
+                                    <p className="text-slate-500 text-xs font-medium uppercase tracking-widest">Unificar registros históricos</p>
+                                </div>
+                            </div>
+
+                            <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex gap-3">
+                                <AlertTriangle className="text-amber-500 shrink-0" size={20} />
+                                <p className="text-xs text-amber-200/80 leading-relaxed font-medium">
+                                    Estás por mover todas las compras y movimientos de <b>{selectedSupplier?.nombre}</b> hacia otro proveedor. Esta acción modificará permanentemente los nombres en la base de datos.
+                                </p>
+                            </div>
+
+                            <div className="space-y-4">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+                                    Seleccionar Proveedor de Destino
+                                </label>
+                                <div className="relative">
+                                    <select 
+                                        className="w-full bg-slate-800 border border-white/10 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-blue-500/50 outline-none appearance-none"
+                                        value={targetSupplierName}
+                                        onChange={(e) => setTargetSupplierName(e.target.value)}
+                                        disabled={isMergingProgress}
+                                    >
+                                        <option value="">-- Elegir destino --</option>
+                                        {proveedores
+                                            .filter(p => p.nombre !== selectedSupplier?.nombre)
+                                            .map(p => (
+                                                <option key={p.nombre} value={p.nombre}>{p.nombre}</option>
+                                            ))
+                                        }
+                                    </select>
+                                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">
+                                        <ChevronDown size={16} />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="flex gap-3 pt-4">
+                                <button 
+                                    onClick={() => setIsMergeModalOpen(false)}
+                                    disabled={isMergingProgress}
+                                    className="flex-1 px-4 py-3 bg-slate-800 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-slate-700 transition-all disabled:opacity-50"
+                                >
+                                    Cancelar
+                                </button>
+                                <button 
+                                    onClick={handleMerge}
+                                    disabled={!targetSupplierName || isMergingProgress}
+                                    className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-blue-500 shadow-lg shadow-blue-500/20 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                                >
+                                    {isMergingProgress ? <Loader2 className="animate-spin size-4" /> : <GitMerge size={14} />}
+                                    {isMergingProgress ? 'Procesando...' : 'Confirmar Fusión'}
+                                </button>
+                            </div>
+                        </div>
                     </>
                 )}
             </AnimatePresence>

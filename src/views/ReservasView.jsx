@@ -65,11 +65,8 @@ const ExpandedRow = ({ row }) => {
     }
 
     return (
-        <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="p-6 space-y-8 bg-slate-900/40 rounded-2xl border border-white/5 shadow-2xl backdrop-blur-md mx-2 mb-4"
+        <div
+            className="p-6 space-y-8 bg-slate-900 rounded-2xl border border-white/5 shadow-2xl mx-2 mb-4"
         >
             <div className="flex flex-col lg:flex-row gap-8">
                 {/* Product Details Section */}
@@ -231,15 +228,15 @@ const ReservasView = () => {
 
     const { data, count, loading } = useReservas(options, showOpenOnly)
 
-    const searchColumns = [
+    const searchColumns = useMemo(() => [
         { key: 'cliente', label: 'Cliente' },
         { key: 'lista_productos', label: 'Producto' },
         { key: 'reserva_id', label: 'ID Reserva' },
         { key: 'estado_pago', label: 'Estado Pago' },
         { key: 'estado_entrega', label: 'Entrega' }
-    ]
+    ], [])
 
-    const columns = [
+    const columns = useMemo(() => [
         { key: 'reserva_id', label: 'ID', width: 'w-40', render: (val) => <span className="font-bold text-slate-500 truncate block">{val}</span> },
         {
             key: 'fecha_creacion', label: 'Fecha', width: 'w-44', render: (val) => {
@@ -286,7 +283,7 @@ const ReservasView = () => {
                 </span>
             )
         },
-    ]
+    ], [])
 
     const handleSort = (column) => {
         setPage(1)
@@ -334,7 +331,7 @@ const ReservasView = () => {
                 <input
                     type="text"
                     placeholder={`Buscar por ${searchColumns.find(c => c.key === filterColumn)?.label.toLowerCase()}...`}
-                    className="pl-11 pr-4 py-2.5 bg-slate-800/50 border border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/50 text-slate-200 placeholder-slate-500 w-full outline-none backdrop-blur-md transition-all"
+                    className="pl-11 pr-4 py-2.5 bg-slate-800/50 border border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/50 text-slate-200 placeholder-slate-500 w-full outline-none transition-all"
                     value={value}
                     onChange={(e) => onChange(e.target.value)}
                 />
@@ -343,11 +340,7 @@ const ReservasView = () => {
     }
 
     return (
-        <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="space-y-6"
-        >
+        <div className="space-y-6">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
                     <h2 className="text-4xl font-black text-white tracking-tight flex items-center gap-3">
@@ -359,7 +352,7 @@ const ReservasView = () => {
                     <p className="text-slate-400 font-medium mt-1">Control de pedidos pendientes y señas.</p>
                 </div>
 
-                <div className="flex gap-2 bg-slate-900/50 p-1 rounded-xl border border-white/5 backdrop-blur-md">
+                <div className="flex gap-2 bg-slate-900 p-1 rounded-xl border border-white/5">
                     <button
                         onClick={() => { setShowOpenOnly(true); setPage(1); }}
                         className={`px-5 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${showOpenOnly ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'text-slate-500 hover:text-slate-300'}`}

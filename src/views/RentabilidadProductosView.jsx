@@ -35,7 +35,7 @@ const RentabilidadProductosView = () => {
         return processedData
     }, [fetchedData, sortColumn, sortOrder])
 
-    const columns = [
+    const columns = useMemo(() => [
         { key: 'producto', label: 'Producto', width: 'w-1/4', wrap: true, render: (val) => <span className="font-bold text-slate-200">{val}</span> },
         { key: 'unidades_vendidas', label: 'U. Vend.', width: 'w-20', render: (val) => <span className="tabular-nums font-semibold">{(val || 0).toLocaleString()}</span> },
         { key: 'ingresos_totales', label: 'Ingresos', width: 'w-24', render: (val) => <span className="tabular-nums text-blue-400 font-bold">${(val || 0).toLocaleString()}</span> },
@@ -56,7 +56,7 @@ const RentabilidadProductosView = () => {
                 return status
             }
         },
-    ]
+    ], [])
 
     const handleSort = (column) => {
         if (sortColumn === column) {
@@ -72,11 +72,7 @@ const RentabilidadProductosView = () => {
     }
 
     return (
-        <motion.div
-            initial={{ opacity: 0, scale: 0.99 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="space-y-6"
-        >
+        <div className="space-y-6">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div>
                     <h2 className="text-4xl font-black text-white tracking-tight flex items-center gap-3">
@@ -98,7 +94,7 @@ const RentabilidadProductosView = () => {
                 rowKey="producto"
                 compact={true}
             />
-        </motion.div>
+        </div>
     )
 }
 

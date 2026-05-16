@@ -15,8 +15,6 @@ import {
     BrainCircuit
 } from 'lucide-react'
 import {
-    LineChart,
-    Line,
     XAxis,
     YAxis,
     CartesianGrid,
@@ -25,16 +23,11 @@ import {
     AreaChart,
     Area
 } from 'recharts'
-import { motion } from 'framer-motion'
 import { useReporte, useReservas, useProductos, useUnifiedFeed, usePredictiveStock, useProductosDuplicadosTrigram } from '../hooks/useData'
 
-const StatCard = ({ title, value, icon: Icon, trend, trendValue, color, index }) => (
-    <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: index * 0.1, duration: 0.5, ease: "easeOut" }}
-        whileHover={{ y: -5 }}
-        className="glass-card p-6 rounded-2xl relative overflow-hidden group"
+const StatCard = ({ title, value, icon: Icon, trend, trendValue, color }) => (
+    <div
+        className="bg-slate-900 p-6 rounded-2xl relative overflow-hidden group border border-white/5 shadow-xl transition-transform hover:-translate-y-1"
     >
         <div className={`absolute top-0 right-0 w-24 h-24 bg-${color}-500/10 rounded-full blur-2xl -mr-12 -mt-12 group-hover:bg-${color}-500/20 transition-all duration-500`} />
 
@@ -54,51 +47,14 @@ const StatCard = ({ title, value, icon: Icon, trend, trendValue, color, index })
             <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest flex items-center gap-2">{title}</p>
             <h3 className="text-2xl font-black text-white mt-1.5 tabular-nums tracking-tight">{value}</h3>
         </div>
-    </motion.div>
+    </div>
 )
-
-const ActivityFeed = ({ data }) => {
-    const getIcon = (type) => {
-        switch (type) {
-            case 'venta': return <ShoppingCart className="h-4 w-4 text-emerald-400" />
-            case 'compra': return <Package className="h-4 w-4 text-rose-400" />
-            case 'retiro': return <ArrowDownRight className="h-4 w-4 text-amber-400" />
-            case 'reserva': return <Calendar className="h-4 w-4 text-purple-400" />
-            default: return <Activity className="h-4 w-4 text-slate-400" />
-        }
-    }
-
-    return (
-        <div className="space-y-3">
-            {data.map((item) => (
-                <div key={item.id} className="flex justify-between items-center group/item hover:bg-white/5 p-2 rounded-xl transition-all border border-transparent hover:border-white/5">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-lg bg-white/5 border border-white/5 group-hover/item:scale-110 transition-transform">
-                            {getIcon(item.type)}
-                        </div>
-                        <div className="flex flex-col">
-                            <span className="text-xs font-black text-slate-200 truncate max-w-[120px]">{item.title}</span>
-                            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-tighter">
-                                {new Date(item.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                            </span>
-                        </div>
-                    </div>
-                    <span className={`text-xs font-black tabular-nums ${item.amount >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                        {item.amount >= 0 ? '+' : ''}${Math.abs(item.amount).toLocaleString()}
-                    </span>
-                </div>
-            ))}
-        </div>
-    )
-}
 
 const HomeView = () => {
     const navigate = useNavigate()
-    const { data: dailyReport, loading: loadingReport } = useReporte('diario', { sortColumn: 'fecha', sortOrder: 'desc', pageSize: 30 })
-    const { data: reservas, loading: loadingReservas } = useReservas({}, true)
+    const { data: dailyReport } = useReporte('diario', { sortColumn: 'fecha', sortOrder: 'desc', pageSize: 30 })
+    const { data: reservas } = useReservas({}, true)
     const { data: productos, loading: loadingProductos } = useProductos({ pageSize: 5, sortColumn: 'stock_actual', sortOrder: 'asc' })
-    const { data: unifiedFeed, loading: loadingFeed } = useUnifiedFeed(10)
-    const { data: topAgotados, loading: loadingPred } = usePredictiveStock({ pageSize: 3, sortColumn: 'dias_restantes', sortOrder: 'asc' })
     const { data: duplicados, loading: loadingDuplicados } = useProductosDuplicadosTrigram()
 
     // Calcular KPIs
@@ -130,7 +86,6 @@ const HomeView = () => {
             })
             .reduce((acc, curr) => acc + (parseFloat(curr.saldo) || 0), 0)
 
-        // Calculate trend based on count of sales
         let trend = null;
         if (todayData.cant_ventas > yesterdayData.cant_ventas) trend = 'up';
         else if (todayData.cant_ventas < yesterdayData.cant_ventas) trend = 'down';
@@ -150,7 +105,6 @@ const HomeView = () => {
         return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(total)
     }, [reservas])
 
-    // Preparar datos para el gráfico (últimos 30 días cronológicamente)
     const chartData = useMemo(() => {
         return [...dailyReport].reverse().map(item => ({
             date: new Date(item.fecha + 'T00:00:00').toLocaleDateString('es-AR', { day: '2-digit', month: 'short' }),
@@ -159,28 +113,8 @@ const HomeView = () => {
         }))
     }, [dailyReport])
 
-    const containerVariants = {
-        hidden: { opacity: 0 },
-        visible: {
-            opacity: 1,
-            transition: {
-                staggerChildren: 0.1
-            }
-        }
-    }
-
-    const itemVariants = {
-        hidden: { opacity: 0, y: 20 },
-        visible: { opacity: 1, y: 0 }
-    }
-
     return (
-        <motion.div
-            initial="hidden"
-            animate="visible"
-            variants={containerVariants}
-            className="space-y-10"
-        >
+        <div className="space-y-10">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div>
                     <h2 className="text-4xl font-black text-white tracking-tight">Centro de Control</h2>
@@ -192,7 +126,6 @@ const HomeView = () => {
                 </div>
             </div>
 
-            {/* Grid de KPIs */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <StatCard
                     title="Ingresos de Hoy"
@@ -201,14 +134,12 @@ const HomeView = () => {
                     color="blue"
                     trend={stats.trend}
                     trendValue={stats.trendValue}
-                    index={0}
                 />
                 <StatCard
                     title="Ganancia este Mes"
                     value={stats.thisMonth}
                     icon={TrendingUp}
                     color="green"
-                    index={1}
                 />
                 <StatCard
                     title="Reservas Abiertas"
@@ -217,20 +148,17 @@ const HomeView = () => {
                     color="purple"
                     trend={null}
                     trendValue={saldoReservas}
-                    index={2}
                 />
                 <StatCard
                     title="Stock Crítico"
                     value={loadingProductos ? '...' : productos.filter(p => (p.stock_actual || 0) <= 5).length}
                     icon={Package}
                     color="yellow"
-                    index={3}
                 />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Gráfico de Ingresos */}
-                <motion.div variants={itemVariants} className="lg:col-span-2 glass-panel p-8 rounded-2xl">
+                <div className="lg:col-span-2 bg-slate-900 p-8 rounded-2xl border border-white/5 shadow-xl">
                     <div className="flex items-center justify-between mb-8">
                         <div>
                             <h3 className="text-xl font-black text-white tracking-tight">Evolución Comercial</h3>
@@ -271,7 +199,7 @@ const HomeView = () => {
                                 />
                                 <Tooltip
                                     cursor={{ stroke: '#3b82f6', strokeWidth: 2, strokeDasharray: '5 5' }}
-                                    contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', backdropFilter: 'blur(12px)', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)' }}
+                                    contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px' }}
                                     itemStyle={{ color: '#fff', fontSize: '12px', fontWeight: 'bold' }}
                                 />
                                 <Area
@@ -281,16 +209,14 @@ const HomeView = () => {
                                     strokeWidth={4}
                                     fillOpacity={1}
                                     fill="url(#colorVentas)"
-                                    animationDuration={2000}
                                 />
                             </AreaChart>
                         </ResponsiveContainer>
                     </div>
-                </motion.div>
+                </div>
 
                 <div className="space-y-8">
-                    {/* Alertas de Catálogo (Duplicados) */}
-                    <motion.div variants={itemVariants} className="glass-panel p-6 rounded-2xl border border-red-500/10 relative overflow-hidden">
+                    <div className="bg-slate-900 p-6 rounded-2xl border border-red-500/10 relative overflow-hidden shadow-xl">
                         <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none" />
                         <div className="flex items-center justify-between mb-6 relative z-10">
                             <h3 className="text-lg font-black text-white tracking-tight">Cruce de Catálogo</h3>
@@ -298,94 +224,58 @@ const HomeView = () => {
                         </div>
                         <div className="space-y-4 relative z-10">
                             {loadingDuplicados ? (
-                                <div className="py-8 text-center text-slate-500 animate-pulse text-sm font-semibold">Analizando similitudes...</div>
+                                <div className="py-8 text-center text-slate-500 animate-pulse text-sm font-semibold">Analizando...</div>
                             ) : duplicados.length === 0 ? (
                                 <div className="py-8 flex flex-col items-center justify-center text-center">
-                                    <div className="h-10 w-10 rounded-full bg-emerald-500/10 flex items-center justify-center mb-3">
-                                        <div className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.5)]"></div>
-                                    </div>
-                                    <span className="text-sm font-bold text-slate-300">Catálogo Optimizado</span>
-                                    <span className="text-[10px] uppercase font-black tracking-widest text-slate-500 mt-1">Sin productos duplicados</span>
+                                    <div className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.5)]"></div>
+                                    <span className="text-sm font-bold text-slate-300 mt-2">Catálogo Optimizado</span>
                                 </div>
                             ) : (
                                 duplicados.slice(0, 3).map((d, i) => (
-                                    <div key={i} className="p-3 rounded-xl bg-red-500/5 hover:bg-red-500/10 border border-transparent hover:border-red-500/20 transition-all group cursor-pointer" onClick={() => navigate('/duplicados')}>
-                                        <div className="flex items-center gap-2 mb-2">
-                                            <AlertCircle className="h-3 w-3 text-red-500 drop-shadow-[0_0_5px_rgba(239,68,68,0.5)]" />
-                                            <span className="text-[10px] font-black uppercase tracking-widest text-red-400 shadow-none">{d.reason}</span>
-                                        </div>
-                                        <div className="flex flex-col gap-1.5 pl-5">
-                                            <div className="flex items-center gap-2">
-                                                <div className="h-1 w-1 rounded-full bg-slate-500 shrink-0" />
-                                                <span className="text-[11px] font-bold text-slate-300 truncate" title={d.p1.nombre}>{d.p1.nombre}</span>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <div className="h-1 w-1 rounded-full bg-slate-500 shrink-0" />
-                                                <span className="text-[11px] font-bold text-slate-300 truncate" title={d.p2.nombre}>{d.p2.nombre}</span>
-                                            </div>
-                                        </div>
+                                    <div key={i} className="p-3 rounded-xl bg-red-500/5 border border-transparent hover:border-red-500/20 transition-all cursor-pointer" onClick={() => navigate('/duplicados')}>
+                                        <div className="text-[10px] font-black uppercase tracking-widest text-red-400">{d.reason}</div>
+                                        <div className="text-[11px] font-bold text-slate-300 truncate mt-1">{d.p1.nombre}</div>
+                                        <div className="text-[11px] font-bold text-slate-300 truncate">{d.p2.nombre}</div>
                                     </div>
                                 ))
                             )}
                         </div>
-                        {duplicados.length > 3 && (
-                            <button onClick={() => navigate('/duplicados')} className="w-full mt-4 py-2 text-[10px] font-black uppercase tracking-widest text-red-400 hover:text-red-300 transition-colors cursor-pointer bg-red-500/5 hover:bg-red-500/10 rounded-lg relative z-10 border border-transparent hover:border-red-500/20">
-                                Explorar {duplicados.length} incidencias
-                            </button>
-                        )}
-                    </motion.div>
+                    </div>
 
-                    {/* Reservas Pendientes */}
-                    <motion.div variants={itemVariants} className="glass-panel p-6 rounded-2xl">
+                    <div className="bg-slate-900 p-6 rounded-2xl border border-white/5 shadow-xl">
                         <div className="flex items-center justify-between mb-6">
                             <h3 className="text-lg font-black text-white tracking-tight">Deudores</h3>
                             <Calendar className="h-5 w-5 text-purple-400" />
                         </div>
                         <div className="space-y-4">
-                            {loadingReservas ? (
-                                <div className="py-8 text-center text-slate-500 animate-pulse">Analizando deudas...</div>
-                            ) : reservas.length === 0 ? (
-                                <div className="py-8 text-center text-slate-500 italic">No hay saldos pendientes</div>
+                            {reservas.length === 0 ? (
+                                <div className="py-4 text-center text-slate-500 italic text-sm">Sin saldos pendientes</div>
                             ) : (
                                 reservas.slice(0, 5).map(r => (
-                                    <div key={r.reserva_id} className="flex justify-between items-center p-3 rounded-xl bg-white/5 hover:bg-white/10 border border-transparent hover:border-white/5 transition-all group">
-                                        <span className="text-sm font-bold text-slate-300 group-hover:text-white transition-colors">{r.cliente}</span>
+                                    <div key={r.reserva_id} className="flex justify-between items-center p-3 rounded-xl bg-white/5 border border-transparent hover:border-white/5 transition-all">
+                                        <span className="text-sm font-bold text-slate-300">{r.cliente}</span>
                                         <span className="text-sm font-black text-red-500 tabular-nums">
-                                            {new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(parseFloat(r.saldo_pendiente) || 0)}
+                                            ${parseFloat(r.saldo_pendiente).toLocaleString()}
                                         </span>
                                     </div>
                                 ))
                             )}
                         </div>
-                        {reservas.length > 5 && (
-                            <button className="w-full mt-4 py-2 text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-white transition-colors cursor-pointer">
-                                Ver todos ({reservas.length})
-                            </button>
-                        )}
-                    </motion.div>
+                    </div>
 
-                    {/* Tip de Gestión */}
-                    <motion.div
-                        variants={itemVariants}
-                        whileHover={{ scale: 1.02 }}
-                        className="bg-gradient-to-br from-blue-600 to-indigo-700 p-6 rounded-2xl text-white shadow-2xl shadow-blue-500/20 relative overflow-hidden group cursor-pointer"
+                    <div
+                        className="bg-gradient-to-br from-blue-600 to-indigo-700 p-6 rounded-2xl text-white shadow-2xl relative overflow-hidden group cursor-pointer transition-transform hover:scale-[1.02]"
                         onClick={() => navigate('/analisis-horarios')}
                     >
-                        <AlertCircle className="absolute top-2 right-2 h-20 w-20 text-white/10 -mr-6 -mt-6 group-hover:scale-110 transition-transform duration-700" />
-                        <h3 className="text-xl font-black mb-2 flex items-center gap-2">
-                            Gestión Proactiva
-                        </h3>
+                        <AlertCircle className="absolute top-2 right-2 h-20 w-20 text-white/10 -mr-6 -mt-6" />
+                        <h3 className="text-xl font-black mb-2 flex items-center gap-2">Gestión Proactiva</h3>
                         <p className="text-blue-50 text-sm leading-relaxed font-semibold opacity-90">
-                            Detectamos picos de demanda a las 19:00 hs. Optimizá tu stock de productos estrella para maximizar cierres.
+                            Detectamos picos de demanda. Optimizá tu stock para maximizar cierres.
                         </p>
-                        <div className="mt-6 flex items-center gap-2 text-xs font-black uppercase tracking-wider">
-                            <span>Ver detalles interactivos</span>
-                            <ArrowUpRight className="h-4 w-4" />
-                        </div>
-                    </motion.div>
+                    </div>
                 </div>
             </div>
-        </motion.div>
+        </div>
     )
 }
 

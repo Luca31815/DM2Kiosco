@@ -58,7 +58,7 @@ const ReporteProductosView = () => {
         }
     }, [filteredData, viewMode])
 
-    const columns = [
+    const columns = useMemo(() => [
         { key: 'producto', label: 'Producto', width: 'w-1/3', wrap: true },
         {
             key: 'periodo_inicio',
@@ -80,9 +80,9 @@ const ReporteProductosView = () => {
         },
         { key: 'cantidad_total', label: 'Cantidad', render: (val) => (val || 0).toLocaleString() },
         { key: 'recaudacion_total', label: 'Recaudación', render: (val) => `$${(val || 0).toLocaleString()}` },
-    ]
+    ], [periodType])
 
-    const predictionColumns = [
+    const predictionColumns = useMemo(() => [
         { key: 'producto', label: 'Producto', width: 'w-1/3', wrap: true },
         { key: 'stock_actual', label: 'Stock Actual', render: (val) => <span className="font-bold text-slate-300">{val}</span> },
         { key: 'ventas_promedio_dia', label: 'Ritmo Venta (Día)', render: (val) => (val || 0).toFixed(2) },
@@ -103,7 +103,7 @@ const ReporteProductosView = () => {
                 return <span className="font-bold text-slate-400">{d}/{m}/{y}</span>
             }
         }
-    ]
+    ], [])
 
     const handleSort = (column) => {
         if (sortColumn === column) {

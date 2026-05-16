@@ -63,11 +63,8 @@ const ExpandedRow = ({ row }) => {
     }
 
     return (
-        <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="p-6 space-y-8 bg-slate-900/40 rounded-2xl border border-white/5 shadow-2xl backdrop-blur-md mx-2 mb-4"
+        <div
+            className="p-6 space-y-8 bg-slate-900 rounded-2xl border border-white/5 shadow-2xl mx-2 mb-4"
         >
             <div className="flex flex-col lg:flex-row gap-8">
                 {/* Product Details Section */}
@@ -228,14 +225,14 @@ const ComprasView = () => {
 
     const { data, count, loading } = useCompras(options)
 
-    const searchColumns = [
+    const searchColumns = useMemo(() => [
         { key: 'proveedor', label: 'Proveedor' },
         { key: 'lista_productos', label: 'Producto' },
         { key: 'compra_id', label: 'ID Compra' },
         { key: 'notas', label: 'Notas' }
-    ]
+    ], [])
 
-    const columns = [
+    const columns = useMemo(() => [
         { key: 'compra_id', label: 'ID', width: 'w-40', render: (val) => <span className="font-bold text-slate-500 truncate block">{val}</span> },
         {
             key: 'fecha', label: 'Fecha', width: 'w-44', render: (val) => {
@@ -252,7 +249,7 @@ const ComprasView = () => {
         { key: 'proveedor', label: 'Proveedor', width: 'w-1/4', wrap: true, render: (val) => <span className="font-bold text-blue-400">{val || 'S/D'}</span> },
         { key: 'total_compra', label: 'Total', width: 'w-24', render: (val) => <span className="font-black text-emerald-400 tabular-nums">${val?.toLocaleString() || '0'}</span> },
         { key: 'notas', label: 'Notas', width: 'w-1/3', wrap: true, render: (val) => <span className="text-slate-400 italic text-xs">{val || '-'}</span> },
-    ]
+    ], [])
 
     const handleSort = (column) => {
         setPage(1)
@@ -288,7 +285,7 @@ const ComprasView = () => {
                 <input
                     type="text"
                     placeholder={`Buscar por ${searchColumns.find(c => c.key === filterColumn)?.label.toLowerCase()}...`}
-                    className="pl-11 pr-4 py-2.5 bg-slate-800/50 border border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/50 text-slate-200 placeholder-slate-500 w-full outline-none backdrop-blur-md transition-all"
+                    className="pl-11 pr-4 py-2.5 bg-slate-800/50 border border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/50 text-slate-200 placeholder-slate-500 w-full outline-none transition-all"
                     value={value}
                     onChange={(e) => onChange(e.target.value)}
                 />
@@ -297,11 +294,7 @@ const ComprasView = () => {
     }
 
     return (
-        <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="space-y-6"
-        >
+        <div className="space-y-6">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
                     <h2 className="text-4xl font-black text-white tracking-tight flex items-center gap-3">

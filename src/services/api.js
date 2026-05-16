@@ -346,3 +346,16 @@ export const sincronizarPrecios = async () => {
         return { success: false, error: error.message };
     }
 }
+
+export const fusionarProveedores = async (origen, destino) => {
+    if (isDemo()) throw new Error('Acción deshabilitada en el modo Demo');
+    const { data, error } = await supabase.rpc('fn_fusionar_proveedores', { 
+        p_nombre_origen: origen, 
+        p_nombre_destino: destino 
+    })
+    if (error) {
+        console.error('Error calling fn_fusionar_proveedores:', error)
+        throw error
+    }
+    return data
+}

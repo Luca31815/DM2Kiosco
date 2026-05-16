@@ -23,7 +23,7 @@ const RetirosView = () => {
         filterValue
     })
 
-    const columns = [
+    const columns = React.useMemo(() => [
         { key: 'retiro_id', label: 'ID', width: 'w-24', render: (val) => <span className="font-bold text-slate-500">#{val.split('_')[1] || val}</span> },
         { 
             key: 'fecha', 
@@ -38,7 +38,7 @@ const RetirosView = () => {
         },
         { key: 'motivo', label: 'Motivo', width: 'w-1/2', wrap: true, render: (val) => <span className="font-semibold text-slate-200">{val}</span> },
         { key: 'monto', label: 'Monto', width: 'w-32', render: (val) => <span className="font-black text-rose-400 text-lg tabular-nums">-${Number(val).toLocaleString()}</span> },
-    ]
+    ], [])
 
     const handleSort = (column) => {
         if (sortColumn === column) {
@@ -72,11 +72,7 @@ const RetirosView = () => {
     }
 
     return (
-        <motion.div
-            initial={{ opacity: 0, scale: 0.98 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="space-y-8"
-        >
+        <div className="space-y-8">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                 <div>
                     <h2 className="text-4xl font-black text-white tracking-tight flex items-center gap-3">
@@ -101,13 +97,9 @@ const RetirosView = () => {
                 </button>
             </div>
 
-            <AnimatePresence>
                 {isAdding && (
-                    <motion.div
-                        initial={{ opacity: 0, y: -20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -20 }}
-                        className="glass-panel p-8 rounded-3xl border border-white/10 bg-white/5 backdrop-blur-2xl shadow-2xl relative overflow-hidden"
+                    <div
+                        className="bg-slate-900 p-8 rounded-3xl border border-white/10 shadow-2xl relative overflow-hidden"
                     >
                         <div className="absolute top-0 right-0 p-8 opacity-5">
                             <Banknote size={120} className="text-white" />
@@ -153,11 +145,10 @@ const RetirosView = () => {
                                 Confirmar Salida
                             </button>
                         </form>
-                    </motion.div>
+                    </div>
                 )}
-            </AnimatePresence>
 
-            <div className="bg-slate-900/20 rounded-3xl border border-white/5 overflow-hidden backdrop-blur-sm">
+            <div className="bg-slate-900 rounded-3xl border border-white/5 overflow-hidden">
                 <DataTable
                     data={retiros}
                     columns={columns}
@@ -171,7 +162,7 @@ const RetirosView = () => {
                     rowKey="retiro_id"
                 />
             </div>
-        </motion.div>
+        </div>
     )
 }
 

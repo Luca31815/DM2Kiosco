@@ -198,7 +198,7 @@ const ProductosView = () => {
     }
 
 
-    const columns = [
+    const columns = useMemo(() => [
         {
             key: 'nombre',
             label: 'Producto',
@@ -271,9 +271,8 @@ const ProductosView = () => {
             ) : (
                 <div className="flex items-center gap-3">
                     <div className="flex-1 h-1.5 w-12 bg-white/5 rounded-full overflow-hidden">
-                        <motion.div
-                            initial={{ width: 0 }}
-                            animate={{ width: `${Math.min((val / 20) * 100, 100)}%` }}
+                        <div
+                            style={{ width: `${Math.min((val / 20) * 100, 100)}%` }}
                             className={`h-full ${val < 10 ? 'bg-rose-500' : val < 20 ? 'bg-amber-500' : 'bg-emerald-500'}`}
                         />
                     </div>
@@ -353,7 +352,7 @@ const ProductosView = () => {
                 </div>
             )
         }
-    ]
+    ], [editingId, editForm, isSaving])
 
     const handleSort = (column) => {
         if (column === 'acciones') return
@@ -372,11 +371,7 @@ const ProductosView = () => {
     }
 
     return (
-        <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="space-y-6"
-        >
+        <div className="space-y-6">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
                     <h2 className="text-4xl font-black text-white tracking-tight flex items-center gap-3">
@@ -462,7 +457,7 @@ const ProductosView = () => {
                 isOpen={isSynonymModalOpen} 
                 onClose={() => setIsSynonymModalOpen(false)} 
             />
-        </motion.div>
+        </div>
     )
 }
 
