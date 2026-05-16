@@ -427,7 +427,7 @@ Producto 2: [${d.p2.producto_id || d.p2.id}] ${d.p2.nombre} ($${d.p2.ultimo_prec
                     </div>
                 )
             ))}
-        </motion.div>
+        </div>
     );
 };
 
@@ -492,7 +492,7 @@ const DuplicateCard = ({ d, uniqueKey, selections, setSelections, handleMergeSel
                     </button>
                 </div>
             </div>
-        </motion.div>
+        </div>
     );
 };
 
@@ -537,7 +537,7 @@ const ConflictCard = ({ d, variants, ignoreSQL }) => {
                     </button>
                 </div>
             </div>
-        </motion.div>
+        </div>
     );
 };
 

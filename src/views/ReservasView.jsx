@@ -204,7 +204,7 @@ const ExpandedRow = ({ row }) => {
                     </div>
                 </div>
             </div>
-        </motion.div>
+        </div>
     )
 }
 
@@ -388,7 +388,7 @@ const ReservasView = () => {
                 onPageChange={setPage}
                 itemsPerPage={pageSize}
             />
-        </motion.div>
+        </div>
     )
 }
 

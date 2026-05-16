@@ -202,7 +202,7 @@ const ExpandedRow = ({ row }) => {
                     </div>
                 </div>
             </div>
-        </motion.div>
+        </div>
     )
 }
 
@@ -327,7 +327,7 @@ const ComprasView = () => {
                 onPageChange={setPage}
                 itemsPerPage={pageSize}
             />
-        </motion.div>
+        </div>
     )
 }
 
