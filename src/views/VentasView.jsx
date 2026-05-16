@@ -289,11 +289,7 @@ const VentasView = () => {
     }
 
     return (
-        <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="space-y-6"
-        >
+        <div className="space-y-6">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div>
                     <h2 className="text-4xl font-black text-white tracking-tight">Historial de Ventas</h2>
@@ -321,7 +317,7 @@ const VentasView = () => {
                 onPageChange={setPage}
                 itemsPerPage={pageSize}
             />
-        </motion.div>
+        </div>
     )
 }
 

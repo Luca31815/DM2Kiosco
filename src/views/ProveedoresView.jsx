@@ -320,7 +320,7 @@ const ProveedoresView = () => {
                                         {loadingComparativa ? (
                                             <div className="h-full flex items-center justify-center"><Loader2 className="animate-spin text-blue-500" /></div>
                                         ) : (
-                                            <ResponsiveContainer width="100%" height="100%">
+                                            <ResponsiveContainer width="100%" height="100%" debounce={50}>
                                                 <AreaChart data={chartData}>
                                                     <defs>
                                                         <linearGradient id="colorCosto" x1="0" y1="0" x2="0" y2="1">
@@ -437,10 +437,9 @@ const ProveedoresView = () => {
                                                     </div>
                                                     <div className="flex items-center gap-2 pt-4 border-t border-white/5">
                                                         <div className="h-1 flex-1 bg-slate-800 rounded-full overflow-hidden">
-                                                            <motion.div 
-                                                                initial={{ width: 0 }}
-                                                                animate={{ width: `${Math.min(100, (g.ultimoCosto / (productosAgrupados.find(p => p.nombre === selectedProduct)?.ultimoCosto || 1)) * 100)}%` }}
-                                                                className={`h-full ${g.ultimoCosto < (productosAgrupados.find(p => p.nombre === selectedProduct)?.ultimoCosto || 0) ? 'bg-green-500' : 'bg-red-500'}`}
+                                                            <div 
+                                                                style={{ width: `${Math.min(100, (g.ultimoCosto / (productosProveedor.find(p => p.producto === selectedProduct)?.ultimo_costo || 1)) * 100)}%` }}
+                                                                className={`h-full ${g.ultimoCosto < (productosProveedor.find(p => p.producto === selectedProduct)?.ultimo_costo || 0) ? 'bg-green-500' : 'bg-red-500'}`}
                                                             />
                                                         </div>
                                                         <span className="text-[10px] font-black text-slate-500 tabular-nums">
