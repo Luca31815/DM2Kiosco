@@ -139,6 +139,8 @@ const ProveedoresView = () => {
             setIsMergingProgress(false)
         }
     }
+
+    const handleGlobalSearch = (productName) => {
         if (!productName) return
         setSelectedProduct(productName)
     }
