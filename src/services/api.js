@@ -278,6 +278,28 @@ export const crearReserva = async (reserva, productos, pagos) => {
     return result
 }
 
+export const entregarReserva = async (reservaId) => {
+    if (isDemo()) throw new Error('Acción deshabilitada en el modo Demo');
+    const { data: result, error } = await supabase
+        .from('reservas')
+        .update({ estado_entrega: 'ENTREGADO' })
+        .eq('reserva_id', reservaId)
+        .select()
+    if (error) {
+        console.error('Error updating estado_entrega:', error)
+        throw error
+    }
+    
+    // Recalcular la reserva para asegurar sincronización de estados y saldos
+    const { error: recalError } = await supabase.rpc('recalcular_reserva', { p_reserva_id: reservaId })
+    if (recalError) {
+        console.error('Error calling recalcular_reserva:', recalError)
+        throw recalError
+    }
+    
+    return result
+}
+
 export const crearRetiro = async (retiro) => {
     if (isDemo()) throw new Error('Acción deshabilitada en el modo Demo');
     const { data, error } = await supabase
