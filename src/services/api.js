@@ -335,6 +335,39 @@ export const auditarDescalcesPagos = async () => {
     }
 }
 
+export const actualizarMovimientoDinero = async (movimientoId, updates) => {
+    if (isDemo()) throw new Error('Acción deshabilitada en el modo Demo');
+    const { data, error } = await supabase
+        .from('movimientos_dinero')
+        .update(updates)
+        .eq('movimiento_id', movimientoId)
+        .select()
+    if (error) {
+        console.error('Error al actualizar movimiento_dinero:', error)
+        throw error
+    }
+    return data
+}
+
+export const actualizarCabeceraOperacion = async (tipo, id, total) => {
+    if (isDemo()) throw new Error('Acción deshabilitada en el modo Demo');
+    const table = tipo === 'VENTA' ? 'ventas' : 'compras';
+    const idCol = tipo === 'VENTA' ? 'venta_id' : 'compra_id';
+    const totalCol = tipo === 'VENTA' ? 'total_venta' : 'total_compra';
+    
+    const { data, error } = await supabase
+        .from(table)
+        .update({ [totalCol]: total })
+        .eq(idCol, id)
+        .select()
+        
+    if (error) {
+        console.error(`Error al actualizar cabecera ${table}:`, error)
+        throw error
+    }
+    return data
+}
+
 export const cleanupOrphanedProducts = async () => {
     if (isDemo()) return { success: false, error: 'Acción no permitida en modo Demo' };
     try {
