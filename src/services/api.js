@@ -321,6 +321,20 @@ export const crearRetiro = async (retiro) => {
 export const getN8nErrors = (options) => fetchTableData('logs_errores_n8n', { sortColumn: 'fecha', sortOrder: 'desc', ...options })
 export const getPredictiveStock = (options) => fetchTableData('vista_prediccion_stock', options)
 
+export const getDescalcesPagos = (options) => fetchTableData('v_descalces_pagos', options)
+
+export const auditarDescalcesPagos = async () => {
+    if (isDemo()) return { success: false, error: 'Acción no permitida en modo Demo' };
+    try {
+        const { data, error } = await supabase.rpc('fn_auditar_descalces_pagos');
+        if (error) throw error;
+        return data;
+    } catch (error) {
+        console.error('Error al ejecutar auditoría de descalces:', error);
+        throw error;
+    }
+}
+
 export const cleanupOrphanedProducts = async () => {
     if (isDemo()) return { success: false, error: 'Acción no permitida en modo Demo' };
     try {

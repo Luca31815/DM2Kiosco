@@ -19,7 +19,8 @@ const Sidebar = memo(({ isOpen, onClose }) => {
         { to: '/reporte-productos', label: 'Ventas por Producto', icon: BarChart3 },
         { to: '/analisis-horarios', label: 'Análisis Horarios', icon: Clock },
         { to: '/historial', label: 'Historial', icon: History },
-        { to: '/duplicados', label: 'Alertas de Catálogo', icon: AlertTriangle },
+        {to: '/duplicados', label: 'Alertas de Catálogo', icon: AlertTriangle },
+        { to: '/descalces', label: 'Auditoría de Pagos', icon: AlertTriangle },
         { to: '/sistema', label: 'Centro de Control', icon: ShieldCheck },
     ]
 

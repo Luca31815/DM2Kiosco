@@ -531,3 +531,22 @@ export function useProductosSinonimos() {
         error
     }
 }
+
+export function useDescalcesPagos(options = {}) {
+    const { isDemoMode } = useAuth()
+    const { data, error, isLoading, mutate } = useSWR(
+        !isDemoMode ? ['descalces_pagos', options] : null,
+        () => api.getDescalcesPagos(options),
+        SWR_OPTIONS
+    )
+
+    if (isDemoMode) return { data: [], count: 0, loading: false, mutate }
+
+    return {
+        data: data?.data || [],
+        count: data?.count || 0,
+        loading: isLoading,
+        error,
+        mutate
+    }
+}
