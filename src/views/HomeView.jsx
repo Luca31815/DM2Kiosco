@@ -553,56 +553,7 @@ const HomeView = () => {
                 {/* ── Right Column ───────────────────────────────────────── */}
                 <div className="space-y-5">
 
-                    {/* Critical Stock Panel */}
-                    <div className="bg-slate-900 p-5 rounded-2xl border border-white/5 shadow-xl animate-fade-in-up animation-delay-200">
-                        <div className="flex items-center justify-between mb-4">
-                            <div className="flex items-center gap-2">
-                                <Package className="h-4 w-4 text-amber-400" />
-                                <h3 className="text-sm font-black text-white tracking-tight">Stock Crítico</h3>
-                            </div>
-                            <button
-                                onClick={() => navigate('/productos')}
-                                className="text-[10px] font-black text-slate-500 hover:text-blue-400 uppercase tracking-wider transition-colors flex items-center gap-1"
-                            >
-                                Ver todo <ChevronRight className="h-3 w-3" />
-                            </button>
-                        </div>
 
-                        <div className="space-y-2.5">
-                            {loadingProductos ? (
-                                Array.from({ length: 4 }).map((_, i) => (
-                                    <div key={i} className="h-10 skeleton rounded-xl" />
-                                ))
-                            ) : criticalStock.length === 0 ? (
-                                <div className="py-6 flex flex-col items-center gap-2">
-                                    <CheckCircle2 className="h-8 w-8 text-emerald-400/50" />
-                                    <span className="text-sm font-bold text-slate-400">Stock en orden</span>
-                                    <span className="text-[11px] text-slate-600">Todos los productos tienen stock suficiente</span>
-                                </div>
-                            ) : (
-                                criticalStock.slice(0, 6).map((p, i) => (
-                                    <div
-                                        key={p.id || i}
-                                        className="flex items-center justify-between gap-3 p-2.5 rounded-xl bg-white/3 hover:bg-white/5 border border-transparent hover:border-amber-500/10 transition-all group cursor-pointer"
-                                        onClick={() => navigate('/productos')}
-                                    >
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-[11px] font-bold text-slate-300 truncate group-hover:text-white transition-colors">{p.nombre}</p>
-                                            <div className="mt-1 flex items-center gap-2">
-                                                <StockBar stock={p.stock_actual || 0} />
-                                                <span className={`text-[10px] font-black ${(p.stock_actual || 0) <= 2 ? 'text-red-400' : 'text-amber-400'}`}>
-                                                    {p.stock_actual || 0} u.
-                                                </span>
-                                            </div>
-                                        </div>
-                                        {(p.stock_actual || 0) <= 2 && (
-                                            <AlertTriangle className="h-3.5 w-3.5 text-red-400 flex-shrink-0" />
-                                        )}
-                                    </div>
-                                ))
-                            )}
-                        </div>
-                    </div>
 
                     {/* Deudores / Reservas */}
                     <div className="bg-slate-900 p-5 rounded-2xl border border-white/5 shadow-xl animate-fade-in-up animation-delay-300">
