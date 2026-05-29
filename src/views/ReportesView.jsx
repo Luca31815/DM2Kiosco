@@ -5,7 +5,7 @@ import {
     FileBarChart, Calendar, ChevronRight, TrendingUp, TrendingDown,
     DollarSign, Loader2, ShoppingCart, Package, ArrowUpRight, ArrowDownRight,
     Activity, Clock, Tag, BarChart2, Percent, Sigma, ArrowRight, Target,
-    CreditCard, PieChart
+    CreditCard, PieChart, Sparkles
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -580,7 +580,7 @@ const ReportesView = () => {
         }
     }, [data])
 
-    // Top 5 productos (periodo activo, últimos registros)
+    // Todos los productos del periodo — se usan tanto para Top 5 como para Ganancia Real
     const { data: topProductsData, loading: loadingTop } = useReporteVentasPeriodico({
         filterColumn: 'tipo_periodo',
         filterValue: reportType.toUpperCase(),
@@ -588,7 +588,7 @@ const ReportesView = () => {
         sortOrder: 'desc',
         dateRange: (dateRange.start || dateRange.end) && reportType !== 'mensual' ? dateRange : undefined,
         dateColumn: 'periodo_inicio',
-        pageSize: 50
+        pageSize: 1000 // Traemos todos para poder calcular ganancia real
     })
 
     const aggregatedTopData = useMemo(() => {
@@ -605,6 +605,41 @@ const ReportesView = () => {
             return acc
         }, {})
         return Object.values(map).sort((a, b) => b.ganancia_total - a.ganancia_total).slice(0, 5)
+    }, [topProductsData])
+
+    // ── Ganancia Real: solo productos con precio de compra registrado ──────────
+    // Un producto tiene costo conocido cuando ganancia_total < recaudacion_total
+    // (si no tiene costo, ganancia_total ≈ recaudacion_total porque no se descontó nada)
+    const gananciaReal = useMemo(() => {
+        if (!topProductsData || !topProductsData.length) return { total: 0, productos: 0, cargando: false }
+
+        // Primero agrupar por nombre de producto (igual que aggregatedTopData)
+        const map = topProductsData.reduce((acc, curr) => {
+            const name = curr.producto?.trim() || 'Sin Nombre'
+            if (!acc[name]) {
+                acc[name] = {
+                    ganancia_total: Number(curr.ganancia_total || 0),
+                    recaudacion_total: Number(curr.recaudacion_total || 0)
+                }
+            } else {
+                acc[name].ganancia_total += Number(curr.ganancia_total || 0)
+                acc[name].recaudacion_total += Number(curr.recaudacion_total || 0)
+            }
+            return acc
+        }, {})
+
+        // Filtrar solo los que tienen precio de compra real
+        // (la ganancia es menor a la recaudación = se descontó un costo real)
+        const CON_COSTO_THRESHOLD = 0.001 // tolerancia para evitar errores de float
+        const conCosto = Object.values(map).filter(p =>
+            p.recaudacion_total > 0 &&
+            p.ganancia_total < (p.recaudacion_total - CON_COSTO_THRESHOLD)
+        )
+
+        return {
+            total: conCosto.reduce((s, p) => s + p.ganancia_total, 0),
+            productos: conCosto.length
+        }
     }, [topProductsData])
 
     // Función de renderizado para fila expandida
@@ -688,7 +723,7 @@ const ReportesView = () => {
             </div>
 
             {/* ── KPI Cards ─────────────────────────────────────────────────── */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-5">
                 <KPICard
                     title="Ingresos Totales"
                     value={`$${Math.floor(totals.ingresos).toLocaleString()}`}
@@ -725,6 +760,47 @@ const ReportesView = () => {
                     colorClass={totals.balance >= 0 ? 'text-emerald-400' : 'text-rose-400'}
                     accentBg={totals.balance >= 0 ? 'bg-emerald-500' : 'bg-rose-500'}
                 />
+
+                {/* Ganancia Real — solo productos con precio de compra registrado */}
+                <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: 0.1 }}
+                    className="relative overflow-hidden p-6 rounded-3xl border border-amber-500/20 bg-gradient-to-br from-amber-500/8 via-slate-900 to-slate-900 shadow-xl hover:border-amber-500/35 transition-all duration-300"
+                >
+                    {/* Resplandor decorativo */}
+                    <div className="absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl opacity-15 bg-amber-400" />
+
+                    <div className="relative z-10">
+                        <div className="flex justify-between items-start mb-5">
+                            <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400">
+                                <Sparkles className="h-5 w-5" />
+                            </div>
+                            {loadingTop
+                                ? <div className="w-12 h-5 bg-white/5 rounded-lg animate-pulse" />
+                                : (
+                                    <div className="flex items-center gap-1 text-[10px] font-black px-2.5 py-1.5 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                                        {gananciaReal.productos} prods
+                                    </div>
+                                )
+                            }
+                        </div>
+                        <h4 className="text-[10px] font-black uppercase tracking-widest text-amber-600 mb-2">
+                            Ganancia Real
+                        </h4>
+                        <div className="flex flex-col gap-1">
+                            {loadingTop
+                                ? <div className="w-28 h-8 bg-white/5 rounded-xl animate-pulse" />
+                                : <span className="text-3xl font-black text-amber-300 tracking-tight tabular-nums">
+                                    ${Math.floor(gananciaReal.total).toLocaleString()}
+                                </span>
+                            }
+                            <span className="text-[10px] font-bold text-amber-700 uppercase tracking-wider">
+                                Solo prods. con costo registrado
+                            </span>
+                        </div>
+                    </div>
+                </motion.div>
             </div>
 
             {/* ── Gráficos ──────────────────────────────────────────────────── */}
