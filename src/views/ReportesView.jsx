@@ -229,6 +229,73 @@ const PeriodTopProducts = ({ item, type }) => {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// SUBCOMPONENTE: Ganancia Real de un periodo específico
+// SWR cachea la request — PeriodTopProducts hace la misma llamada, sin doble fetch
+// ─────────────────────────────────────────────────────────────────────────────
+const PeriodGananciaRealStat = ({ item, type }) => {
+    const dateRange = getPeriodDateRange(item, type)
+
+    const { data: rawData, loading } = useReporteVentasPeriodico({
+        filterColumn: 'tipo_periodo',
+        filterValue: type.toUpperCase(),
+        dateColumn: 'periodo_inicio',
+        dateRange,
+        sortColumn: 'ganancia_total',
+        sortOrder: 'desc',
+        pageSize: 500
+    })
+
+    const gananciaReal = useMemo(() => {
+        if (!rawData || !rawData.length) return { total: 0, productos: 0 }
+        // Agrupar por producto para evitar duplicados
+        const map = rawData.reduce((acc, curr) => {
+            const name = curr.producto?.trim() || 'Sin Nombre'
+            if (!acc[name]) {
+                acc[name] = {
+                    ganancia_total: Number(curr.ganancia_total || 0),
+                    recaudacion_total: Number(curr.recaudacion_total || 0)
+                }
+            } else {
+                acc[name].ganancia_total += Number(curr.ganancia_total || 0)
+                acc[name].recaudacion_total += Number(curr.recaudacion_total || 0)
+            }
+            return acc
+        }, {})
+        // Solo los que tienen precio de compra (ganancia < recaudación)
+        const conCosto = Object.values(map).filter(p =>
+            p.recaudacion_total > 0 &&
+            p.ganancia_total < (p.recaudacion_total - 0.001)
+        )
+        return {
+            total: conCosto.reduce((s, p) => s + p.ganancia_total, 0),
+            productos: conCosto.length
+        }
+    }, [rawData])
+
+    if (loading) return (
+        <div className="flex justify-between items-center bg-white/4 p-3 rounded-xl border border-white/5">
+            <div className="w-24 h-3 bg-white/5 rounded animate-pulse" />
+            <div className="w-16 h-3 bg-white/5 rounded animate-pulse" />
+        </div>
+    )
+
+    return (
+        <div className="flex justify-between items-center bg-amber-500/8 border border-amber-500/15 hover:border-amber-500/25 p-3 rounded-xl transition-colors">
+            <div className="flex items-center gap-2">
+                <Sparkles className="h-3 w-3 text-amber-500" />
+                <span className="text-[10px] text-amber-600 font-black uppercase tracking-wide">Ganancia Real</span>
+            </div>
+            <div className="flex items-center gap-2">
+                <span className="text-[9px] text-amber-700 font-bold">{gananciaReal.productos} prods</span>
+                <span className="text-xs font-black text-amber-300 tabular-nums">
+                    ${Math.floor(gananciaReal.total).toLocaleString()}
+                </span>
+            </div>
+        </div>
+    )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // SUBCOMPONENTE: Panel de detalle expandido por fila
 // ─────────────────────────────────────────────────────────────────────────────
 const ExpandedPeriodPanel = ({ item, reportType }) => {
@@ -299,6 +366,8 @@ const ExpandedPeriodPanel = ({ item, reportType }) => {
                             value={`${cantVentas} / ${cantCompras}`}
                             colorClass="text-slate-400"
                         />
+                        {/* Ganancia real solo de productos con costo registrado */}
+                        <PeriodGananciaRealStat item={item} type={reportType} />
                     </div>
                 </div>
 
