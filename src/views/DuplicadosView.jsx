@@ -1,18 +1,18 @@
-import React, { useState } from 'react'
-import { motion } from 'framer-motion'
+import React, { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { AlertCircle, ArrowRight, Package, Tag, ArrowUpRight, Search, EyeOff, CheckCircle2, Loader2, Sparkles, Copy, Trash2, RefreshCcw } from 'lucide-react'
+import { AlertCircle, Tag, Search, EyeOff, CheckCircle2, Loader2, Sparkles, Copy, Trash2 } from 'lucide-react'
 import { useSWRConfig } from 'swr'
 import { toast } from 'react-hot-toast'
 import * as api from '../services/api'
 import { useProductosDuplicadosTrigram, useProductos, useProductosSinonimos } from '../hooks/useData'
-import { useMemo } from 'react'
 import { checkDuplicateStatus, FLAVORS, BRANDS, FORMATS } from '../utils/duplicateRules'
 
 const DuplicadosView = () => {
     const navigate = useNavigate()
     const { mutate } = useSWRConfig()
     const { data: duplicadosSQL, loading: sqlLoading, ignoreDuplicate: ignoreSQL, ignoredPairs } = useProductosDuplicadosTrigram()
+    // allProducts is fetched internally by useProductosDuplicadosTrigram (pageSize: 5000)
+    // We still need it here for the AI scan feature
     const { data: allProducts } = useProductos({ pageSize: 5000 })
     const { data: learnedSynonyms } = useProductosSinonimos()
     const [searchTerm, setSearchTerm] = useState('')
@@ -272,12 +272,18 @@ Producto 2: [${d.p2.producto_id || d.p2.id}] ${d.p2.nombre} ($${d.p2.ultimo_prec
         }
     }
 
-    const filteredDuplicados = duplicados.filter(d => {
+    const filteredDuplicados = useMemo(() => duplicados.filter(d => {
         const name1 = d.p1?.nombre || '';
         const name2 = d.p2?.nombre || '';
-        return name1.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        return name1.toLowerCase().includes(searchTerm.toLowerCase()) ||
                name2.toLowerCase().includes(searchTerm.toLowerCase())
-    })
+    }), [duplicados, searchTerm])
+
+    const filteredConflictos = useMemo(() => conflictos.filter(c => {
+        const n1 = c.p1.nombre.toLowerCase();
+        const n2 = c.p2.nombre.toLowerCase();
+        return n1.includes(searchTerm.toLowerCase()) || n2.includes(searchTerm.toLowerCase());
+    }), [conflictos, searchTerm])
 
     const containerVariants = {
         hidden: { opacity: 0 },
@@ -397,21 +403,13 @@ Producto 2: [${d.p2.producto_id || d.p2.id}] ${d.p2.nombre} ($${d.p2.ultimo_prec
                     </div>
                 )
             ) : (
-                conflictos.filter(c => {
-                    const n1 = c.p1.nombre.toLowerCase();
-                    const n2 = c.p2.nombre.toLowerCase();
-                    return n1.includes(searchTerm.toLowerCase()) || n2.includes(searchTerm.toLowerCase());
-                }).length === 0 ? (
+                filteredConflictos.length === 0 ? (
                     <div className="py-20 flex flex-col items-center justify-center text-center text-slate-500 font-medium">
                         No se detectaron conflictos activos para esta búsqueda.
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 gap-4">
-                        {conflictos.filter(c => {
-                            const n1 = c.p1.nombre.toLowerCase();
-                            const n2 = c.p2.nombre.toLowerCase();
-                            return n1.includes(searchTerm.toLowerCase()) || n2.includes(searchTerm.toLowerCase());
-                        }).map((c) => {
+                        {filteredConflictos.map((c) => {
                             const id1 = String(c.p1.producto_id || c.p1.id || '');
                             const id2 = String(c.p2.producto_id || c.p2.id || '');
                             const uniqueKey = `conflict_${id1}_${id2}`;

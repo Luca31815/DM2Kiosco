@@ -1,6 +1,6 @@
-import React, { useState, useEffect, memo } from 'react'
+import React, { useState, useEffect, memo, useCallback } from 'react'
 import { ChevronDown, ChevronUp, Search, Loader2, Download, ChevronLeft, ChevronRight } from 'lucide-react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 
 const DataTableRow = memo(({ row, rowIndex, columns, compact, renderExpandedRow, isExpanded, toggleRow, rowKey }) => {
     return (
@@ -37,6 +37,7 @@ const DataTableRow = memo(({ row, rowIndex, columns, compact, renderExpandedRow,
         </React.Fragment>
     )
 })
+DataTableRow.displayName = 'DataTableRow'
 
 const DataTable = ({
     data,
@@ -75,19 +76,18 @@ const DataTable = ({
     const totalPages = Math.ceil(totalRows / itemsPerPage)
     const paginatedData = serverSide ? data : data.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
 
-
-    const handleFilterChange = (val) => {
+    const handleFilterChange = useCallback((val) => {
         setFilterValue(val)
         onFilter(val)
-    }
+    }, [onFilter])
 
-    const toggleRow = (id) => {
+    const toggleRow = useCallback((id) => {
         if (renderExpandedRow) {
-            setExpandedRow(expandedRow === id ? null : id)
+            setExpandedRow(prev => prev === id ? null : id)
         }
-    }
+    }, [renderExpandedRow])
 
-    const exportToCSV = () => {
+    const exportToCSV = useCallback(() => {
         if (!data || data.length === 0) return
 
         const headers = columns.map(col => col.label).join(',')
@@ -107,7 +107,7 @@ const DataTable = ({
         document.body.appendChild(link)
         link.click()
         document.body.removeChild(link)
-    }
+    }, [data, columns])
 
     return (
         <div className="w-full glass-panel rounded-2xl overflow-hidden flex flex-col max-h-[calc(100vh-220px)]">
@@ -183,35 +183,35 @@ const DataTable = ({
                     </thead>
                     <tbody className="divide-y divide-white/5">
                         {isLoading ? (
-                                <motion.tr initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                                    <td colSpan={columns.length} className="px-6 py-20 text-center">
-                                        <div className="flex flex-col items-center gap-3">
-                                            <Loader2 className="animate-spin h-8 w-8 text-blue-500" />
-                                            <span className="text-slate-500 font-medium">Procesando datos...</span>
-                                        </div>
-                                    </td>
-                                </motion.tr>
-                            ) : data.length === 0 ? (
-                                <motion.tr initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                                    <td colSpan={columns.length} className="px-6 py-20 text-center text-slate-500 italic font-medium">
-                                        No se encontraron registros coincidentes.
-                                    </td>
-                                </motion.tr>
-                            ) : (
-                                paginatedData.map((row, rowIndex) => (
-                                    <DataTableRow 
-                                        key={row[rowKey] || rowIndex}
-                                        row={row}
-                                        rowIndex={rowIndex}
-                                        columns={columns}
-                                        compact={compact}
-                                        renderExpandedRow={renderExpandedRow}
-                                        isExpanded={expandedRow === (row[rowKey] !== undefined ? row[rowKey] : rowIndex)}
-                                        toggleRow={toggleRow}
-                                        rowKey={rowKey}
-                                    />
-                                ))
-                            )}
+                            <tr>
+                                <td colSpan={columns.length} className="px-6 py-20 text-center">
+                                    <div className="flex flex-col items-center gap-3">
+                                        <Loader2 className="animate-spin h-8 w-8 text-blue-500" />
+                                        <span className="text-slate-500 font-medium">Procesando datos...</span>
+                                    </div>
+                                </td>
+                            </tr>
+                        ) : data.length === 0 ? (
+                            <tr>
+                                <td colSpan={columns.length} className="px-6 py-20 text-center text-slate-500 italic font-medium">
+                                    No se encontraron registros coincidentes.
+                                </td>
+                            </tr>
+                        ) : (
+                            paginatedData.map((row, rowIndex) => (
+                                <DataTableRow
+                                    key={row[rowKey] || rowIndex}
+                                    row={row}
+                                    rowIndex={rowIndex}
+                                    columns={columns}
+                                    compact={compact}
+                                    renderExpandedRow={renderExpandedRow}
+                                    isExpanded={expandedRow === (row[rowKey] !== undefined ? row[rowKey] : rowIndex)}
+                                    toggleRow={toggleRow}
+                                    rowKey={rowKey}
+                                />
+                            ))
+                        )}
                     </tbody>
                 </table>
             </div>
@@ -222,7 +222,7 @@ const DataTable = ({
                     <span className="text-xs text-slate-500 font-bold uppercase tracking-widest">
                         Mostrando <span className="text-slate-200">{(currentPage - 1) * itemsPerPage + 1}</span> - <span className="text-slate-200">{Math.min(currentPage * itemsPerPage, totalRows)}</span> de <span className="text-slate-200">{totalRows}</span>
                     </span>
-                    
+
                     <div className="flex items-center gap-2">
                         <button
                             onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
@@ -231,7 +231,7 @@ const DataTable = ({
                         >
                             <ChevronLeft size={16} />
                         </button>
-                        
+
                         <div className="flex items-center gap-1">
                             {[...Array(totalPages)].map((_, i) => {
                                 const page = i + 1;

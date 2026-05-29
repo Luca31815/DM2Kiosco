@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import Sidebar from './Sidebar'
 import { Menu, RefreshCw, Clock } from 'lucide-react'
 import { Toaster } from 'react-hot-toast'
@@ -55,30 +55,42 @@ const Layout = ({ children }) => {
     )
 }
 
-const TopBar = ({ onMenuClick }) => {
-    const [currentTime, setCurrentTime] = useState(new Date())
-    const [lastUpdated, setLastUpdated] = useState(new Date())
-    const [refreshing, setRefreshing] = useState(false)
+// ── Live Clock — isolated so only it re-renders every second ─────────────────
+const LiveClock = React.memo(() => {
+    const [currentTime, setCurrentTime] = useState(() => new Date())
 
     useEffect(() => {
         const timer = setInterval(() => setCurrentTime(new Date()), 1000)
         return () => clearInterval(timer)
     }, [])
 
-    const handleRefresh = () => {
+    const timeStr = currentTime.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+    const dateStr = currentTime.toLocaleDateString('es-AR', { weekday: 'short', day: 'numeric', month: 'short' })
+
+    return (
+        <div className="hidden md:flex items-center gap-3 px-4 py-1.5 rounded-xl bg-white/3 border border-white/5">
+            <Clock className="h-3.5 w-3.5 text-slate-500" />
+            <div className="flex items-baseline gap-1.5">
+                <span className="text-sm font-black text-slate-200 tabular-nums tracking-tight">{timeStr}</span>
+                <span className="text-[10px] text-slate-500 font-semibold capitalize">{dateStr}</span>
+            </div>
+        </div>
+    )
+})
+LiveClock.displayName = 'LiveClock'
+
+// ── TopBar — no longer re-renders on clock tick ──────────────────────────────
+const TopBar = React.memo(({ onMenuClick }) => {
+    const [lastUpdated] = useState(() => new Date())
+    const [refreshing, setRefreshing] = useState(false)
+
+    const handleRefresh = useCallback(() => {
         setRefreshing(true)
-        setLastUpdated(new Date())
         setTimeout(() => {
             setRefreshing(false)
             window.location.reload()
         }, 600)
-    }
-
-    const timeStr = currentTime.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
-    const dateStr = currentTime.toLocaleDateString('es-AR', { weekday: 'short', day: 'numeric', month: 'short' })
-
-    const minutesAgo = Math.floor((currentTime - lastUpdated) / 60000)
-    const updatedLabel = minutesAgo === 0 ? 'Actualizado ahora' : `Hace ${minutesAgo} min`
+    }, [])
 
     return (
         <div className="fixed top-0 left-0 right-0 z-30 h-16">
@@ -100,19 +112,13 @@ const TopBar = ({ onMenuClick }) => {
 
                 {/* Right: Time + Status + Refresh */}
                 <div className="flex items-center gap-2 md:gap-4">
-                    {/* Live clock - hidden on mobile */}
-                    <div className="hidden md:flex items-center gap-3 px-4 py-1.5 rounded-xl bg-white/3 border border-white/5">
-                        <Clock className="h-3.5 w-3.5 text-slate-500" />
-                        <div className="flex items-baseline gap-1.5">
-                            <span className="text-sm font-black text-slate-200 tabular-nums tracking-tight">{timeStr}</span>
-                            <span className="text-[10px] text-slate-500 font-semibold capitalize">{dateStr}</span>
-                        </div>
-                    </div>
+                    {/* Live clock — only this component ticks */}
+                    <LiveClock />
 
                     {/* Sync status */}
                     <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-500/8 border border-emerald-500/15">
                         <div className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_6px_rgba(52,211,153,0.8)]" />
-                        <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest hidden lg:block">{updatedLabel}</span>
+                        <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest hidden lg:block">Live</span>
                         <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest lg:hidden">Live</span>
                     </div>
 
@@ -129,7 +135,8 @@ const TopBar = ({ onMenuClick }) => {
             </div>
         </div>
     )
-}
+})
+TopBar.displayName = 'TopBar'
 
 const LogoTrigger = () => {
     const [clicks, setClicks] = useState(0)
@@ -167,24 +174,27 @@ const LogoTrigger = () => {
     )
 }
 
+// ── AuthBadge — useEffect siempre se llama (hooks rule fix) ──────────────────
 const AuthBadge = () => {
-    const { isDemoMode } = useAuth();
-    if (isDemoMode) {
-        useEffect(() => {
-            const url = new URL(window.location.href);
-            if (url.searchParams.has('admin')) {
-                url.searchParams.delete('admin');
-                window.history.replaceState({}, '', url.toString());
-            }
-        }, []);
-        return null;
-    }
+    const { isDemoMode } = useAuth()
+
+    // Always call the effect — conditionally execute its body
+    useEffect(() => {
+        if (!isDemoMode) return
+        const url = new URL(window.location.href)
+        if (url.searchParams.has('admin')) {
+            url.searchParams.delete('admin')
+            window.history.replaceState({}, '', url.toString())
+        }
+    }, [isDemoMode])
+
+    if (isDemoMode) return null
 
     const handleLock = () => {
         if (confirm('¿Querés BLOQUEAR el dashboard y volver al modo restringido?')) {
-            window.location.search = '?logout=true';
+            window.location.search = '?logout=true'
         }
-    };
+    }
 
     return (
         <div
@@ -197,7 +207,7 @@ const AuthBadge = () => {
                 <span className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity">| Bloquear</span>
             </div>
         </div>
-    );
+    )
 }
 
 export default Layout

@@ -1,6 +1,6 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo, useCallback } from 'react'
 import useSWR from 'swr'
-import { getAuditLogs, getN8nErrors, getPredictiveStock, rollbackLog, getAISummaries } from '../services/api'
+import { getAuditLogs, getN8nErrors, getPredictiveStock, rollbackLog, getAISummaries, getSystemAlerts } from '../services/api'
 import DataTable from '../components/DataTable'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ShieldCheck, Activity, PackageSearch, AlertCircle, Clock, Database, Terminal, User, Cpu, ArrowRight, Code2, RotateCcw, Sparkles } from 'lucide-react'
@@ -210,7 +210,7 @@ const SystemView = () => {
         { id: 'n8n', label: 'Monitor n8n', icon: Terminal, color: 'text-purple-400', bg: 'bg-purple-500/10', border: 'border-purple-500/20' }
     ]
 
-    const auditColumns = [
+    const auditColumns = useMemo(() => [
         { key: 'fecha', label: 'Fecha/Hora', width: 'w-40', render: (val) => formatDate(val, true) },
         { key: 'nombre_tabla', label: 'Tabla', width: 'w-32', render: (val) => <span className="px-2 py-1 rounded bg-white/5 text-xs font-mono uppercase tracking-tighter">{val}</span> },
         {
@@ -258,9 +258,9 @@ const SystemView = () => {
                 </button>
             )
         }
-    ]
+    ], [rollbackStatus])
 
-    const stockColumns = [
+    const stockColumns = useMemo(() => [
         { key: 'nombre', label: 'Producto', width: 'w-1/3', wrap: true },
         { key: 'stock_actual', label: 'Stock', width: 'w-24', render: (val) => <span className={`font-bold ${val <= 0 ? 'text-red-400' : 'text-slate-300'}`}>{val}</span> },
         { key: 'ventas_diarias_promedio', label: 'Ventas Diarias (30d)', width: 'w-32', render: (val) => <span className="text-slate-400">{val} u/día</span> },
@@ -280,16 +280,16 @@ const SystemView = () => {
                 </div>
             )
         }
-    ]
+    ], [])
 
-    const n8nColumns = [
+    const n8nColumns = useMemo(() => [
         { key: 'fecha', label: 'Fecha', width: 'w-40', render: (val) => formatDate(val, true) },
         { key: 'workflow_nombre', label: 'Workflow', width: 'w-1/4', wrap: true },
         { key: 'nodo_nombre', label: 'Nodo Fallido', width: 'w-1/4', wrap: true, render: (val) => <code className="text-purple-400 text-xs">{val}</code> },
         { key: 'mensaje_error', label: 'Error', render: (val) => <span className="text-red-400 text-xs line-clamp-1 truncate max-w-xs">{val}</span> }
-    ]
+    ], [])
 
-    const renderExpandedAudit = (row) => (
+    const renderExpandedAudit = useCallback((row) => (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-2 font-mono text-xs">
             <div className="space-y-2">
                 <div className="text-slate-500 uppercase tracking-widest font-black text-[10px]">Valor Anterior</div>
@@ -304,7 +304,7 @@ const SystemView = () => {
                 </pre>
             </div>
         </div>
-    )
+    ), [])
 
     return (
         <motion.div
