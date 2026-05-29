@@ -1,50 +1,132 @@
 import React, { useState, useEffect } from 'react'
 import Sidebar from './Sidebar'
-import { Menu, Search, Command } from 'lucide-react'
+import { Menu, RefreshCw, Clock } from 'lucide-react'
 import { Toaster } from 'react-hot-toast'
-import CommandPalette from './CommandPalette'
 import { useAuth } from '../context/AuthContext'
 
 const Layout = ({ children }) => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false)
 
-
     return (
         <div className="flex bg-slate-950 min-h-screen relative overflow-hidden font-outfit">
-            {/* Background estático y liviano */}
-            <div className="absolute inset-0 z-0 pointer-events-none bg-slate-950" />
+            {/* Background grid pattern */}
+            <div className="absolute inset-0 z-0 pointer-events-none bg-grid-pattern opacity-100" />
+            {/* Radial glow top-left */}
+            <div className="absolute top-0 left-0 w-[600px] h-[400px] bg-blue-600/3 rounded-full blur-3xl z-0 pointer-events-none" />
 
-            <Toaster position="top-right" toastOptions={{
-                style: { background: '#1e293b', color: '#f1f5f9', border: '1px solid #334155' }
-            }} />
-
+            <Toaster
+                position="top-right"
+                toastOptions={{
+                    style: {
+                        background: '#1e293b',
+                        color: '#f1f5f9',
+                        border: '1px solid rgba(255,255,255,0.07)',
+                        borderRadius: '12px',
+                        fontSize: '13px',
+                        fontWeight: '600',
+                        backdropFilter: 'blur(12px)',
+                        boxShadow: '0 20px 40px rgba(0,0,0,0.4)'
+                    },
+                    success: {
+                        iconTheme: { primary: '#22c55e', secondary: '#0f172a' }
+                    },
+                    error: {
+                        iconTheme: { primary: '#ef4444', secondary: '#0f172a' }
+                    }
+                }}
+            />
 
             <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
             <main className="flex-1 flex flex-col min-w-0 relative z-10">
-                {/* Top Bar for Toggle */}
-                <div className="p-4 border-b border-white/5 flex items-center justify-between bg-slate-950/40 backdrop-blur-md fixed top-0 left-0 right-0 z-30">
-                    <div className="flex items-center">
-                        <button
-                            onClick={() => setIsSidebarOpen(true)}
-                            className="p-2 mr-4 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition-all active:scale-95"
-                        >
-                            <Menu className="h-6 w-6" />
-                        </button>
-                        <LogoTrigger />
-                    </div>
+                {/* Enhanced Top Bar */}
+                <TopBar onMenuClick={() => setIsSidebarOpen(true)} />
 
-                </div>
-
-                <div className="p-4 md:p-8 pt-20 md:pt-24 overflow-y-auto overflow-x-hidden custom-scrollbar">
+                <div className="p-4 md:p-8 pt-[80px] md:pt-[80px] overflow-y-auto overflow-x-hidden custom-scrollbar">
                     <div className="max-w-7xl mx-auto pb-16">
                         {children}
                     </div>
                 </div>
 
-                {/* Status Badge - Only visible when Live */}
+                {/* Status Badge */}
                 <AuthBadge />
             </main>
+        </div>
+    )
+}
+
+const TopBar = ({ onMenuClick }) => {
+    const [currentTime, setCurrentTime] = useState(new Date())
+    const [lastUpdated, setLastUpdated] = useState(new Date())
+    const [refreshing, setRefreshing] = useState(false)
+
+    useEffect(() => {
+        const timer = setInterval(() => setCurrentTime(new Date()), 1000)
+        return () => clearInterval(timer)
+    }, [])
+
+    const handleRefresh = () => {
+        setRefreshing(true)
+        setLastUpdated(new Date())
+        setTimeout(() => {
+            setRefreshing(false)
+            window.location.reload()
+        }, 600)
+    }
+
+    const timeStr = currentTime.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+    const dateStr = currentTime.toLocaleDateString('es-AR', { weekday: 'short', day: 'numeric', month: 'short' })
+
+    const minutesAgo = Math.floor((currentTime - lastUpdated) / 60000)
+    const updatedLabel = minutesAgo === 0 ? 'Actualizado ahora' : `Hace ${minutesAgo} min`
+
+    return (
+        <div className="fixed top-0 left-0 right-0 z-30 h-16">
+            {/* Glass background */}
+            <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-xl border-b border-white/5" />
+
+            <div className="relative flex items-center justify-between h-full px-4 md:px-6">
+                {/* Left: Menu + Logo */}
+                <div className="flex items-center gap-3">
+                    <button
+                        id="sidebar-toggle"
+                        onClick={onMenuClick}
+                        className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/8 transition-all active:scale-95"
+                    >
+                        <Menu className="h-5 w-5" />
+                    </button>
+                    <LogoTrigger />
+                </div>
+
+                {/* Right: Time + Status + Refresh */}
+                <div className="flex items-center gap-2 md:gap-4">
+                    {/* Live clock - hidden on mobile */}
+                    <div className="hidden md:flex items-center gap-3 px-4 py-1.5 rounded-xl bg-white/3 border border-white/5">
+                        <Clock className="h-3.5 w-3.5 text-slate-500" />
+                        <div className="flex items-baseline gap-1.5">
+                            <span className="text-sm font-black text-slate-200 tabular-nums tracking-tight">{timeStr}</span>
+                            <span className="text-[10px] text-slate-500 font-semibold capitalize">{dateStr}</span>
+                        </div>
+                    </div>
+
+                    {/* Sync status */}
+                    <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-500/8 border border-emerald-500/15">
+                        <div className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_6px_rgba(52,211,153,0.8)]" />
+                        <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest hidden lg:block">{updatedLabel}</span>
+                        <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest lg:hidden">Live</span>
+                    </div>
+
+                    {/* Refresh button */}
+                    <button
+                        id="refresh-btn"
+                        onClick={handleRefresh}
+                        title="Recargar datos"
+                        className={`p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/8 transition-all active:scale-95 ${refreshing ? 'text-blue-400' : ''}`}
+                    >
+                        <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+                    </button>
+                </div>
+            </div>
         </div>
     )
 }
@@ -74,9 +156,13 @@ const LogoTrigger = () => {
     }
 
     return (
-        <div onClick={handleClick} className="flex items-center gap-3 cursor-default select-none">
-            <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-            <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">DM2Kiosco</h1>
+        <div onClick={handleClick} className="flex items-center gap-2.5 cursor-default select-none">
+            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-600/30">
+                <span className="text-white text-xs font-black">D</span>
+            </div>
+            <h1 className="text-base font-black bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400 tracking-tight">
+                DM2Kiosco
+            </h1>
         </div>
     )
 }
@@ -84,7 +170,6 @@ const LogoTrigger = () => {
 const AuthBadge = () => {
     const { isDemoMode } = useAuth();
     if (isDemoMode) {
-        // En modo demo, si hay un 'admin' en la URL, lo limpiamos para que no quede expuesto
         useEffect(() => {
             const url = new URL(window.location.href);
             if (url.searchParams.has('admin')) {
@@ -95,7 +180,6 @@ const AuthBadge = () => {
         return null;
     }
 
-    // Modo Live: mostramos el badge y la función de Lock
     const handleLock = () => {
         if (confirm('¿Querés BLOQUEAR el dashboard y volver al modo restringido?')) {
             window.location.search = '?logout=true';
@@ -105,12 +189,12 @@ const AuthBadge = () => {
     return (
         <div
             onClick={handleLock}
-            className="fixed bottom-4 right-4 z-50 px-3 py-1.5 rounded-full border border-green-500/20 text-[10px] font-bold uppercase tracking-wider cursor-pointer transition-all active:scale-95 shadow-lg backdrop-blur-md bg-green-500/10 text-green-500 hover:bg-green-500/20 group"
+            className="fixed bottom-4 right-4 z-50 px-3 py-1.5 rounded-full border border-emerald-500/20 text-[10px] font-bold uppercase tracking-wider cursor-pointer transition-all active:scale-95 shadow-lg backdrop-blur-md bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 group"
         >
             <div className="flex items-center gap-2">
-                <div className="h-1.5 w-1.5 rounded-full animate-pulse bg-green-500" />
+                <div className="h-1.5 w-1.5 rounded-full animate-pulse bg-emerald-400 shadow-[0_0_4px_rgba(52,211,153,0.8)]" />
                 <span>Fijado (Live)</span>
-                <span className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity">| Click para Bloquear</span>
+                <span className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity">| Bloquear</span>
             </div>
         </div>
     );

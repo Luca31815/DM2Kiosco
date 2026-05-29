@@ -1,28 +1,72 @@
 import React, { memo } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { LayoutDashboard, ShoppingCart, Calendar, Package, TrendingUp, FileBarChart, History, Clock, X, BarChart3, ShieldCheck, AlertTriangle, Users } from 'lucide-react'
+import {
+    LayoutDashboard,
+    ShoppingCart,
+    Calendar,
+    Package,
+    TrendingUp,
+    FileBarChart,
+    History,
+    Clock,
+    X,
+    BarChart3,
+    ShieldCheck,
+    AlertTriangle,
+    Users,
+    Wallet,
+    CandlestickChart,
+    ScanSearch,
+    Scale,
+    Zap
+} from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+
+const navGroups = [
+    {
+        label: 'Principal',
+        items: [
+            { to: '/', label: 'Dashboard', icon: LayoutDashboard, badge: null },
+        ]
+    },
+    {
+        label: 'Ventas & Compras',
+        items: [
+            { to: '/ventas', label: 'Ventas', icon: TrendingUp },
+            { to: '/compras', label: 'Compras', icon: ShoppingCart },
+            { to: '/proveedores', label: 'Proveedores', icon: Users },
+            { to: '/reservas', label: 'Reservas', icon: Calendar },
+            { to: '/retiros', label: 'Gestión de Caja', icon: Wallet },
+        ]
+    },
+    {
+        label: 'Inventario',
+        items: [
+            { to: '/productos', label: 'Productos', icon: Package },
+            { to: '/rentabilidad', label: 'Rentabilidad', icon: CandlestickChart },
+        ]
+    },
+    {
+        label: 'Análisis & Reportes',
+        items: [
+            { to: '/reportes', label: 'Reportes', icon: FileBarChart },
+            { to: '/reporte-productos', label: 'Ventas por Producto', icon: BarChart3 },
+            { to: '/analisis-horarios', label: 'Análisis Horarios', icon: Clock },
+            { to: '/historial', label: 'Historial', icon: History },
+        ]
+    },
+    {
+        label: 'Auditoría',
+        items: [
+            { to: '/duplicados', label: 'Alertas de Catálogo', icon: ScanSearch, alert: true },
+            { to: '/descalces', label: 'Auditoría de Pagos', icon: Scale, alert: true },
+            { to: '/sistema', label: 'Centro de Control', icon: ShieldCheck },
+        ]
+    }
+]
 
 const Sidebar = memo(({ isOpen, onClose }) => {
     const location = useLocation()
-
-    const links = [
-        { to: '/', label: 'Dashboard', icon: LayoutDashboard },
-        { to: '/ventas', label: 'Ventas', icon: TrendingUp },
-        { to: '/compras', label: 'Compras', icon: ShoppingCart },
-        { to: '/proveedores', label: 'Proveedores', icon: Users },
-        { to: '/reservas', label: 'Reservas', icon: Calendar },
-        { to: '/productos', label: 'Productos', icon: Package },
-        { to: '/retiros', label: 'Gestión de Caja', icon: TrendingUp },
-        { to: '/rentabilidad', label: 'Rentabilidad', icon: TrendingUp },
-        { to: '/reportes', label: 'Reportes', icon: FileBarChart },
-        { to: '/reporte-productos', label: 'Ventas por Producto', icon: BarChart3 },
-        { to: '/analisis-horarios', label: 'Análisis Horarios', icon: Clock },
-        { to: '/historial', label: 'Historial', icon: History },
-        {to: '/duplicados', label: 'Alertas de Catálogo', icon: AlertTriangle },
-        { to: '/descalces', label: 'Auditoría de Pagos', icon: AlertTriangle },
-        { to: '/sistema', label: 'Centro de Control', icon: ShieldCheck },
-    ]
 
     return (
         <>
@@ -33,57 +77,107 @@ const Sidebar = memo(({ isOpen, onClose }) => {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 bg-slate-950/80 z-40" /* Quitamos el blur del overlay */
+                        transition={{ duration: 0.2 }}
+                        className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-40"
                         onClick={onClose}
                     />
                 )}
             </AnimatePresence>
 
             {/* Sidebar Drawer */}
-            <div 
-                className={`fixed top-0 left-0 h-full w-72 bg-slate-900 border-r border-white/5 z-50 flex flex-col transform transition-transform duration-300 ease-out ${isOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}`}
-                style={{ transform: isOpen ? 'translateX(0) translateZ(0)' : 'translateX(-100%) translateZ(0)' }}
-            >
-                <div className="p-8 border-b border-white/5 flex justify-between items-center bg-white/5">
-                    <h1 className="text-2xl font-black tracking-tight text-white flex items-center gap-3">
-                        <div className="p-2 bg-blue-600 rounded-xl shadow-lg shadow-blue-600/30">
-                            <LayoutDashboard className="h-6 w-6 text-white" />
-                        </div>
-                        <span className="bg-clip-text text-transparent bg-gradient-to-br from-white to-slate-400">DM2</span>
-                    </h1>
-                    <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-xl text-slate-400 hover:text-white transition-all">
-                        <X className="h-6 w-6" />
-                    </button>
-                </div>
+            <AnimatePresence>
+                {isOpen && (
+                    <motion.div
+                        initial={{ x: '-100%' }}
+                        animate={{ x: 0 }}
+                        exit={{ x: '-100%' }}
+                        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                        className="fixed top-0 left-0 h-full w-72 z-50 flex flex-col"
+                        style={{ willChange: 'transform' }}
+                    >
+                        {/* Sidebar background with subtle blur */}
+                        <div className="absolute inset-0 bg-slate-900/95 backdrop-blur-xl border-r border-white/5" />
 
-                <nav className="flex-1 p-6 space-y-1 overflow-y-auto custom-scrollbar">
-                    {links.map((link) => {
-                        const Icon = link.icon
-                        const isActive = location.pathname === link.to
-                        return (
-                            <Link
-                                key={link.to}
-                                to={link.to}
+                        {/* Header */}
+                        <div className="relative z-10 p-6 border-b border-white/5 flex justify-between items-center">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-lg shadow-blue-600/30">
+                                    <Zap className="h-5 w-5 text-white" />
+                                </div>
+                                <div>
+                                    <h1 className="text-lg font-black tracking-tight text-white">DM2Kiosco</h1>
+                                    <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Panel de Control</p>
+                                </div>
+                            </div>
+                            <button
                                 onClick={onClose}
-                                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all relative group ${isActive
-                                    ? 'bg-blue-600/10 text-blue-400'
-                                    : 'hover:bg-white/5 text-slate-400 hover:text-white'
-                                    }`}
+                                className="p-2 hover:bg-white/10 rounded-xl text-slate-400 hover:text-white transition-all active:scale-95"
                             >
-                                {isActive && (
-                                    <div className="absolute left-0 w-1 h-6 bg-blue-500 rounded-r-full" />
-                                )}
-                                <Icon className={`h-5 w-5 transition-transform ${isActive ? 'text-blue-500' : 'group-hover:scale-105'}`} />
-                                <span className="font-semibold text-sm">{link.label}</span>
-                            </Link>
-                        )
-                    })}
-                </nav>
+                                <X className="h-5 w-5" />
+                            </button>
+                        </div>
 
-                <div className="p-6 border-t border-white/5 text-[10px] uppercase tracking-widest font-black text-slate-600 text-center">
-                    Inteligencia en Gestión &copy; 2026
-                </div>
-            </div>
+                        {/* Navigation */}
+                        <nav className="relative z-10 flex-1 py-4 overflow-y-auto custom-scrollbar">
+                            {navGroups.map((group, gi) => (
+                                <div key={gi} className="mb-2">
+                                    <div className="px-6 pt-3 pb-1">
+                                        <span className="text-[9px] font-black uppercase tracking-[0.15em] text-slate-600">
+                                            {group.label}
+                                        </span>
+                                    </div>
+                                    <div className="px-3 space-y-0.5">
+                                        {group.items.map((link) => {
+                                            const Icon = link.icon
+                                            const isActive = location.pathname === link.to
+                                            return (
+                                                <Link
+                                                    key={link.to}
+                                                    to={link.to}
+                                                    onClick={onClose}
+                                                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all relative group ${
+                                                        isActive
+                                                            ? 'bg-blue-600/15 text-blue-400'
+                                                            : 'hover:bg-white/5 text-slate-400 hover:text-slate-100'
+                                                    }`}
+                                                >
+                                                    {isActive && (
+                                                        <motion.div
+                                                            layoutId="activeIndicator"
+                                                            className="absolute left-0 w-1 h-5 bg-gradient-to-b from-blue-400 to-indigo-500 rounded-r-full shadow-[0_0_8px_rgba(59,130,246,0.6)]"
+                                                        />
+                                                    )}
+                                                    <div className={`flex-shrink-0 transition-all ${
+                                                        isActive
+                                                            ? 'text-blue-400'
+                                                            : link.alert
+                                                            ? 'text-amber-500'
+                                                            : 'text-slate-500 group-hover:text-slate-300'
+                                                    }`}>
+                                                        <Icon className="h-4 w-4" />
+                                                    </div>
+                                                    <span className="font-semibold text-sm flex-1">{link.label}</span>
+                                                    {link.alert && (
+                                                        <div className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+                                                    )}
+                                                </Link>
+                                            )
+                                        })}
+                                    </div>
+                                </div>
+                            ))}
+                        </nav>
+
+                        {/* Footer */}
+                        <div className="relative z-10 p-4 border-t border-white/5">
+                            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/3">
+                                <div className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_6px_rgba(52,211,153,0.6)]" />
+                                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Sistema Activo</span>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </>
     )
 })
