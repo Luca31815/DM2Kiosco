@@ -160,6 +160,7 @@ const RetirosView = () => {
                     searchColumn="motivo"
                     searchPlaceholder="Buscar por motivo..."
                     rowKey="retiro_id"
+                    minWidth="750px"
                 />
             </div>
         </div>

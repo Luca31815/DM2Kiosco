@@ -405,6 +405,7 @@ const ReportesView = () => {
                         reportType === 'semanal' ? row.semana_del :
                         `${row.mes}-${row.anio}`
                     }
+                    minWidth="800px"
                 />
             </div>
 

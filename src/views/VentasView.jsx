@@ -68,7 +68,7 @@ const ExpandedRow = ({ row }) => {
                 </div>
 
                 <div className="overflow-x-auto scroll-touch rounded-xl border border-white/5">
-                    <table className="w-full text-sm text-left" style={{ minWidth: '600px' }}>
+                    <table className="w-full text-sm text-left" style={{ minWidth: '700px' }}>
                         <thead className="text-[10px] font-black uppercase tracking-widest text-slate-500 bg-white/5">
                             <tr>
                                 <th className="px-6 py-3">Producto</th>
@@ -316,6 +316,7 @@ const VentasView = () => {
                 currentPage={page}
                 onPageChange={setPage}
                 itemsPerPage={pageSize}
+                minWidth="850px"
             />
         </div>
     )

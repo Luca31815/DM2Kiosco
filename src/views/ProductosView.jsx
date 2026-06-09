@@ -447,6 +447,7 @@ const ProductosView = () => {
                 currentPage={page}
                 onPageChange={setPage}
                 itemsPerPage={pageSize}
+                minWidth="950px"
                 renderExpandedRow={(product) => (
                     <ProductDetailExpansion product={product} />
                 )}

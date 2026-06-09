@@ -93,6 +93,7 @@ const RentabilidadProductosView = () => {
                 onFilter={setFilterValue}
                 rowKey="producto"
                 compact={true}
+                minWidth="900px"
             />
         </div>
     )

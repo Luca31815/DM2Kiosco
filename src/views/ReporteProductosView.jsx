@@ -211,6 +211,7 @@ const ReporteProductosView = () => {
                     renderSearchInput={renderSearchInput}
                     rowKey="producto"
                     compact={true}
+                    minWidth="800px"
                 />
             ) : viewMode === 'LIST' ? (
                 <DataTable
@@ -224,6 +225,7 @@ const ReporteProductosView = () => {
                     renderSearchInput={renderSearchInput}
                     rowKey={(row) => `${row.producto}-${row.periodo_inicio}`}
                     compact={true}
+                    minWidth="750px"
                 />
             ) : (
                 <div className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden shadow-xl relative group">

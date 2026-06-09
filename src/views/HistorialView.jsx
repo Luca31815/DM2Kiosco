@@ -89,6 +89,7 @@ const HistorialView = () => {
                 onSearchColumnChange={setFilterColumn}
                 renderExpandedRow={(row) => <ExpandedRow row={row} />}
                 rowKey="log_id"
+                minWidth="850px"
             />
         </div>
     )

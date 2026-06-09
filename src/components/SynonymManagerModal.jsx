@@ -222,7 +222,7 @@ const SynonymManagerModal = ({ isOpen, onClose }) => {
                             <span className="text-sm italic">No se encontraron incidencias en el catálogo.</span>
                         </div>
                     ) : (
-                        <table className="w-full text-left text-sm">
+                        <table className="w-full text-left text-sm border-collapse" style={{ minWidth: '700px' }}>
                             <thead className="bg-white/[0.01] sticky top-0 backdrop-blur-md border-b border-white/5">
                                 <tr className="text-[10px] font-black uppercase tracking-widest text-slate-500">
                                     <th className="px-6 py-4">Variante (Alias)</th>

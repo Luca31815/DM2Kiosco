@@ -58,7 +58,8 @@ const DataTable = ({
     totalCount = 0,
     onPageChange,
     currentPage: externalPage,
-    itemsPerPage = 20
+    itemsPerPage = 20,
+    minWidth
 }) => {
     const [filterValue, setFilterValue] = useState('')
     const [expandedRow, setExpandedRow] = useState(null)
@@ -167,7 +168,7 @@ const DataTable = ({
 
             {/* Table — horizontal scroll on mobile */}
             <div className="overflow-auto custom-scrollbar flex-1 -webkit-overflow-scrolling-touch">
-                <table className="w-full text-left text-sm border-collapse" style={{ minWidth: compact ? '500px' : '600px' }}>
+                <table className="w-full text-left text-sm border-collapse" style={{ minWidth: minWidth || (compact ? '500px' : '600px') }}>
                     <thead className="bg-white/5 text-slate-400 uppercase text-[11px] font-black tracking-widest border-y border-white/5 sticky top-0 z-20 backdrop-blur-md">
                         <tr>
                             {columns.map((col) => (

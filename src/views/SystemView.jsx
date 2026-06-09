@@ -425,6 +425,7 @@ const SystemView = () => {
                                 filterValue={filterValue}
                                 onFilterChange={setFilterValue}
                                 expandableRow={renderExpandedAudit}
+                                minWidth="900px"
                             />
                         </div>
                     )}
@@ -436,6 +437,7 @@ const SystemView = () => {
                             onFilter={setFilterValue}
                             rowKey="nombre"
                             compact
+                            minWidth="750px"
                         />
                     )}
                     {activeTab === 'n8n' && (
@@ -449,6 +451,7 @@ const SystemView = () => {
                             onFilter={setFilterValue}
                             rowKey="id"
                             compact
+                            minWidth="850px"
                             renderExpandedRow={(row) => (
                                 <div className="space-y-4 font-mono text-xs">
                                     <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl">

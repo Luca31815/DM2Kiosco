@@ -476,6 +476,7 @@ const AnalisisHorariosView = () => {
                     sortColumn={sortColumn}
                     sortOrder={sortOrder}
                     onFilter={setFilterValue}
+                    minWidth={analysisMode === 'hitos' ? '950px' : '750px'}
                 />
             )}
         </div>
