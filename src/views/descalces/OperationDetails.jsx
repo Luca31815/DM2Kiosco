@@ -213,8 +213,8 @@ const OperationDetails = ({ operacionId, tipoOperacion, onRefresh, cabeceraOrigi
                     {items.length === 0 ? (
                         <p className="text-xs text-slate-500 italic py-2">Sin productos registrados en los detalles.</p>
                     ) : (
-                        <div className="overflow-x-auto max-h-60 overflow-y-auto pr-1">
-                            <table className="w-full text-left text-xs text-slate-350">
+                        <div className="overflow-x-auto scroll-touch max-h-60 overflow-y-auto pr-1">
+                            <table className="w-full text-left text-xs text-slate-350" style={{ minWidth: '450px' }}>
                                 <thead>
                                     <tr className="text-slate-500 border-b border-slate-800/80 pb-1">
                                         <th className="py-1.5 font-normal">Producto</th>
@@ -285,8 +285,8 @@ const OperationDetails = ({ operacionId, tipoOperacion, onRefresh, cabeceraOrigi
                             <p className="text-xs text-slate-500 italic">Sin registros de pago vinculados en caja.</p>
                         </div>
                     ) : (
-                        <div className="overflow-x-auto max-h-60 overflow-y-auto pr-1">
-                            <table className="w-full text-left text-xs text-slate-350">
+                        <div className="overflow-x-auto scroll-touch max-h-60 overflow-y-auto pr-1">
+                            <table className="w-full text-left text-xs text-slate-350" style={{ minWidth: '450px' }}>
                                 <thead>
                                     <tr className="text-slate-500 border-b border-slate-800/80 pb-1">
                                         <th className="py-1.5 font-normal">Caja / Cuenta</th>

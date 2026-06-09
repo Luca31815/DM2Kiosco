@@ -69,8 +69,8 @@ const HistorialView = () => {
 
     return (
         <div className="space-y-6">
-            <h2 className="text-4xl font-black text-white tracking-tight flex items-center gap-3">
-                <History className="h-10 w-10 text-purple-500" />
+            <h2 className="text-2xl md:text-4xl font-black text-white tracking-tight flex items-center gap-3">
+                <History className="h-8 w-8 md:h-10 md:w-10 text-purple-500" />
                 <span className="bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-500">
                     Historial Operaciones
                 </span>

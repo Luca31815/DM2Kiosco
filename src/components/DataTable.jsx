@@ -11,7 +11,7 @@ const DataTableRow = memo(({ row, rowIndex, columns, compact, renderExpandedRow,
                 style={{ transform: 'translateZ(0)' }}
             >
                 {columns.map((col) => (
-                    <td key={col.key} className={`text-slate-300 group-hover:text-white transition-colors font-medium ${compact ? 'px-4 py-2 text-[11px]' : 'px-6 py-3.5'} ${col.wrap ? 'whitespace-normal break-words' : 'whitespace-nowrap'}`}>
+                    <td key={col.key} className={`text-slate-300 group-hover:text-white transition-colors font-medium ${compact ? 'px-3 py-2 text-[11px]' : 'px-4 md:px-6 py-3'} ${col.wrap ? 'whitespace-normal break-words' : 'whitespace-nowrap'}`}>
                         {(() => {
                             try {
                                 return col.render ? col.render(row[col.key], row) : row[col.key] || '-'
@@ -29,7 +29,7 @@ const DataTableRow = memo(({ row, rowIndex, columns, compact, renderExpandedRow,
                     animate={{ opacity: 1 }}
                     className="bg-blue-600/5"
                 >
-                    <td colSpan={columns.length} className="px-6 py-6 border-l-2 border-blue-500 shadow-inner overflow-hidden">
+                    <td colSpan={columns.length} className="px-2 md:px-6 py-4 border-l-2 border-blue-500 shadow-inner overflow-hidden">
                         {renderExpandedRow(row)}
                     </td>
                 </motion.tr>
@@ -110,15 +110,16 @@ const DataTable = ({
     }, [data, columns])
 
     return (
-        <div className="w-full glass-panel rounded-2xl overflow-hidden flex flex-col max-h-[calc(100vh-220px)]">
+        <div className="w-full glass-panel rounded-2xl overflow-hidden flex flex-col" style={{ maxHeight: 'calc(100vh - 200px)', minHeight: '300px' }}>
             {/* Header / Filter */}
-            <div className="p-6 flex flex-col sm:flex-row justify-between items-center gap-6 bg-white/5 shrink-0">
-                <div className="relative flex items-center gap-4 w-full sm:w-auto">
+            <div className="p-4 md:p-6 flex flex-col gap-3 bg-white/5 shrink-0">
+                {/* Row 1: Search filter controls */}
+                <div className="flex flex-col sm:flex-row gap-3">
                     {searchColumns && searchColumns.length > 0 && (
                         <select
                             value={searchColumn}
                             onChange={(e) => onSearchColumnChange(e.target.value)}
-                            className="bg-slate-800/50 border border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/50 text-slate-300 py-2.5 pl-4 pr-10 cursor-pointer backdrop-blur-md outline-none transition-all"
+                            className="bg-slate-800/50 border border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/50 text-slate-300 py-2.5 pl-4 pr-10 cursor-pointer backdrop-blur-md outline-none transition-all w-full sm:w-auto shrink-0"
                         >
                             {searchColumns.map((col) => (
                                 <option key={col.key} value={col.key}>
@@ -127,7 +128,7 @@ const DataTable = ({
                             ))}
                         </select>
                     )}
-                    <div className="relative w-full sm:w-auto group">
+                    <div className="relative flex-1 group">
                         {renderSearchInput ? (
                             renderSearchInput(filterValue, handleFilterChange)
                         ) : (
@@ -136,7 +137,7 @@ const DataTable = ({
                                 <input
                                     type="text"
                                     placeholder="Buscar en tabla..."
-                                    className="pl-11 pr-4 py-2.5 bg-slate-800/50 border border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/50 text-slate-200 placeholder-slate-500 w-full sm:w-80 outline-none transition-all"
+                                    className="pl-11 pr-4 py-2.5 bg-slate-800/50 border border-white/10 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/50 text-slate-200 placeholder-slate-500 w-full outline-none transition-all"
                                     value={filterValue}
                                     onChange={(e) => handleFilterChange(e.target.value)}
                                 />
@@ -144,36 +145,42 @@ const DataTable = ({
                         )}
                     </div>
                 </div>
-
-                <div className="flex items-center gap-3 w-full sm:w-auto">
+                {/* Row 2: Export + loading */}
+                <div className="flex items-center justify-between">
                     <button
                         onClick={exportToCSV}
                         disabled={isLoading || data.length === 0}
                         className="flex items-center gap-2 px-4 py-2.5 bg-white/5 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed border border-white/10 rounded-xl text-sm font-semibold text-slate-300 hover:text-white transition-all active:scale-95"
                     >
                         <Download className="h-4 w-4" />
-                        <span>Exportar</span>
+                        <span className="hidden sm:inline">Exportar CSV</span>
+                        <span className="sm:hidden">CSV</span>
                     </button>
                     {isLoading && <Loader2 className="animate-spin h-5 w-5 text-blue-500" />}
+                    {!isLoading && totalRows > 0 && (
+                        <span className="text-xs text-slate-600 font-medium">
+                            {totalRows} registros
+                        </span>
+                    )}
                 </div>
             </div>
 
-            {/* Table */}
-            <div className="overflow-auto custom-scrollbar flex-1">
-                <table className="w-full text-left text-sm border-collapse table-fixed">
+            {/* Table — horizontal scroll on mobile */}
+            <div className="overflow-auto custom-scrollbar flex-1 -webkit-overflow-scrolling-touch">
+                <table className="w-full text-left text-sm border-collapse" style={{ minWidth: compact ? '500px' : '600px' }}>
                     <thead className="bg-white/5 text-slate-400 uppercase text-[11px] font-black tracking-widest border-y border-white/5 sticky top-0 z-20 backdrop-blur-md">
                         <tr>
                             {columns.map((col) => (
                                 <th
                                     key={col.key}
-                                    className={`${compact ? 'px-4 py-3' : 'px-6 py-4'} cursor-pointer hover:bg-white/5 hover:text-white transition-all select-none ${col.width ? col.width : ''}`}
+                                    className={`${compact ? 'px-3 py-3' : 'px-4 md:px-6 py-4'} cursor-pointer hover:bg-white/5 hover:text-white transition-all select-none ${col.width ? col.width : ''}`}
                                     onClick={() => onSort(col.key)}
                                 >
-                                    <div className="flex items-center gap-2">
-                                        {col.label}
+                                    <div className="flex items-center gap-1.5">
+                                        <span className="truncate">{col.label}</span>
                                         {sortColumn === col.key && (
-                                            <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }}>
-                                                {sortOrder === 'asc' ? <ChevronUp className="h-4 w-4 text-blue-400" /> : <ChevronDown className="h-4 w-4 text-blue-400" />}
+                                            <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="shrink-0">
+                                                {sortOrder === 'asc' ? <ChevronUp className="h-3.5 w-3.5 text-blue-400" /> : <ChevronDown className="h-3.5 w-3.5 text-blue-400" />}
                                             </motion.div>
                                         )}
                                     </div>
@@ -218,16 +225,17 @@ const DataTable = ({
 
             {/* Pagination Controls */}
             {!isLoading && totalRows > itemsPerPage && (
-                <div className="p-4 flex flex-col sm:flex-row justify-between items-center gap-4 bg-white/5 border-t border-white/5 shrink-0">
-                    <span className="text-xs text-slate-500 font-bold uppercase tracking-widest">
-                        Mostrando <span className="text-slate-200">{(currentPage - 1) * itemsPerPage + 1}</span> - <span className="text-slate-200">{Math.min(currentPage * itemsPerPage, totalRows)}</span> de <span className="text-slate-200">{totalRows}</span>
+                <div className="p-3 md:p-4 flex flex-col sm:flex-row justify-between items-center gap-3 bg-white/5 border-t border-white/5 shrink-0">
+                    <span className="text-xs text-slate-500 font-bold uppercase tracking-widest order-2 sm:order-1">
+                        <span className="text-slate-200">{(currentPage - 1) * itemsPerPage + 1}</span>–<span className="text-slate-200">{Math.min(currentPage * itemsPerPage, totalRows)}</span>
+                        <span className="hidden sm:inline"> de <span className="text-slate-200">{totalRows}</span></span>
                     </span>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5 order-1 sm:order-2">
                         <button
                             onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                             disabled={currentPage === 1}
-                            className="p-2 bg-white/5 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed border border-white/10 rounded-xl text-slate-400 hover:text-white transition-all active:scale-95"
+                            className="p-2 bg-white/5 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed border border-white/10 rounded-xl text-slate-400 hover:text-white transition-all active:scale-95 min-w-[36px] min-h-[36px] flex items-center justify-center"
                         >
                             <ChevronLeft size={16} />
                         </button>
@@ -237,7 +245,7 @@ const DataTable = ({
                                 const page = i + 1;
                                 // Mostrar solo algunas páginas si hay muchas
                                 if (
-                                    totalPages <= 7 ||
+                                    totalPages <= 5 ||
                                     page === 1 ||
                                     page === totalPages ||
                                     (page >= currentPage - 1 && page <= currentPage + 1)
@@ -246,7 +254,7 @@ const DataTable = ({
                                         <button
                                             key={page}
                                             onClick={() => setCurrentPage(page)}
-                                            className={`w-8 h-8 rounded-lg text-xs font-black transition-all ${currentPage === page ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'bg-white/5 text-slate-500 hover:bg-white/10 hover:text-slate-300'}`}
+                                            className={`min-w-[32px] min-h-[32px] rounded-lg text-xs font-black transition-all ${currentPage === page ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'bg-white/5 text-slate-500 hover:bg-white/10 hover:text-slate-300'}`}
                                         >
                                             {page}
                                         </button>
@@ -255,7 +263,7 @@ const DataTable = ({
                                     (page === 2 && currentPage > 3) ||
                                     (page === totalPages - 1 && currentPage < totalPages - 2)
                                 ) {
-                                    return <span key={page} className="text-slate-700 px-1 text-xs">...</span>;
+                                    return <span key={page} className="text-slate-700 px-1 text-xs">…</span>;
                                 }
                                 return null;
                             })}
@@ -264,7 +272,7 @@ const DataTable = ({
                         <button
                             onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                             disabled={currentPage === totalPages}
-                            className="p-2 bg-white/5 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed border border-white/10 rounded-xl text-slate-400 hover:text-white transition-all active:scale-95"
+                            className="p-2 bg-white/5 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed border border-white/10 rounded-xl text-slate-400 hover:text-white transition-all active:scale-95 min-w-[36px] min-h-[36px] flex items-center justify-center"
                         >
                             <ChevronRight size={16} />
                         </button>

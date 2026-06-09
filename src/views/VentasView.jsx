@@ -67,8 +67,8 @@ const ExpandedRow = ({ row }) => {
                     {isSaving && <div className="flex items-center text-blue-400 text-xs font-bold gap-2"><Loader2 className="animate-spin size-3" /> Procesando...</div>}
                 </div>
 
-                <div className="overflow-x-auto rounded-xl border border-white/5 overflow-hidden">
-                    <table className="w-full text-sm text-left">
+                <div className="overflow-x-auto scroll-touch rounded-xl border border-white/5">
+                    <table className="w-full text-sm text-left" style={{ minWidth: '600px' }}>
                         <thead className="text-[10px] font-black uppercase tracking-widest text-slate-500 bg-white/5">
                             <tr>
                                 <th className="px-6 py-3">Producto</th>
@@ -292,8 +292,8 @@ const VentasView = () => {
         <div className="space-y-6">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div>
-                    <h2 className="text-4xl font-black text-white tracking-tight">Historial de Ventas</h2>
-                    <p className="text-slate-400 font-medium mt-1">Gestión detallada de transacciones.</p>
+                    <h2 className="text-2xl md:text-4xl font-black text-white tracking-tight">Historial de Ventas</h2>
+                    <p className="text-slate-400 font-medium mt-1 text-sm">Gestión detallada de transacciones.</p>
                 </div>
             </div>
 

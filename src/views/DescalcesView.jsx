@@ -96,23 +96,23 @@ const DescalcesView = () => {
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-slate-900/35 p-6 rounded-2xl border border-slate-800/60 backdrop-blur-md">
                 <div className="space-y-1">
                     <div className="flex items-center space-x-2.5">
-                        <div className="p-2 bg-amber-500/10 border border-amber-500/25 rounded-xl text-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.08)]">
-                            <AlertTriangle className="w-6 h-6" />
+                        <div className="p-2 bg-amber-500/10 border border-amber-500/25 rounded-xl text-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.08)] shrink-0">
+                            <AlertTriangle className="w-5 h-5 sm:w-6 sm:h-6" />
                         </div>
-                        <h1 className="text-2xl font-bold text-slate-100">Conciliación y Auditoría de Pagos</h1>
+                        <h1 className="text-lg sm:text-2xl font-bold text-slate-100">Conciliación de Pagos</h1>
                     </div>
                     <p className="text-slate-400 text-sm leading-relaxed max-w-2xl">
                         Detección dinámica de desajustes entre el total de las facturas (Cabecera), la suma de los productos (Detalles) y las transacciones de Caja (Pagos).
                     </p>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 w-full md:w-auto">
                     <button
                         onClick={handleRunAudit}
                         disabled={auditing || loading}
-                        className="flex items-center space-x-2 px-5 py-3 rounded-xl bg-violet-600 hover:bg-violet-500 disabled:bg-violet-800/50 disabled:cursor-not-allowed text-white font-medium border border-violet-500/30 transition-all shadow-[0_4px_20px_rgba(124,58,237,0.2)] hover:shadow-[0_4px_25px_rgba(124,58,237,0.3)] hover:-translate-y-0.5 active:translate-y-0"
+                        className="w-full md:w-auto flex items-center justify-center space-x-2 px-5 py-3 rounded-xl bg-violet-600 hover:bg-violet-500 disabled:bg-violet-800/50 disabled:cursor-not-allowed text-white font-medium border border-violet-500/30 transition-all shadow-[0_4px_20px_rgba(124,58,237,0.2)] hover:shadow-[0_4px_25px_rgba(124,58,237,0.3)] hover:-translate-y-0.5 active:translate-y-0 min-h-[44px]"
                     >
-                        <RefreshCcw className={`w-4 h-4 ${auditing ? 'animate-spin' : ''}`} />
-                        <span>{auditing ? 'Auditando...' : 'Ejecutar Conciliación y Auto-Curación'}</span>
+                        <RefreshCcw className={`w-4 h-4 ${auditing ? 'animate-spin' : ''} shrink-0`} />
+                        <span>{auditing ? 'Auditando...' : <><span className="hidden sm:inline">Ejecutar Conciliación y Auto-Curación</span><span className="sm:hidden">Ejecutar Auditoría</span></>}</span>
                     </button>
                 </div>
             </div>
@@ -124,28 +124,28 @@ const DescalcesView = () => {
                     { label: 'Diferencia Acumulada en Caja', value: loading ? '...' : `$${stats.totalDiferenciaPagos.toLocaleString('es-AR', { minimumFractionDigits: 2 })}`, icon: Coins, color: 'text-rose-400' },
                     { label: 'Revisión Manual Requerida', value: loading ? '...' : stats.manualesCount, icon: ShieldCheck, color: 'text-emerald-400' },
                 ].map(({ label, value, icon: Icon, color }) => (
-                    <div key={label} className="p-5 bg-slate-900/40 rounded-2xl border border-slate-800/60 backdrop-blur-sm relative overflow-hidden group">
+                    <div key={label} className="p-4 sm:p-5 bg-slate-900/40 rounded-2xl border border-slate-800/60 backdrop-blur-sm relative overflow-hidden group">
                         <div className="absolute top-0 right-0 p-8 opacity-[0.03] text-slate-200 pointer-events-none group-hover:scale-110 transition-transform duration-300">
                             <Icon className="w-24 h-24" />
                         </div>
                         <span className="text-xs text-slate-450 uppercase font-semibold tracking-wider block">{label}</span>
-                        <span className={`text-3xl font-mono font-bold ${color} mt-2 block`}>{value}</span>
+                        <span className={`text-2xl sm:text-3xl font-mono font-bold ${color} mt-2 block`}>{value}</span>
                     </div>
                 ))}
             </div>
 
             {/* Pestañas */}
-            <div className="flex border-b border-slate-800">
+            <div className="flex flex-col sm:flex-row border-b border-slate-800 gap-1 sm:gap-0">
                 <button
                     onClick={() => setActiveTab('todas')}
-                    className={`px-5 py-3 text-sm font-semibold tracking-wide border-b-2 transition-all ${activeTab === 'todas' ? 'border-violet-500 text-violet-400 bg-violet-500/[0.02]' : 'border-transparent text-slate-450 hover:text-slate-200'}`}
+                    className={`px-5 py-3 text-sm font-semibold tracking-wide border-b-2 text-center sm:text-left transition-all ${activeTab === 'todas' ? 'border-violet-500 text-violet-400 bg-violet-500/[0.02]' : 'border-transparent text-slate-450 hover:text-slate-200'}`}
                 >
                     Todas las Inconsistencias
                     {!loading && stats.total > 0 && <span className="ml-2 px-1.5 py-0.5 rounded-full text-[10px] bg-slate-800 text-slate-300 font-bold">{stats.total}</span>}
                 </button>
                 <button
                     onClick={() => setActiveTab('revisar')}
-                    className={`px-5 py-3 text-sm font-semibold tracking-wide border-b-2 transition-all ${activeTab === 'revisar' ? 'border-rose-500 text-rose-450 bg-rose-500/[0.02]' : 'border-transparent text-slate-450 hover:text-slate-200'}`}
+                    className={`px-5 py-3 text-sm font-semibold tracking-wide border-b-2 text-center sm:text-left transition-all ${activeTab === 'revisar' ? 'border-rose-500 text-rose-450 bg-rose-500/[0.02]' : 'border-transparent text-slate-450 hover:text-slate-200'}`}
                 >
                     Revisión Manual Obligatoria (No Curables)
                     {!loading && stats.manualesCount > 0 && <span className="ml-2 px-1.5 py-0.5 rounded-full text-[10px] bg-rose-500/10 text-rose-400 font-bold border border-rose-500/20">{stats.manualesCount}</span>}

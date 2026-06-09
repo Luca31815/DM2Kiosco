@@ -256,13 +256,13 @@ const ReportesView = () => {
                     <p className="text-slate-500 font-medium mt-2 ml-1">Análisis detallado de movimientos, flujo de caja y rentabilidad.</p>
                 </div>
 
-                <div className="flex flex-wrap gap-3 items-center w-full xl:w-auto">
+            <div className="flex flex-wrap gap-2 items-center w-full xl:w-auto">
                     <div className="flex bg-slate-900 p-1 rounded-xl border border-white/5">
                         {['diario', 'semanal', 'mensual'].map((type) => (
                             <button
                                 key={type}
                                 onClick={() => handleReportTypeChange(type)}
-                                className={`px-5 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all duration-200 ${
+                                className={`px-3 sm:px-5 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all duration-200 ${
                                     reportType === type
                                         ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
                                         : 'text-slate-500 hover:text-slate-300'
@@ -273,18 +273,18 @@ const ReportesView = () => {
                         ))}
                     </div>
                     {reportType !== 'mensual' && (
-                        <div className="flex items-center gap-2 bg-slate-900 p-1.5 rounded-xl border border-white/5">
-                            <Calendar className="h-4 w-4 text-slate-600 ml-2" />
-                            <input type="date" className="bg-transparent border-none text-white text-xs font-bold focus:ring-0 w-32 outline-none" value={dateRange.start} onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })} />
+                        <div className="flex items-center gap-1 bg-slate-900 p-1.5 rounded-xl border border-white/5 flex-wrap">
+                            <Calendar className="h-4 w-4 text-slate-600 ml-1" />
+                            <input type="date" className="bg-transparent border-none text-white text-xs font-bold focus:ring-0 w-28 outline-none" value={dateRange.start} onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })} />
                             <ChevronRight className="h-3 w-3 text-slate-700" />
-                            <input type="date" className="bg-transparent border-none text-white text-xs font-bold focus:ring-0 w-32 outline-none" value={dateRange.end} onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })} />
+                            <input type="date" className="bg-transparent border-none text-white text-xs font-bold focus:ring-0 w-28 outline-none" value={dateRange.end} onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })} />
                         </div>
                     )}
                 </div>
             </div>
 
             {/* ── KPI Cards ─────────────────────────────────────────────────── */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-5">
+            <div className="grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-5 gap-3 md:gap-5">
                 <KPICard title="Ingresos Totales" value={`$${Math.floor(totals.ingresos).toLocaleString()}`} subValue={`${totals.ventas} tickets generados`} trend={trends.ingresos} icon={ShoppingCart} colorClass="text-emerald-400" accentBg="bg-emerald-500" />
                 <KPICard title="Egresos / Gastos" value={`$${Math.floor(totals.egresos).toLocaleString()}`} subValue={`${totals.compras} compras cargadas`} trend={trends.egresos} icon={Package} colorClass="text-rose-400" accentBg="bg-rose-500" />
                 <KPICard title="Ticket Promedio" value={`$${Math.floor(ticketPromedio).toLocaleString()}`} subValue="Ingreso medio por venta" trend={trends.ticket} icon={CreditCard} colorClass="text-blue-400" accentBg="bg-blue-500" />
@@ -409,28 +409,24 @@ const ReportesView = () => {
             </div>
 
             {/* ── Barra flotante inferior ───────────────────────────────────── */}
-            <div className="fixed bottom-6 left-0 right-0 z-50 flex justify-center pointer-events-none px-4">
+            <div className="fixed bottom-0 left-0 right-0 z-50 pointer-events-none px-2 pb-2 sm:pb-6 sm:px-4">
                 <motion.div
                     initial={{ y: 20, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
                     transition={{ delay: 0.5 }}
-                    className="bg-slate-950/90 backdrop-blur-xl border border-white/8 shadow-[0_20px_60px_rgba(0,0,0,0.6)] rounded-2xl p-4 md:px-8 md:py-3.5 flex flex-col md:flex-row items-center justify-between w-full max-w-4xl pointer-events-auto gap-4 md:gap-10"
+                    className="bg-slate-950/90 backdrop-blur-xl border border-white/8 shadow-[0_20px_60px_rgba(0,0,0,0.6)] rounded-2xl p-3 md:px-8 md:py-3.5 grid grid-cols-3 md:flex md:flex-row items-center justify-between w-full max-w-4xl mx-auto pointer-events-auto gap-2 md:gap-10"
                 >
-                    <div className="flex items-center gap-8 w-full md:w-auto justify-around">
-                        <div className="flex flex-col items-center md:items-start">
-                            <span className="text-[9px] font-black uppercase tracking-widest text-emerald-500 mb-0.5">Ingresos</span>
-                            <span className="text-lg font-black text-white tabular-nums">${Math.floor(totals.ingresos).toLocaleString()}</span>
-                        </div>
-                        <div className="h-8 w-px bg-white/5 hidden md:block" />
-                        <div className="flex flex-col items-center md:items-start">
-                            <span className="text-[9px] font-black uppercase tracking-widest text-rose-500 mb-0.5">Egresos</span>
-                            <span className="text-lg font-black text-white tabular-nums">${Math.floor(totals.egresos).toLocaleString()}</span>
-                        </div>
-                        <div className="h-8 w-px bg-white/5 hidden md:block" />
-                        <div className="flex flex-col items-center md:items-start">
-                            <span className="text-[9px] font-black uppercase tracking-widest text-blue-500 mb-0.5">Balance</span>
-                            <span className={`text-lg font-black tabular-nums ${totals.balance >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>${Math.floor(totals.balance).toLocaleString()}</span>
-                        </div>
+                    <div className="flex flex-col items-center md:items-start">
+                        <span className="text-[9px] font-black uppercase tracking-widest text-emerald-500 mb-0.5">Ingresos</span>
+                        <span className="text-base md:text-lg font-black text-white tabular-nums">${Math.floor(totals.ingresos).toLocaleString()}</span>
+                    </div>
+                    <div className="flex flex-col items-center md:items-start">
+                        <span className="text-[9px] font-black uppercase tracking-widest text-rose-500 mb-0.5">Egresos</span>
+                        <span className="text-base md:text-lg font-black text-white tabular-nums">${Math.floor(totals.egresos).toLocaleString()}</span>
+                    </div>
+                    <div className="flex flex-col items-center md:items-start">
+                        <span className="text-[9px] font-black uppercase tracking-widest text-blue-500 mb-0.5">Balance</span>
+                        <span className={`text-base md:text-lg font-black tabular-nums ${totals.balance >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>${Math.floor(totals.balance).toLocaleString()}</span>
                     </div>
                     <div className="hidden md:flex items-center gap-8 border-l border-white/8 pl-10">
                         <div className="flex flex-col items-end">

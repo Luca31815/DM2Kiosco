@@ -42,8 +42,8 @@ const Layout = ({ children }) => {
                 {/* Enhanced Top Bar */}
                 <TopBar onMenuClick={() => setIsSidebarOpen(true)} />
 
-                <div className="p-4 md:p-8 pt-[80px] md:pt-[80px] overflow-y-auto overflow-x-hidden custom-scrollbar">
-                    <div className="max-w-7xl mx-auto pb-16">
+                <div className="p-4 md:p-8 pt-[80px] overflow-y-auto overflow-x-hidden custom-scrollbar">
+                    <div className="max-w-7xl mx-auto pb-24 md:pb-16">
                         {children}
                     </div>
                 </div>
@@ -199,7 +199,7 @@ const AuthBadge = () => {
     return (
         <div
             onClick={handleLock}
-            className="fixed bottom-4 right-4 z-50 px-3 py-1.5 rounded-full border border-emerald-500/20 text-[10px] font-bold uppercase tracking-wider cursor-pointer transition-all active:scale-95 shadow-lg backdrop-blur-md bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 group"
+            className="fixed bottom-20 sm:bottom-4 right-4 z-50 px-3 py-1.5 rounded-full border border-emerald-500/20 text-[10px] font-bold uppercase tracking-wider cursor-pointer transition-all active:scale-95 shadow-lg backdrop-blur-md bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 group"
         >
             <div className="flex items-center gap-2">
                 <div className="h-1.5 w-1.5 rounded-full animate-pulse bg-emerald-400 shadow-[0_0_4px_rgba(52,211,153,0.8)]" />

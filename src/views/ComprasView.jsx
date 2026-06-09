@@ -88,15 +88,15 @@ const ExpandedRow = ({ row }) => {
             className="p-6 space-y-8 bg-slate-900 rounded-2xl border border-white/5 shadow-2xl mx-2 mb-4"
         >
             {/* Header: Supplier Edit */}
-            <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/10">
-                <div className="flex items-center gap-4">
-                    <div className="p-2 bg-blue-500/20 rounded-lg">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-white/5 rounded-xl border border-white/10 gap-4">
+                <div className="flex items-center gap-4 w-full">
+                    <div className="p-2 bg-blue-500/20 rounded-lg shrink-0">
                         <Users className="h-5 w-5 text-blue-400" />
                     </div>
                     {editingSupplier ? (
                         <input 
                             type="text"
-                            className="bg-slate-800 border border-blue-500/50 rounded-lg px-3 py-1.5 text-white font-bold outline-none focus:ring-2 focus:ring-blue-500/50 w-64"
+                            className="bg-slate-800 border border-blue-500/50 rounded-lg px-3 py-1.5 text-white font-bold outline-none focus:ring-2 focus:ring-blue-500/50 w-full sm:w-64"
                             value={supplierName}
                             onChange={e => setSupplierName(e.target.value)}
                             autoFocus
@@ -108,18 +108,18 @@ const ExpandedRow = ({ row }) => {
                         </div>
                     )}
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 w-full sm:w-auto">
                     {editingSupplier ? (
                         <>
                             <button 
                                 onClick={handleSaveSupplier}
-                                className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-xl text-xs font-black hover:bg-green-600 transition-all shadow-lg shadow-green-500/20"
+                                className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-green-500 text-white rounded-xl text-xs font-black hover:bg-green-600 transition-all shadow-lg shadow-green-500/20 min-h-[44px]"
                             >
                                 <Check size={14} /> Confirmar
                             </button>
                             <button 
                                 onClick={() => { setEditingSupplier(false); setSupplierName(row.proveedor); }}
-                                className="flex items-center gap-2 px-4 py-2 bg-white/5 text-slate-400 rounded-xl text-xs font-black hover:bg-white/10 transition-all"
+                                className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-white/5 text-slate-400 rounded-xl text-xs font-black hover:bg-white/10 transition-all min-h-[44px]"
                             >
                                 <X size={14} /> Cancelar
                             </button>
@@ -127,7 +127,7 @@ const ExpandedRow = ({ row }) => {
                     ) : (
                         <button 
                             onClick={() => setEditingSupplier(true)}
-                            className="flex items-center gap-2 px-4 py-2 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-xl text-xs font-black hover:bg-blue-500/20 transition-all"
+                            className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-xl text-xs font-black hover:bg-blue-500/20 transition-all min-h-[44px]"
                         >
                             <Edit2 size={14} /> Editar Proveedor
                         </button>
@@ -145,8 +145,8 @@ const ExpandedRow = ({ row }) => {
                         </div>
                     </div>
 
-                    <div className="overflow-hidden rounded-xl border border-white/5 bg-slate-950/20">
-                        <table className="w-full text-sm text-left">
+                    <div className="overflow-x-auto scroll-touch rounded-xl border border-white/5 bg-slate-950/20">
+                        <table className="w-full text-sm text-left" style={{ minWidth: '600px' }}>
                             <thead className="bg-white/5 text-[10px] font-black uppercase tracking-widest text-slate-600">
                                 <tr>
                                     <th className="px-4 py-3">Producto</th>
@@ -366,13 +366,13 @@ const ComprasView = () => {
         <div className="space-y-6">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                    <h2 className="text-4xl font-black text-white tracking-tight flex items-center gap-3">
-                        <Receipt className="h-10 w-10 text-emerald-500" />
+                    <h2 className="text-2xl md:text-4xl font-black text-white tracking-tight flex items-center gap-3">
+                        <Receipt className="h-8 w-8 md:h-10 md:w-10 text-emerald-500" />
                         <span className="bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-500">
                             Compras
                         </span>
                     </h2>
-                    <p className="text-slate-400 font-medium mt-1">Gestión de facturas y entrada de mercadería.</p>
+                    <p className="text-slate-400 font-medium mt-1 text-sm">Gestión de facturas y entrada de mercadería.</p>
                 </div>
             </div>
 

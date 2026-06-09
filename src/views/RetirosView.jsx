@@ -73,20 +73,20 @@ const RetirosView = () => {
 
     return (
         <div className="space-y-8">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                    <h2 className="text-4xl font-black text-white tracking-tight flex items-center gap-3">
-                        <Banknote className="h-10 w-10 text-rose-500" />
+                    <h2 className="text-2xl md:text-4xl font-black text-white tracking-tight flex items-center gap-3">
+                        <Banknote className="h-8 w-8 md:h-10 md:w-10 text-rose-500" />
                         <span className="bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-500">
                             Gestión de Caja
                         </span>
                     </h2>
-                    <p className="text-slate-400 font-medium mt-1">Control de retiros manuales y salidas de dinero.</p>
+                    <p className="text-slate-400 font-medium mt-1 text-sm">Control de retiros manuales y salidas de dinero.</p>
                 </div>
 
                 <button
                     onClick={() => setIsAdding(!isAdding)}
-                    className={`flex items-center gap-2 px-6 py-3 rounded-2xl font-black uppercase tracking-widest text-xs transition-all ${
+                    className={`w-full md:w-auto flex items-center justify-center gap-2 px-6 py-3 rounded-2xl font-black uppercase tracking-widest text-xs transition-all min-h-[44px] ${
                         isAdding 
                         ? 'bg-slate-800 text-slate-400 border border-white/5' 
                         : 'bg-rose-600 text-white shadow-lg shadow-rose-600/20 hover:scale-105 active:scale-95'
@@ -99,7 +99,7 @@ const RetirosView = () => {
 
                 {isAdding && (
                     <div
-                        className="bg-slate-900 p-8 rounded-3xl border border-white/10 shadow-2xl relative overflow-hidden"
+                        className="bg-slate-900 p-6 sm:p-8 rounded-2xl sm:rounded-3xl border border-white/10 shadow-2xl relative overflow-hidden"
                     >
                         <div className="absolute top-0 right-0 p-8 opacity-5">
                             <Banknote size={120} className="text-white" />

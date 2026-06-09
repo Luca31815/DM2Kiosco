@@ -163,8 +163,8 @@ const ExpandedRow = ({ row }) => {
                         </div>
                     </div>
 
-                    <div className="overflow-hidden rounded-xl border border-white/5 bg-slate-950/20">
-                        <table className="w-full text-sm text-left">
+                    <div className="overflow-x-auto scroll-touch rounded-xl border border-white/5 bg-slate-950/20">
+                        <table className="w-full text-sm text-left" style={{ minWidth: '600px' }}>
                             <thead className="bg-white/5 text-[10px] font-black uppercase tracking-widest text-slate-600">
                                 <tr>
                                     <th className="px-4 py-3">Producto</th>
@@ -489,25 +489,25 @@ const ReservasView = () => {
         <div className="space-y-6">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                    <h2 className="text-4xl font-black text-white tracking-tight flex items-center gap-3">
-                        <Calendar className="h-10 w-10 text-blue-500" />
+                    <h2 className="text-2xl md:text-4xl font-black text-white tracking-tight flex items-center gap-3">
+                        <Calendar className="h-8 w-8 md:h-10 md:w-10 text-blue-500" />
                         <span className="bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-500">
                             Reservas
                         </span>
                     </h2>
-                    <p className="text-slate-400 font-medium mt-1">Control de pedidos pendientes y señas.</p>
+                    <p className="text-slate-400 font-medium mt-1 text-sm">Control de pedidos pendientes y señas.</p>
                 </div>
 
-                <div className="flex gap-2 bg-slate-900 p-1 rounded-xl border border-white/5">
+                <div className="flex gap-2 bg-slate-900 p-1 rounded-xl border border-white/5 w-full md:w-auto justify-center md:justify-start">
                     <button
                         onClick={() => { setShowOpenOnly(true); setPage(1); }}
-                        className={`px-5 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${showOpenOnly ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'text-slate-500 hover:text-slate-300'}`}
+                        className={`flex-1 md:flex-none px-5 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all min-h-[38px] ${showOpenOnly ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'text-slate-500 hover:text-slate-300'}`}
                     >
                         Abiertas
                     </button>
                     <button
                         onClick={() => { setShowOpenOnly(false); setPage(1); }}
-                        className={`px-5 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${!showOpenOnly ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'text-slate-500 hover:text-slate-300'}`}
+                        className={`flex-1 md:flex-none px-5 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all min-h-[38px] ${!showOpenOnly ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'text-slate-500 hover:text-slate-300'}`}
                     >
                         Todas
                     </button>

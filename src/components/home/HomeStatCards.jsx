@@ -106,7 +106,7 @@ export const StatCard = React.memo(({ title, value, rawValue, icon: Icon, trend,
 
     return (
         <div
-            className={`bg-slate-900 p-5 rounded-2xl relative overflow-hidden border border-white/5 shadow-xl transition-all duration-300 hover:-translate-y-1.5 hover:border-white/10 animate-fade-in-up ${c.glow} ${onClick ? 'cursor-pointer' : ''}`}
+            className={`bg-slate-900 p-4 sm:p-5 rounded-xl sm:rounded-2xl relative overflow-hidden border border-white/5 shadow-xl transition-all duration-300 hover:-translate-y-1.5 hover:border-white/10 animate-fade-in-up ${c.glow} ${onClick ? 'cursor-pointer' : ''}`}
             style={{ animationDelay: `${delay}ms` }}
             onClick={onClick}
         >
@@ -114,11 +114,11 @@ export const StatCard = React.memo(({ title, value, rawValue, icon: Icon, trend,
             <div className={`absolute -top-8 -right-8 w-28 h-28 ${c.bg} rounded-full blur-2xl pointer-events-none transition-opacity duration-300`} />
 
             <div className="flex justify-between items-start mb-3 relative z-10">
-                <div className={`p-2.5 rounded-xl ${c.bg} border ${c.border} shadow-sm`}>
-                    <Icon className={`h-5 w-5 ${c.icon}`} />
+                <div className={`p-2 sm:p-2.5 rounded-lg sm:rounded-xl ${c.bg} border ${c.border} shadow-sm`}>
+                    <Icon className={`h-4 w-4 sm:h-5 sm:w-5 ${c.icon}`} />
                 </div>
                 {trendValue !== undefined && trendValue !== null && (
-                    <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-black ${
+                    <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-black ${
                         trend === 'up' ? 'bg-emerald-500/10 text-emerald-400' :
                         trend === 'down' ? 'bg-red-500/10 text-red-400' :
                         'bg-slate-700/50 text-slate-400'
@@ -132,12 +132,12 @@ export const StatCard = React.memo(({ title, value, rawValue, icon: Icon, trend,
             </div>
 
             <div className="relative z-10">
-                <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.12em] mb-1">{title}</p>
-                <h3 className="text-2xl font-black text-white tabular-nums tracking-tight leading-none">
+                <p className="text-slate-500 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.12em] mb-1">{title}</p>
+                <h3 className="text-xl sm:text-2xl font-black text-white tabular-nums tracking-tight leading-none">
                     {value}
                 </h3>
                 {(subtitle || trendLabel) && (
-                    <p className="text-slate-500 text-[11px] font-semibold mt-1.5">{subtitle || trendLabel}</p>
+                    <p className="text-slate-500 text-[10px] sm:text-[11px] font-semibold mt-1.5">{subtitle || trendLabel}</p>
                 )}
             </div>
 

@@ -146,7 +146,7 @@ const ProveedoresView = () => {
     }
 
     return (
-        <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-180px)]">
+        <div className="flex flex-col lg:flex-row gap-6 h-auto lg:h-[calc(100vh-180px)]">
             <div className="w-full lg:w-80 flex flex-col gap-4">
                 <div className="p-4 rounded-2xl bg-slate-900 border border-white/5 space-y-4 shadow-xl">
                     <h3 className="text-xs font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">
@@ -164,7 +164,7 @@ const ProveedoresView = () => {
                     </div>
                 </div>
 
-                <div className="flex-1 bg-slate-900 rounded-2xl border border-white/5 overflow-hidden flex flex-col shadow-xl">
+                <div className="h-64 lg:h-auto lg:flex-1 bg-slate-900 rounded-2xl border border-white/5 overflow-hidden flex flex-col shadow-xl">
                     <div className="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-1">
                         {loadingProveedores ? (
                             <div className="p-8 flex justify-center"><Loader2 className="animate-spin text-blue-500" /></div>
@@ -191,7 +191,7 @@ const ProveedoresView = () => {
                 </div>
             </div>
 
-            <div className="flex-1 flex flex-col gap-6 overflow-hidden">
+            <div className="flex-1 flex flex-col gap-6 overflow-visible lg:overflow-hidden">
                 <div className="bg-slate-900 p-4 rounded-3xl border border-white/5 flex flex-col sm:flex-row items-center gap-4 shadow-xl">
                     <div className="flex items-center gap-3 px-4 py-2 bg-blue-500/10 rounded-2xl border border-blue-500/20">
                         <SearchCode className="size-5 text-blue-400" />
@@ -215,7 +215,7 @@ const ProveedoresView = () => {
                     </div>
                 ) : (
                     <>
-                        <div className="bg-slate-900 p-6 rounded-3xl border border-white/5 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 shadow-xl">
+                        <div className="bg-slate-900 p-6 rounded-3xl border border-white/5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 shadow-xl">
                             <div>
                                 <div className="flex items-center gap-3 mb-1">
                                     <div className="size-3 rounded-full bg-green-500" />
@@ -239,7 +239,7 @@ const ProveedoresView = () => {
                             </div>
                         </div>
 
-                        <div className="flex-1 bg-slate-900 rounded-3xl border border-white/5 overflow-hidden flex flex-col shadow-xl">
+                        <div className="h-auto lg:flex-1 bg-slate-900 rounded-3xl border border-white/5 overflow-hidden flex flex-col shadow-xl">
                             <div className="p-6 border-b border-white/5 flex flex-col md:flex-row justify-between items-center bg-slate-800/50 gap-4">
                                 <h3 className="font-black text-white flex items-center gap-3">
                                     <Package className="text-blue-500" /> Productos Comprados
@@ -298,15 +298,15 @@ const ProveedoresView = () => {
                 {selectedProduct && (
                     <>
                         <div onClick={() => setSelectedProduct(null)} className="fixed inset-0 bg-slate-950/80 z-[60]" />
-                        <div className="fixed top-0 right-0 h-full w-full max-w-xl bg-slate-900 border-l border-white/10 z-[70] shadow-2xl flex flex-col">
-                            <div className="p-8 border-b border-white/5 flex justify-between items-start bg-slate-950/40">
+                        <div className="fixed top-0 right-0 h-full w-full sm:max-w-xl bg-slate-900 border-l border-white/10 z-[70] shadow-2xl flex flex-col">
+                            <div className="p-5 sm:p-8 border-b border-white/5 flex justify-between items-start bg-slate-950/40">
                                 <div>
                                     <span className="text-[10px] font-black uppercase text-blue-400 tracking-widest">Análisis</span>
                                     <h2 className="text-2xl font-black text-white">{selectedProduct}</h2>
                                 </div>
                                 <button onClick={() => setSelectedProduct(null)} className="p-3 hover:bg-white/5 rounded-2xl text-slate-500"><X size={24} /></button>
                             </div>
-                            <div className="flex-1 overflow-y-auto p-8 space-y-10 custom-scrollbar">
+                            <div className="flex-1 overflow-y-auto p-5 sm:p-8 space-y-8 sm:space-y-10 custom-scrollbar">
                                 <section className="h-64 bg-slate-800/50 p-4 rounded-3xl border border-white/5">
                                     <ResponsiveContainer width="100%" height="100%">
                                         <AreaChart data={chartData}>

@@ -299,27 +299,26 @@ Producto 2: [${d.p2.producto_id || d.p2.id}] ${d.p2.nombre} ($${d.p2.ultimo_prec
         <div className="space-y-8">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div>
-                    <h2 className="text-4xl font-black text-white tracking-tight flex items-center gap-3">
-                        <AlertCircle className="h-10 w-10 text-red-500" />
+                    <h2 className="text-2xl md:text-4xl font-black text-white tracking-tight flex items-center gap-3">
+                        <AlertCircle className="h-8 w-8 md:h-10 md:w-10 text-red-500" />
                         Incidencias de Catálogo
                     </h2>
-                    <p className="text-slate-400 font-medium mt-1">Análisis de posibles productos duplicados o redundantes.</p>
+                    <p className="text-slate-400 font-medium mt-1 text-sm">Análisis de posibles productos duplicados o redundantes.</p>
                 </div>
                 {/* Contadores y Botón IA */}
-                <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
                     <button 
                         onClick={handleAiScan}
                         disabled={isAiScanning}
-                        className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white rounded-xl font-bold transition-all shadow-[0_0_20px_rgba(99,102,241,0.3)] hover:shadow-[0_0_25px_rgba(99,102,241,0.5)] active:scale-95 disabled:opacity-50"
+                        className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white rounded-xl font-bold transition-all shadow-[0_0_20px_rgba(99,102,241,0.3)] hover:shadow-[0_0_25px_rgba(99,102,241,0.5)] active:scale-95 disabled:opacity-50 min-h-[44px]"
                     >
                         {isAiScanning ? <Loader2 className="h-5 w-5 animate-spin" /> : <Sparkles className="h-5 w-5" />}
-                        <span className="hidden md:inline">Auditoría IA</span>
-                        <span className="md:hidden">IA</span>
+                        <span>Auditoría IA</span>
                     </button>
                     {aiDuplicates.length > 0 && (
                         <button 
                             onClick={handleCopyAiReport}
-                            className="flex items-center gap-2 px-4 py-2 bg-slate-800 border border-slate-700 hover:bg-slate-700 text-slate-300 rounded-xl font-bold transition-all active:scale-95"
+                            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-800 border border-slate-700 hover:bg-slate-700 text-slate-300 rounded-xl font-bold transition-all active:scale-95 min-h-[44px]"
                             title="Copiar reporte técnico para soporte"
                         >
                             <Copy className="h-5 w-5" />
@@ -327,33 +326,33 @@ Producto 2: [${d.p2.producto_id || d.p2.id}] ${d.p2.nombre} ($${d.p2.ultimo_prec
                     )}
                     <button 
                         onClick={handleCleanup}
-                        className="flex items-center gap-2 px-4 py-2 bg-slate-800 border border-slate-700 hover:bg-slate-700 text-red-400 rounded-xl font-bold transition-all active:scale-95"
+                        className="flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-800 border border-slate-700 hover:bg-slate-700 text-red-400 rounded-xl font-bold transition-all active:scale-95 min-h-[44px]"
                         title="Eliminar productos que no tienen ventas, compras ni reservas"
                     >
                         <Trash2 className="h-5 w-5" />
-                        <span className="hidden md:inline">Limpiar Huérfanos</span>
+                        <span>Limpiar Huérfanos</span>
                     </button>
-                    <div className="flex items-center gap-2 px-4 py-3 md:py-2 bg-red-500/10 border border-red-500/20 rounded-xl justify-center">
+                    <div className="flex items-center gap-2 px-4 py-3 md:py-2 bg-red-500/10 border border-red-500/20 rounded-xl justify-center min-h-[44px]">
                         <span className="text-xs font-black text-red-400 uppercase tracking-widest">{duplicados.length} Alertas</span>
                     </div>
                 </div>
             </div>
 
             {/* Tabs de Selección */}
-            <div className="flex items-center gap-2 p-1 bg-slate-900 border border-slate-800 rounded-2xl w-fit">
+            <div className="flex items-center gap-2 p-1 bg-slate-900 border border-slate-800 rounded-2xl w-full sm:w-fit">
                 <button
                     onClick={() => setActiveTab('sugerencias')}
-                    className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-2 ${activeTab === 'sugerencias' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'text-slate-500 hover:text-slate-300'}`}
+                    className={`flex-1 sm:flex-none px-6 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 min-h-[44px] ${activeTab === 'sugerencias' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'text-slate-500 hover:text-slate-300'}`}
                 >
                     <CheckCircle2 className="h-4 w-4" />
                     Sugerencias ({duplicados.length})
                 </button>
                 <button
                     onClick={() => setActiveTab('conflictos')}
-                    className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-2 ${activeTab === 'conflictos' ? 'bg-amber-600 text-white shadow-lg shadow-amber-500/20' : 'text-slate-500 hover:text-slate-300'}`}
+                    className={`flex-1 sm:flex-none px-6 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 min-h-[44px] ${activeTab === 'conflictos' ? 'bg-amber-600 text-white shadow-lg shadow-amber-500/20' : 'text-slate-500 hover:text-slate-300'}`}
                 >
                     <EyeOff className="h-4 w-4" />
-                    Conflictos Detectados ({conflictos.length})
+                    Conflictos ({conflictos.length})
                 </button>
             </div>
 

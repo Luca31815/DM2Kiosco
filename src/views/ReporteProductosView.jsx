@@ -143,18 +143,18 @@ const ReporteProductosView = () => {
     return (
         <div className="space-y-6">
             <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-                <h2 className="text-3xl font-bold text-white flex items-center gap-2">
-                    <BarChart3 className="h-8 w-8 text-blue-500" />
-                    Ventas por Producto
+                <h2 className="text-2xl sm:text-3xl font-black text-white flex items-center gap-2">
+                    <BarChart3 className="h-7 w-7 sm:h-8 sm:w-8 text-blue-500 shrink-0" />
+                    <span className="bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-500">Ventas por Producto</span>
                 </h2>
 
-                <div className="flex flex-wrap gap-4 items-center bg-gray-900 p-2 rounded-lg border border-gray-800">
-                    <div className="flex bg-gray-800 p-1 rounded-md">
+                <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center bg-gray-900 p-2 rounded-xl border border-gray-800 w-full lg:w-auto">
+                    <div className="flex bg-gray-800 p-1 rounded-lg justify-center sm:justify-start">
                         {['DIARIO', 'SEMANAL', 'MENSUAL'].map((type) => (
                             <button
                                 key={type}
                                 onClick={() => setPeriodType(type)}
-                                className={`px-3 py-1.5 rounded text-sm font-medium transition-all ${periodType === type
+                                className={`flex-1 sm:flex-none px-3 py-1.5 rounded-md text-xs font-semibold uppercase tracking-wider transition-all min-h-[36px] ${periodType === type
                                     ? 'bg-blue-600 text-white shadow-lg'
                                     : 'text-gray-400 hover:text-white'
                                     }`}
@@ -166,10 +166,10 @@ const ReporteProductosView = () => {
 
                     <div className="h-6 w-px bg-gray-700 hidden sm:block"></div>
 
-                    <div className="flex bg-gray-800 p-1 rounded-md">
+                    <div className="flex bg-gray-800 p-1 rounded-lg justify-center sm:justify-start">
                         <button
                             onClick={() => setViewMode('PIVOT')}
-                            className={`px-3 py-1.5 rounded text-sm font-medium transition-all ${viewMode === 'PIVOT'
+                            className={`flex-1 sm:flex-none px-3 py-1.5 rounded-md text-xs font-semibold uppercase tracking-wider transition-all min-h-[36px] ${viewMode === 'PIVOT'
                                 ? 'bg-indigo-600 text-white shadow-lg'
                                 : 'text-gray-400 hover:text-white'
                                 }`}
@@ -178,7 +178,7 @@ const ReporteProductosView = () => {
                         </button>
                         <button
                             onClick={() => setViewMode('LIST')}
-                            className={`px-3 py-1.5 rounded text-sm font-medium transition-all ${viewMode === 'LIST'
+                            className={`flex-1 sm:flex-none px-3 py-1.5 rounded-md text-xs font-semibold uppercase tracking-wider transition-all min-h-[36px] ${viewMode === 'LIST'
                                 ? 'bg-indigo-600 text-white shadow-lg'
                                 : 'text-gray-400 hover:text-white'
                                 }`}
@@ -187,12 +187,12 @@ const ReporteProductosView = () => {
                         </button>
                         <button
                             onClick={() => setViewMode('PREDICTION')}
-                            className={`px-3 py-1.5 rounded text-sm font-medium transition-all flex items-center gap-2 ${viewMode === 'PREDICTION'
+                            className={`flex-1 sm:flex-none px-3 py-1.5 rounded-md text-xs font-semibold uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 min-h-[36px] ${viewMode === 'PREDICTION'
                                 ? 'bg-emerald-600 text-white shadow-lg'
                                 : 'text-gray-400 hover:text-white'
                                 }`}
                         >
-                            <BrainCircuit className="h-4 w-4" />
+                            <BrainCircuit className="h-3.5 w-3.5" />
                             Predicción
                         </button>
                     </div>

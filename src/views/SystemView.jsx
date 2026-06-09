@@ -312,21 +312,21 @@ const SystemView = () => {
             animate={{ opacity: 1, y: 0 }}
             className="p-4 sm:p-6 space-y-6"
         >
-            <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
                 <div className="space-y-1">
-                    <h1 className="text-3xl font-black tracking-tight text-white flex items-center gap-3">
-                        <Activity className="h-8 w-8 text-blue-500" />
-                        Centro de Control Digital
+                    <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white flex items-center gap-3">
+                        <Activity className="h-7 w-7 sm:h-8 sm:w-8 text-blue-500 shrink-0" />
+                        <span className="bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-500">Centro de Control</span>
                     </h1>
-                    <p className="text-slate-400 font-medium">Observabilidad técnica y predicciones comerciales</p>
+                    <p className="text-slate-400 font-medium text-sm">Observabilidad técnica y predicciones comerciales</p>
                 </div>
 
-                <div className="flex bg-white/5 p-1 rounded-2xl border border-white/5 backdrop-blur-xl shrink-0">
+                <div className="flex bg-white/5 p-1 rounded-2xl border border-white/5 backdrop-blur-xl shrink-0 overflow-x-auto scroll-touch max-w-full">
                     {tabs.map(tab => (
                         <button
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
-                            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all relative ${activeTab === tab.id ? 'text-white' : 'text-slate-500 hover:text-slate-300'
+                            className={`flex items-center gap-2 px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all relative shrink-0 ${activeTab === tab.id ? 'text-white' : 'text-slate-500 hover:text-slate-300'
                                 }`}
                         >
                             {activeTab === tab.id && (
@@ -335,8 +335,8 @@ const SystemView = () => {
                                     className={`absolute inset-0 ${tab.bg} rounded-xl border ${tab.border} -z-10`}
                                 />
                             )}
-                            <tab.icon className={`h-4 w-4 ${activeTab === tab.id ? tab.color : 'text-slate-500'}`} />
-                            <span className="hidden sm:inline">{tab.label}</span>
+                            <tab.icon className={`h-4 w-4 ${activeTab === tab.id ? tab.color : 'text-slate-500'} shrink-0`} />
+                            <span>{tab.label}</span>
                         </button>
                     ))}
                 </div>

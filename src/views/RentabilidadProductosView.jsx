@@ -75,11 +75,11 @@ const RentabilidadProductosView = () => {
         <div className="space-y-6">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div>
-                    <h2 className="text-4xl font-black text-white tracking-tight flex items-center gap-3">
-                        <TrendingUp className="h-10 w-10 text-green-500" />
+                    <h2 className="text-2xl md:text-4xl font-black text-white tracking-tight flex items-center gap-3">
+                        <TrendingUp className="h-8 w-8 md:h-10 md:w-10 text-green-500" />
                         <span className="bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-500">Rentabilidad</span>
                     </h2>
-                    <p className="text-slate-400 font-medium mt-1">Análisis profundo de márgenes por producto.</p>
+                    <p className="text-slate-400 font-medium mt-1 text-sm">Análisis profundo de márgenes por producto.</p>
                 </div>
             </div>
 
