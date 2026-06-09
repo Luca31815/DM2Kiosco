@@ -73,7 +73,21 @@ export function useProductosDuplicadosTrigram() {
         () => api.getDuplicadosTrigram(),
         SWR_OPTIONS
     )
-    const { data: allProducts } = useProductos({ pageSize: 5000 })
+
+    // Build the unique list of product IDs from the duplicates results
+    const productIds = useMemo(() => {
+        if (!rawDups || rawDups.length === 0) return null
+        const ids = new Set()
+        rawDups.forEach(d => { ids.add(d.id1); ids.add(d.id2) })
+        return [...ids]
+    }, [rawDups])
+
+    // Only fetch the specific products involved in duplicates (not all 5000)
+    const { data: involvedProducts } = useSWR(
+        (!isDemoMode && productIds && productIds.length > 0) ? ['productos_por_ids', productIds] : null,
+        () => api.getProductosPorIds(productIds),
+        SWR_OPTIONS
+    )
 
     const [ignoredPairs, setIgnoredPairs] = useState(() => {
         try {
@@ -92,15 +106,15 @@ export function useProductosDuplicadosTrigram() {
     };
 
     const duplicados = useMemo(() => {
-        if (!rawDups || !allProducts) return []
+        if (!rawDups || !involvedProducts) return []
         return rawDups.map(d => {
-            const p1 = allProducts.find(p => String(p.producto_id) === d.id1)
-            const p2 = allProducts.find(p => String(p.producto_id) === d.id2)
+            const p1 = involvedProducts.find(p => String(p.producto_id) === d.id1)
+            const p2 = involvedProducts.find(p => String(p.producto_id) === d.id2)
             if (!p1 || !p2) return null
             if (ignoredPairs.includes([d.id1, d.id2].sort().join('|'))) return null
             return { p1, p2, reason: `Similitud SQL: ${Math.round(d.similitud * 100)}%` }
         }).filter(Boolean)
-    }, [rawDups, allProducts, ignoredPairs])
+    }, [rawDups, involvedProducts, ignoredPairs])
 
     return { data: duplicados, loading: isLoading, error, ignoreDuplicate, ignoredPairs }
 }
@@ -495,26 +509,9 @@ export function usePredictiveStock(options = {}) {
     }
 }
 
-export function useUnifiedFeed(limit = 15) {
-    const { data: ventas } = useVentas({ pageSize: limit })
-    const { data: compras } = useCompras({ pageSize: limit })
-    const { data: retiros } = useRetiros({ pageSize: limit })
-    const { data: reservas } = useReservas({ pageSize: limit })
-
-    const combined = useMemo(() => {
-        if (!ventas && !compras && !retiros && !reservas) return []
-        
-        const result = [
-            ...(ventas || []).map(v => ({ id: v.venta_id, type: 'venta', title: `Venta #${v.venta_id.split('_').pop()}`, amount: v.total_venta, time: v.fecha })),
-            ...(compras || []).map(c => ({ id: c.compra_id, type: 'compra', title: `Compra: ${c.proveedor || 'S/P'}`, amount: -c.total_compra, time: c.fecha })),
-            ...(retiros || []).map(r => ({ id: r.retiro_id, type: 'retiro', title: `Retiro: ${r.motivo}`, amount: -r.monto, time: r.fecha })),
-            ...(reservas || []).map(res => ({ id: res.reserva_id, type: 'reserva', title: `Reserva: ${res.cliente}`, amount: res.total_reserva, time: res.fecha_creacion, isReserva: true })),
-        ]
-        return result.sort((a, b) => new Date(b.time) - new Date(a.time)).slice(0, limit)
-    }, [ventas, compras, retiros, reservas, limit])
-
-    return { data: combined, loading: !ventas && !compras }
-}
+// NOTE: useUnifiedFeed removed — was triggering 4 redundant parallel API calls (ventas, compras, retiros, reservas)
+// with no active consumers in the codebase. If needed in the future, re-implement using a single
+// server-side aggregation endpoint to avoid the N+1 network request pattern.
 export function useProductosSinonimos() {
     const { isDemoMode } = useAuth()
     const { data, error, isLoading } = useSWR(

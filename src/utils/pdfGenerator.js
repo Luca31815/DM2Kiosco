@@ -1,14 +1,19 @@
-import jsPDF from 'jspdf'
-import autoTable from 'jspdf-autotable'
-
-
 /**
  * Genera un PDF con la lista de productos
  * @param {Array} products - Lista de objetos de producto ({ nombre, ultimo_precio_venta })
  * @param {string} filterLabel - Etiqueta del filtro aplicado (opcional)
+ *
+ * NOTE: jsPDF and jspdf-autotable are loaded dynamically on first call to keep
+ * the ProductosView chunk small (Core Web Vitals: reduces initial LCP weight).
  */
-export const generateProductsPDF = (products, filterLabel = '') => {
-    const doc = jsPDF()
+export const generateProductsPDF = async (products, filterLabel = '') => {
+    // Dynamic imports — only downloaded when the user clicks "Exportar PDF"
+    const [{ default: jsPDF }, { default: autoTable }] = await Promise.all([
+        import('jspdf'),
+        import('jspdf-autotable'),
+    ])
+
+    const doc = new jsPDF()
     const now = new Date()
     const dateStr = now.toLocaleDateString()
     const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
@@ -73,3 +78,4 @@ export const generateProductsPDF = (products, filterLabel = '') => {
     const filename = `productos_${filterLabel ? filterLabel.toLowerCase().replace(/\s+/g, '_') : 'todos'}_${now.getTime()}.pdf`
     doc.save(filename)
 }
+

@@ -120,6 +120,21 @@ export const getReservasDetalles = (id) => fetchDetails('reservas_detalles', 're
 
 export const getProductos = (options) => fetchTableData('productos', options)
 
+/** Fetch only the specific products by their IDs — used by duplicate detection to avoid full catalog download */
+export const getProductosPorIds = async (ids) => {
+    if (!ids || ids.length === 0) return []
+    if (isDemo()) return []
+    const { data, error } = await supabase
+        .from('productos')
+        .select('producto_id, nombre, stock_actual, ultimo_precio_venta, ultimo_costo_compra')
+        .in('producto_id', ids)
+    if (error) {
+        console.error('Error fetching productos por IDs:', error)
+        return []
+    }
+    return data || []
+}
+
 export const getRetiros = (options) => fetchTableData('retiros', { sortColumn: 'fecha', sortOrder: 'desc', ...options })
 
 export const getClientes = (options) => fetchTableData('vista_clientes_unicos', options)
