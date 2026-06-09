@@ -401,14 +401,17 @@ const ReservasView = () => {
             label: 'Cliente',
             width: 'w-1/4',
             wrap: true,
-            render: (val, row) => (
-                <div className="flex items-center gap-2">
-                    <div className="h-8 w-8 rounded-full bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
-                        <User className="h-4 w-4 text-blue-400" />
+            render: (val, row) => {
+                const name = val || row.Cliente || 'N/A'
+                return (
+                    <div className="flex items-center gap-2 min-w-0">
+                        <div className="h-8 w-8 rounded-full bg-blue-500/10 flex items-center justify-center border border-blue-500/20 shrink-0">
+                            <User className="h-4 w-4 text-blue-400" />
+                        </div>
+                        <span className="font-bold text-slate-200 truncate" title={name}>{name}</span>
                     </div>
-                    <span className="font-bold text-slate-200">{val || row.Cliente || 'N/A'}</span>
-                </div>
-            )
+                )
+            }
         },
         { key: 'total_reserva', label: 'Total', width: 'w-24', render: (val) => <span className="font-black text-slate-400 tabular-nums">${val?.toLocaleString() || '0'}</span> },
         { key: 'total_pagado', label: 'Pagado', width: 'w-24', render: (val) => <span className="font-black text-emerald-400 tabular-nums">${val?.toLocaleString() || '0'}</span> },
