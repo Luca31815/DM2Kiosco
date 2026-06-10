@@ -1,7 +1,10 @@
 import React from 'react'
 import { FileWarning, Loader2 } from 'lucide-react'
+import { useIsMobile } from '../hooks/useIsMobile'
 
 export default function SalesTable({ data, loading, error }) {
+    const isMobile = useIsMobile()
+
     if (loading) {
         return (
             <div className="w-full h-64 flex flex-col items-center justify-center text-slate-400 gap-3">
@@ -37,49 +40,51 @@ export default function SalesTable({ data, loading, error }) {
 
     return (
         <div className="w-full bg-slate-800/50 rounded-xl border border-slate-700/50 shadow-xl overflow-hidden backdrop-blur-sm">
-            {/* Desktop Table View */}
-            <div className="hidden md:block overflow-x-auto">
-                <table className="w-full text-left text-sm text-slate-400">
-                    <thead className="bg-slate-900/50 text-slate-200 uppercase tracking-wider font-semibold text-xs border-b border-slate-700">
-                        <tr>
+            {isMobile ? (
+                /* Mobile Card View */
+                <div className="divide-y divide-slate-700/50">
+                    {data.map((row, rowIndex) => (
+                        <div key={row.id || rowIndex} className="p-4 space-y-3 bg-slate-800/20">
                             {headers.map((header) => (
-                                <th key={header} className="px-6 py-4">
-                                    {header.replace(/_/g, ' ')}
-                                </th>
-                            ))}
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-700/50">
-                        {data.map((row, rowIndex) => (
-                            <tr key={row.id || rowIndex} className="hover:bg-slate-700/30 transition-colors duration-150 group">
-                                {headers.map((header, colIndex) => (
-                                    <td key={`${rowIndex}-${colIndex}`} className="px-6 py-4 text-slate-300 group-hover:text-white transition-colors">
+                                <div key={header} className="flex justify-between items-center gap-4">
+                                    <span className="text-xs uppercase font-medium text-slate-500 tracking-wide">
+                                        {header.replace(/_/g, ' ')}
+                                    </span>
+                                    <span className="text-sm text-slate-200 text-right">
                                         {formatValue(header, row[header])}
-                                    </td>
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    ))}
+                </div>
+            ) : (
+                /* Desktop Table View */
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left text-sm text-slate-400">
+                        <thead className="bg-slate-900/50 text-slate-200 uppercase tracking-wider font-semibold text-xs border-b border-slate-700">
+                            <tr>
+                                {headers.map((header) => (
+                                    <th key={header} className="px-6 py-4">
+                                        {header.replace(/_/g, ' ')}
+                                    </th>
                                 ))}
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-
-            {/* Mobile Card View */}
-            <div className="md:hidden divide-y divide-slate-700/50">
-                {data.map((row, rowIndex) => (
-                    <div key={row.id || rowIndex} className="p-4 space-y-3 bg-slate-800/20">
-                        {headers.map((header) => (
-                            <div key={header} className="flex justify-between items-center gap-4">
-                                <span className="text-xs uppercase font-medium text-slate-500 tracking-wide">
-                                    {header.replace(/_/g, ' ')}
-                                </span>
-                                <span className="text-sm text-slate-200 text-right">
-                                    {formatValue(header, row[header])}
-                                </span>
-                            </div>
-                        ))}
-                    </div>
-                ))}
-            </div>
+                        </thead>
+                        <tbody className="divide-y divide-slate-700/50">
+                            {data.map((row, rowIndex) => (
+                                <tr key={row.id || rowIndex} className="hover:bg-slate-700/30 transition-colors duration-150 group">
+                                    {headers.map((header, colIndex) => (
+                                        <td key={`${rowIndex}-${colIndex}`} className="px-6 py-4 text-slate-300 group-hover:text-white transition-colors">
+                                            {formatValue(header, row[header])}
+                                        </td>
+                                    ))}
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
         </div>
     )
 }

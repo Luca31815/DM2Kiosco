@@ -189,9 +189,20 @@
     min-width: 44px;
   }
 
-  /* Smooth momentum scroll on iOS WebKit */
+  /* Smooth momentum scroll on iOS WebKit & GPU acceleration */
   .scroll-touch {
     -webkit-overflow-scrolling: touch;
+    will-change: scroll-position;
+    transform: translateZ(0);
+  }
+
+  /* Disable double-tap-to-zoom delay on mobile interactive elements */
+  button, 
+  a, 
+  select,
+  input[type="submit"],
+  input[type="button"] {
+    touch-action: manipulation;
   }
 }
 

@@ -8,6 +8,8 @@ import ProductAutocomplete from '../components/ProductAutocomplete'
 import ClientAutocomplete from '../components/ClientAutocomplete'
 import { motion } from 'framer-motion'
 import { toast } from 'react-hot-toast'
+import { useIsMobile } from '../hooks/useIsMobile'
+
 
 const ExpandedRow = ({ row }) => {
     const { data: details, loading: loadingDetails } = useVentasDetalles(row.venta_id)
@@ -199,12 +201,13 @@ const ExpandedRow = ({ row }) => {
 }
 
 const VentasView = () => {
+    const isMobile = useIsMobile()
     const [sortColumn, setSortColumn] = useState('fecha')
     const [sortOrder, setSortOrder] = useState('desc')
     const [filterValue, setFilterValue] = useState('')
     const [filterColumn, setFilterColumn] = useState('cliente')
     const [page, setPage] = useState(1)
-    const pageSize = 20
+    const pageSize = isMobile ? 10 : 20
 
     const options = React.useMemo(() => ({
         sortColumn,

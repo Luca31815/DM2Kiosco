@@ -3,16 +3,18 @@ import Sidebar from './Sidebar'
 import { Menu, RefreshCw, Clock } from 'lucide-react'
 import { Toaster } from 'react-hot-toast'
 import { useAuth } from '../context/AuthContext'
+import { useIsMobile } from '../hooks/useIsMobile'
 
 const Layout = ({ children }) => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+    const isMobile = useIsMobile()
 
     return (
         <div className="flex bg-slate-950 min-h-screen relative overflow-hidden font-outfit">
-            {/* Background grid pattern */}
-            <div className="absolute inset-0 z-0 pointer-events-none bg-grid-pattern opacity-100" />
-            {/* Radial glow top-left */}
-            <div className="absolute top-0 left-0 w-[600px] h-[400px] bg-blue-600/3 rounded-full blur-3xl z-0 pointer-events-none" />
+            {/* Background grid pattern — desktop only */}
+            {!isMobile && <div className="absolute inset-0 z-0 pointer-events-none bg-grid-pattern opacity-100" />}
+            {/* Radial glow top-left — desktop only */}
+            {!isMobile && <div className="absolute top-0 left-0 w-[600px] h-[400px] bg-blue-600/3 rounded-full blur-3xl z-0 pointer-events-none" />}
 
             <Toaster
                 position="top-right"
@@ -83,6 +85,7 @@ LiveClock.displayName = 'LiveClock'
 const TopBar = React.memo(({ onMenuClick }) => {
     const [lastUpdated] = useState(() => new Date())
     const [refreshing, setRefreshing] = useState(false)
+    const isMobile = useIsMobile()
 
     const handleRefresh = useCallback(() => {
         setRefreshing(true)
@@ -112,8 +115,8 @@ const TopBar = React.memo(({ onMenuClick }) => {
 
                 {/* Right: Time + Status + Refresh */}
                 <div className="flex items-center gap-2 md:gap-4">
-                    {/* Live clock — only this component ticks */}
-                    <LiveClock />
+                    {/* Live clock — only this component ticks on desktop */}
+                    {!isMobile && <LiveClock />}
 
                     {/* Sync status */}
                     <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-500/8 border border-emerald-500/15">

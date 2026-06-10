@@ -10,6 +10,7 @@ import {
     Bar,
     ReferenceLine,
 } from 'recharts'
+import { useIsMobile } from '../../hooks/useIsMobile'
 
 // ── Period Selector ──────────────────────────────────────────────────────────
 export const PeriodButton = React.memo(({ label, active, onClick }) => (
@@ -49,6 +50,8 @@ const CustomTooltip = ({ active, payload, label }) => {
 
 // ── Evolution Chart Card ──────────────────────────────────────────────────────
 export const HomeChart = React.memo(({ chartData, chartPeriod, setChartPeriod }) => {
+    const isMobile = useIsMobile()
+
     return (
         <div className="bg-slate-900 p-6 rounded-2xl border border-white/5 shadow-xl animate-fade-in-up animation-delay-200">
             <div className="flex items-center justify-between mb-6">
@@ -64,7 +67,7 @@ export const HomeChart = React.memo(({ chartData, chartPeriod, setChartPeriod })
             </div>
 
             <div className="h-[280px] w-full">
-                <ResponsiveContainer width="100%" height="100%" debounce={50}>
+                <ResponsiveContainer width="100%" height="100%" debounce={isMobile ? 250 : 50}>
                     <ComposedChart data={chartData.points} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
                         <defs>
                             <linearGradient id="gradIngresos" x1="0" y1="0" x2="0" y2="1">
@@ -117,6 +120,7 @@ export const HomeChart = React.memo(({ chartData, chartPeriod, setChartPeriod })
                             name="Transacciones"
                             fill="rgba(99, 102, 241, 0.15)"
                             radius={[3, 3, 0, 0]}
+                            isAnimationActive={!isMobile}
                         />
                         <Area
                             yAxisId="ingresos"
@@ -129,6 +133,7 @@ export const HomeChart = React.memo(({ chartData, chartPeriod, setChartPeriod })
                             fill="url(#gradIngresos)"
                             dot={false}
                             activeDot={{ r: 4, fill: '#3b82f6', stroke: '#fff', strokeWidth: 2 }}
+                            isAnimationActive={!isMobile}
                         />
                     </ComposedChart>
                 </ResponsiveContainer>

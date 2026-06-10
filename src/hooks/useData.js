@@ -4,14 +4,44 @@ import * as api from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import * as mock from '../services/mockData'
 
-// Global SWR config for better performance
-const SWR_OPTIONS = {
-    refreshInterval: 60000, // 1 minute auto-refresh
-    revalidateOnFocus: false, // Don't revalidate when switching tabs
-    revalidateOnReconnect: true,
-    dedupingInterval: 10000, // Deduplicate requests for 10 seconds
-    shouldRetryOnError: false,
+// Global SWR config helper for better performance on mobile and slow networks
+const getSWROptions = () => {
+    if (typeof window === 'undefined') return {
+        refreshInterval: 60000,
+        revalidateOnFocus: false,
+        revalidateOnReconnect: true,
+        dedupingInterval: 10000,
+        shouldRetryOnError: false,
+    }
+
+    const isMobile = window.matchMedia('(max-width: 768px)').matches
+    const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection
+    
+    let interval = 60000 // Default 1 minute
+    let deduping = 10000 // Default 10 seconds
+    
+    if (isMobile) {
+        interval = 300000 // 5 minutes on mobile to save battery
+        deduping = 20000  // 20 seconds deduplication to avoid redundant calls
+    }
+    
+    if (connection) {
+        if (connection.saveData || ['slow-2g', '2g', '3g'].includes(connection.effectiveType)) {
+            interval = 0 // Disable auto-refresh entirely on slow or metered connections
+        }
+    }
+    
+    return {
+        refreshInterval: interval,
+        revalidateOnFocus: false,
+        revalidateOnReconnect: true,
+        dedupingInterval: deduping,
+        shouldRetryOnError: false,
+    }
 }
+
+const SWR_OPTIONS = getSWROptions()
+
 
 export function useVentas(options = {}) {
     const { isDemoMode } = useAuth()

@@ -10,14 +10,16 @@ import { toast } from 'react-hot-toast'
 import ProductDetailExpansion from '../components/ProductDetailExpansion'
 import { generateProductsPDF } from '../utils/pdfGenerator'
 import SynonymManagerModal from '../components/SynonymManagerModal'
+import { useIsMobile } from '../hooks/useIsMobile'
 
 
 const ProductosView = () => {
+    const isMobile = useIsMobile()
     const [sortColumn, setSortColumn] = useState('nombre')
     const [sortOrder, setSortOrder] = useState('asc')
     const [filterValue, setFilterValue] = useState('')
     const [page, setPage] = useState(1)
-    const pageSize = 20
+    const pageSize = isMobile ? 10 : 20
     const { mutate } = useSWRConfig()
 
     const [editingId, setEditingId] = useState(null)
