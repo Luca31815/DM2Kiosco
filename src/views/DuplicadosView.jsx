@@ -1,5 +1,4 @@
 import React, { useState, useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { AlertCircle, Tag, Search, EyeOff, CheckCircle2, Loader2, Sparkles, Copy, Trash2 } from 'lucide-react'
 import { useSWRConfig } from 'swr'
 import { toast } from 'react-hot-toast'
@@ -8,7 +7,6 @@ import { useProductosDuplicadosTrigram, useProductos, useProductosSinonimos } fr
 import { checkDuplicateStatus, FLAVORS, BRANDS, FORMATS } from '../utils/duplicateRules'
 
 const DuplicadosView = () => {
-    const navigate = useNavigate()
     const { mutate } = useSWRConfig()
     const { data: duplicadosSQL, loading: sqlLoading, ignoreDuplicate: ignoreSQL, ignoredPairs } = useProductosDuplicadosTrigram()
     // allProducts is fetched internally by useProductosDuplicadosTrigram (pageSize: 5000)
@@ -285,10 +283,7 @@ Producto 2: [${d.p2.producto_id || d.p2.id}] ${d.p2.nombre} ($${d.p2.ultimo_prec
         return n1.includes(searchTerm.toLowerCase()) || n2.includes(searchTerm.toLowerCase());
     }), [conflictos, searchTerm])
 
-    const containerVariants = {
-        hidden: { opacity: 0 },
-        visible: { opacity: 1, transition: { staggerChildren: 0.1 } }
-    }
+
 
     const itemVariants = {
         hidden: { opacity: 0, y: 20 },
@@ -428,7 +423,7 @@ Producto 2: [${d.p2.producto_id || d.p2.id}] ${d.p2.nombre} ($${d.p2.ultimo_prec
     );
 };
 
-const DuplicateCard = ({ d, uniqueKey, selections, setSelections, handleMergeSelection, ignoreSQL, setAiDuplicates, mergingId, variants }) => {
+const DuplicateCard = ({ d, uniqueKey, selections, setSelections, handleMergeSelection, ignoreSQL, setAiDuplicates, mergingId }) => {
     const id1 = String(d.p1.producto_id || d.p1.id || '');
     const id2 = String(d.p2.producto_id || d.p2.id || '');
 
@@ -493,7 +488,7 @@ const DuplicateCard = ({ d, uniqueKey, selections, setSelections, handleMergeSel
     );
 };
 
-const ConflictCard = ({ d, variants, ignoreSQL }) => {
+const ConflictCard = ({ d, ignoreSQL }) => {
     const id1 = String(d.p1.producto_id || d.p1.id || '');
     const id2 = String(d.p2.producto_id || d.p2.id || '');
 

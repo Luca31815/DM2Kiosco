@@ -364,6 +364,39 @@ export const actualizarMovimientoDinero = async (movimientoId, updates) => {
     return data
 }
 
+export const eliminarMovimientoDinero = async (movimientoId) => {
+    if (isDemo()) throw new Error('Acción deshabilitada en el modo Demo');
+    const { data, error } = await supabase
+        .from('movimientos_dinero')
+        .delete()
+        .eq('movimiento_id', movimientoId)
+        .select()
+    if (error) {
+        console.error('Error al eliminar movimiento_dinero:', error)
+        throw error
+    }
+    return data
+}
+
+export const crearMovimientoDinero = async (movimiento) => {
+    if (isDemo()) throw new Error('Acción deshabilitada en el modo Demo');
+    const { data, error } = await supabase
+        .from('movimientos_dinero')
+        .insert([{
+            movimiento_id: `MD_${Date.now()}`,
+            fecha: new Date().toISOString(),
+            ...movimiento
+        }])
+        .select()
+
+    if (error) {
+        console.error('Error al crear movimiento_dinero:', error)
+        throw error
+    }
+    return data[0]
+}
+
+
 export const actualizarCabeceraOperacion = async (tipo, id, total) => {
     if (isDemo()) throw new Error('Acción deshabilitada en el modo Demo');
     const table = tipo === 'VENTA' ? 'ventas' : 'compras';

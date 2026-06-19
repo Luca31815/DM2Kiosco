@@ -38,7 +38,7 @@ const SynonymManagerModal = ({ isOpen, onClose }) => {
             setSynonyms(s => s.filter(item => item.alias !== alias))
             setConflicts(c => c.filter(item => item.alias !== alias))
             toast.success('Sinónimo eliminado')
-        } catch (err) {
+        } catch {
             toast.error('Error al eliminar')
         }
     }

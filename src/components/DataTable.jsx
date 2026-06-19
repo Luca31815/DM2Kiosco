@@ -1,4 +1,4 @@
-import React, { useState, useEffect, memo, useCallback } from 'react'
+import React, { useState, memo, useCallback } from 'react'
 import { ChevronDown, ChevronUp, Search, Loader2, Download, ChevronLeft, ChevronRight } from 'lucide-react'
 import { motion } from 'framer-motion'
 
@@ -64,14 +64,15 @@ const DataTable = ({
     const [filterValue, setFilterValue] = useState('')
     const [expandedRow, setExpandedRow] = useState(null)
     const [internalPage, setInternalPage] = useState(1)
+    const [prevDataLength, setPrevDataLength] = useState(data.length)
+
+    if (data.length !== prevDataLength) {
+        if (!serverSide) setInternalPage(1)
+        setPrevDataLength(data.length)
+    }
 
     const currentPage = serverSide ? externalPage : internalPage
     const setCurrentPage = serverSide ? onPageChange : setInternalPage
-
-    // Reset pagination when data changes (e.g., search/filter)
-    useEffect(() => {
-        if (!serverSide) setInternalPage(1)
-    }, [data.length, serverSide])
 
     const totalRows = serverSide ? totalCount : data.length
     const totalPages = Math.ceil(totalRows / itemsPerPage)

@@ -6,7 +6,6 @@ import * as api from '../services/api'
 import { useSWRConfig } from 'swr'
 import ProductAutocomplete from '../components/ProductAutocomplete'
 import ClientAutocomplete from '../components/ClientAutocomplete'
-import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'react-hot-toast'
 
 const ExpandedRow = ({ row }) => {

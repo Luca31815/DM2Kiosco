@@ -10,7 +10,6 @@ const ReporteProductosView = () => {
     const [sortColumn, setSortColumn] = useState('periodo_inicio')
     const [sortOrder, setSortOrder] = useState('desc')
     const [filterValue, setFilterValue] = useState('')
-    const [filterColumn, setFilterColumn] = useState('producto')
 
     const { data: prediccionData, loading: loadingPrediccion } = usePredictiveStock({
         sortColumn: 'dias_restantes',

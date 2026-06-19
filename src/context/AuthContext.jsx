@@ -1,26 +1,18 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+/* eslint-disable react-refresh/only-export-components */
+import React, { createContext, useContext, useState } from 'react';
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-    const [isDemoMode, setIsDemoMode] = useState(false);
+    const [isDemoMode] = useState(() => {
+        if (typeof document === 'undefined') return false;
+        if (import.meta.env.DEV) return false;
 
-    useEffect(() => {
-        const getCookie = (name) => {
-            const value = `; ${document.cookie}`;
-            const parts = value.split(`; ${name}=`);
-            if (parts.length === 2) return parts.pop().split(';').shift();
-            return null;
-        };
-
-        const mode = getCookie('dashboard_mode');
-        // En entorno local de desarrollo (Vite) no corre el middleware de Vercel para logins. Forzamos modo "Live" (Admin)
-        if (import.meta.env.DEV) {
-            setIsDemoMode(false);
-        } else {
-            setIsDemoMode(mode === 'demo');
-        }
-    }, []);
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; dashboard_mode=`);
+        if (parts.length === 2) return parts.pop().split(';').shift() === 'demo';
+        return false;
+    });
 
     return (
         <AuthContext.Provider value={{ isDemoMode }}>

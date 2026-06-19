@@ -234,7 +234,7 @@ const AnalisisHorariosView = () => {
                                 } else {
                                     return -1
                                 }
-                            } catch (e) {
+                            } catch {
                                 return -1
                             }
                             if (isNaN(h) || isNaN(m)) return -1
@@ -420,7 +420,7 @@ const AnalisisHorariosView = () => {
 
             {analysisMode === 'hitos' && hitosRawData?.hitos?.length > 0 && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                    {[10, 20, 30, 40].map((n, i) => {
+                    {[10, 20, 30, 40].map(n => {
                         let sumMinutes = 0
                         let count = 0
 

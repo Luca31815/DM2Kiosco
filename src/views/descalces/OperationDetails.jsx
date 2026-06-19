@@ -1,7 +1,7 @@
-import React, { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import React, { useState, useCallback } from 'react'
 import {
-    AlertTriangle, Coins, Package, Loader2, Edit2, Check, X, Plus, Info
+    AlertTriangle, Coins, Package, Loader2, Edit2, Check, X, Plus, Info,
+    Trash2, Zap, Sparkles, CheckCircle2
 } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import * as api from '../../services/api'
@@ -29,7 +29,7 @@ const OperationDetails = ({ operacionId, tipoOperacion, onRefresh, cabeceraOrigi
 
     const [isSaving, setIsSaving] = useState(false)
 
-    const loadDetails = async () => {
+    const loadDetails = useCallback(async () => {
         try {
             setLoading(true)
             const [itemsData, paymentsData] = await Promise.all([
@@ -46,11 +46,11 @@ const OperationDetails = ({ operacionId, tipoOperacion, onRefresh, cabeceraOrigi
             setError('Error al cargar los detalles de la base de datos.')
             setLoading(false)
         }
-    }
+    }, [operacionId, tipoOperacion])
 
     React.useEffect(() => {
         loadDetails()
-    }, [operacionId, tipoOperacion])
+    }, [loadDetails])
 
     // --- ACCIONES DE EDICIÓN ---
 
@@ -123,20 +123,148 @@ const OperationDetails = ({ operacionId, tipoOperacion, onRefresh, cabeceraOrigi
         setIsSaving(true)
         const loadingToast = toast.loading('Creando movimiento de caja compensatorio...')
         try {
-            await api.crearRetiro({
-                tipo_movimiento: tipoOperacion === 'VENTA' ? 'INGRESO' : 'EGRESO',
+            await api.crearMovimientoDinero({
+                tipo: tipoOperacion === 'VENTA' ? 'ENTRADA' : 'SALIDA',
                 monto: parseFloat(cabeceraOriginal),
-                motivo: `Conciliación manual descalce ${tipoOperacion}`,
-                cuenta_caja: 'Caja Principal',
                 referencia_id: operacionId,
                 referencia_tipo: tipoOperacion,
-                notas: '[CONCILIADO MANUAL] Generado desde Auditoría para saldar descalce.'
+                metodo: 'Efectivo',
+                notas: '[CONCILIADO MANUAL] Generado desde Auditoría para saldar descalce.',
+                tipo_movimiento: tipoOperacion === 'VENTA' ? 'INGRESO' : 'EGRESO'
             })
             toast.success('Movimiento de caja creado y conciliado', { id: loadingToast })
             onRefresh()
             await loadDetails()
         } catch (err) {
             toast.error(`Error al crear movimiento: ${err.message || 'Desconocido'}`, { id: loadingToast })
+        } finally {
+            setIsSaving(false)
+        }
+    }
+
+    // 5. Eliminar Pago de Caja
+    const handleDeletePayment = async (movimientoId) => {
+        if (!window.confirm('¿Estás seguro de eliminar este registro de pago de la caja?')) return
+        setIsSaving(true)
+        const loadingToast = toast.loading('Eliminando movimiento de caja...')
+        try {
+            await api.eliminarMovimientoDinero(movimientoId)
+            toast.success('Movimiento de caja eliminado', { id: loadingToast })
+            onRefresh()
+            await loadDetails()
+        } catch (err) {
+            toast.error(`Error: ${err.message || 'Desconocido'}`, { id: loadingToast })
+        } finally {
+            setIsSaving(false)
+        }
+    }
+
+    // 6. Alinear Pago Único a la Cabecera
+    const handleAlinearPagoACabecera = async () => {
+        if (payments.length !== 1) return
+        const payment = payments[0]
+        const totalCabecera = parseFloat(cabeceraOriginal || 0)
+        setIsSaving(true)
+        const loadingToast = toast.loading('Alineando pago a cabecera...')
+        try {
+            await api.actualizarMovimientoDinero(payment.movimiento_id, { monto: totalCabecera })
+            toast.success('Pago de caja corregido', { id: loadingToast })
+            onRefresh()
+            await loadDetails()
+        } catch (err) {
+            toast.error(`Error: ${err.message || 'Desconocido'}`, { id: loadingToast })
+        } finally {
+            setIsSaving(false)
+        }
+    }
+
+    // 7. Ajustar último pago para absorber la diferencia
+    const handleAdjustLastPayment = async (diferencia) => {
+        if (payments.length === 0) return
+        const lastPayment = payments[payments.length - 1]
+        const nuevoMonto = parseFloat(lastPayment.monto || 0) + diferencia
+        if (nuevoMonto < 0) {
+            return toast.error('El monto resultante para el pago sería negativo. Elimine el pago o ajuste manualmente.')
+        }
+        setIsSaving(true)
+        const loadingToast = toast.loading('Ajustando el último pago para saldar la diferencia...')
+        try {
+            await api.actualizarMovimientoDinero(lastPayment.movimiento_id, { monto: nuevoMonto })
+            toast.success('Último pago ajustado con éxito', { id: loadingToast })
+            onRefresh()
+            await loadDetails()
+        } catch (err) {
+            toast.error(`Error: ${err.message || 'Desconocido'}`, { id: loadingToast })
+        } finally {
+            setIsSaving(false)
+        }
+    }
+
+    // 8. Crear Pago por la Diferencia
+    const handleCreateDifferencePayment = async (diferencia) => {
+        if (diferencia <= 0) return
+        setIsSaving(true)
+        const loadingToast = toast.loading('Creando pago por la diferencia...')
+        try {
+            await api.crearMovimientoDinero({
+                tipo: tipoOperacion === 'VENTA' ? 'ENTRADA' : 'SALIDA',
+                monto: diferencia,
+                referencia_id: operacionId,
+                referencia_tipo: tipoOperacion,
+                metodo: 'Efectivo',
+                notas: '[CONCILIADO MANUAL] Pago por diferencia para saldar descalce.',
+                tipo_movimiento: tipoOperacion === 'VENTA' ? 'INGRESO' : 'EGRESO'
+            })
+            toast.success('Pago por la diferencia creado con éxito', { id: loadingToast })
+            onRefresh()
+            await loadDetails()
+        } catch (err) {
+            toast.error(`Error: ${err.message || 'Desconocido'}`, { id: loadingToast })
+        } finally {
+            setIsSaving(false)
+        }
+    }
+
+    // 9. Alinear cabecera a la suma de pagos
+    const handleAlinearCabeceraAPagos = async (totalPagos) => {
+        if (isNaN(totalPagos) || totalPagos < 0) return toast.error('Monto de pagos inválido')
+        setIsSaving(true)
+        const loadingToast = toast.loading('Alineando cabecera al total de pagos...')
+        try {
+            await api.actualizarCabeceraOperacion(tipoOperacion, operacionId, totalPagos)
+            toast.success('Monto de cabecera alineado con los pagos', { id: loadingToast })
+            onRefresh()
+            await loadDetails()
+        } catch (err) {
+            toast.error(`Error: ${err.message || 'Desconocido'}`, { id: loadingToast })
+        } finally {
+            setIsSaving(false)
+        }
+    }
+
+    // 10. Reemplazar todos los pagos con uno único por la cabecera
+    const handleResetAndCreateSinglePayment = async (totalCabecera) => {
+        if (!window.confirm(`¿Estás seguro de eliminar todos los pagos actuales (${payments.length}) y reemplazarlos con un único pago de $${totalCabecera.toLocaleString('es-AR')}?`)) return
+        setIsSaving(true)
+        const loadingToast = toast.loading('Reemplazando pagos con pago único...')
+        try {
+            for (const p of payments) {
+                await api.eliminarMovimientoDinero(p.movimiento_id)
+            }
+            await api.crearMovimientoDinero({
+                tipo: tipoOperacion === 'VENTA' ? 'ENTRADA' : 'SALIDA',
+                monto: totalCabecera,
+                referencia_id: operacionId,
+                referencia_tipo: tipoOperacion,
+                metodo: 'Efectivo',
+                notas: '[CONCILIADO MANUAL] Reemplazo de pagos múltiples para saldar descalce.',
+                tipo_movimiento: tipoOperacion === 'VENTA' ? 'INGRESO' : 'EGRESO'
+            })
+            toast.success('Pagos reemplazados con éxito', { id: loadingToast })
+            onRefresh()
+            await loadDetails()
+        } catch (err) {
+            toast.error(`Error: ${err.message || 'Desconocido'}`, { id: loadingToast })
         } finally {
             setIsSaving(false)
         }
@@ -155,8 +283,115 @@ const OperationDetails = ({ operacionId, tipoOperacion, onRefresh, cabeceraOrigi
         </div>
     )
 
+    const totalCabecera = parseFloat(cabeceraOriginal || 0)
+    const totalPagos = payments.reduce((sum, p) => sum + parseFloat(p.monto || 0), 0)
+    const diferencia = totalCabecera - totalPagos
+    const absDiferencia = Math.abs(diferencia)
+    const isConciliado = absDiferencia < 0.01
+
     return (
         <div className="space-y-4 bg-slate-900/60 rounded-b-xl border-t border-slate-800/80 p-5">
+
+            {/* Asistente de Conciliación Rápida */}
+            <div className={`p-4 rounded-xl border transition-all duration-200 ${
+                isConciliado 
+                    ? 'bg-emerald-950/10 border-emerald-500/20 text-emerald-300' 
+                    : 'bg-amber-950/10 border-amber-500/20 text-amber-300'
+            }`}>
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                    <div className="space-y-1">
+                        <div className="flex items-center space-x-2">
+                            <Zap className={`w-4 h-4 ${isConciliado ? 'text-emerald-400' : 'text-amber-400 animate-pulse'}`} />
+                            <h4 className="text-xs font-bold uppercase tracking-wider">
+                                Asistente de Conciliación Rápida
+                            </h4>
+                        </div>
+                        {isConciliado ? (
+                            <p className="text-xs text-slate-400 leading-relaxed">
+                                Esta operación está perfectamente conciliada. La cabecera y los movimientos de caja coinciden.
+                            </p>
+                        ) : (
+                            <p className="text-xs text-slate-400 leading-relaxed">
+                                Se detectó un desajuste de <span className="font-mono font-bold text-rose-450">${absDiferencia.toLocaleString('es-AR', { minimumFractionDigits: 2 })}</span>. 
+                                La caja chica tiene {diferencia > 0 ? 'de menos' : 'de más'} dinero con respecto a la factura.
+                            </p>
+                        )}
+                    </div>
+                    {isConciliado ? (
+                        <div className="flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-bold uppercase text-emerald-400 self-start sm:self-auto">
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            <span>Conciliado</span>
+                        </div>
+                    ) : (
+                        <div className="flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-rose-500/10 border border-rose-500/20 text-[10px] font-bold uppercase text-rose-400 self-start sm:self-auto">
+                            <AlertTriangle className="w-3.5 h-3.5 animate-pulse" />
+                            <span>Desajustado</span>
+                        </div>
+                    )}
+                </div>
+
+                {!isConciliado && (
+                    <div className="mt-4 flex flex-wrap gap-2 pt-3 border-t border-slate-800/40">
+                        {/* Option A: Align single payment to Cabecera (Case 1: exactly 1 payment) */}
+                        {payments.length === 1 && (
+                            <button
+                                onClick={handleAlinearPagoACabecera}
+                                disabled={isSaving}
+                                className="flex items-center space-x-1 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white transition-all text-xs font-medium border border-emerald-500/20 shadow-md hover:shadow-lg active:scale-95"
+                            >
+                                <Sparkles className="w-3.5 h-3.5" />
+                                <span>Alinear pago a Cabecera (${totalCabecera.toLocaleString('es-AR', { minimumFractionDigits: 2 })})</span>
+                            </button>
+                        )}
+
+                        {/* Option B: Add payment for the difference (if diff > 0) */}
+                        {diferencia > 0 && (
+                            <button
+                                onClick={() => handleCreateDifferencePayment(diferencia)}
+                                disabled={isSaving}
+                                className="flex items-center space-x-1 px-3 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white transition-all text-xs font-medium border border-violet-500/20 shadow-md hover:shadow-lg active:scale-95"
+                            >
+                                <Plus className="w-3.5 h-3.5" />
+                                <span>Crear pago por la diferencia (${diferencia.toLocaleString('es-AR', { minimumFractionDigits: 2 })})</span>
+                            </button>
+                        )}
+
+                        {/* Option C: Adjust last payment to absorb the difference (if payments.length > 0) */}
+                        {payments.length > 0 && (
+                            <button
+                                onClick={() => handleAdjustLastPayment(diferencia)}
+                                disabled={isSaving}
+                                className="flex items-center space-x-1 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white transition-all text-xs font-medium border border-blue-500/20 shadow-md hover:shadow-lg active:scale-95"
+                            >
+                                <Coins className="w-3.5 h-3.5" />
+                                <span>Ajustar último pago</span>
+                            </button>
+                        )}
+
+                        {/* Option D: Adjust Cabecera to Payments sum */}
+                        <button
+                            onClick={() => handleAlinearCabeceraAPagos(totalPagos)}
+                            disabled={isSaving}
+                            className="flex items-center space-x-1 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-slate-200 transition-all text-xs font-medium border border-slate-700 shadow-md hover:shadow-lg active:scale-95"
+                        >
+                            <Edit2 className="w-3.5 h-3.5" />
+                            <span>Ajustar Cabecera a total pagos (${totalPagos.toLocaleString('es-AR', { minimumFractionDigits: 2 })})</span>
+                        </button>
+
+                        {/* Option E: Reset and create single payment */}
+                        {payments.length > 0 && (
+                            <button
+                                onClick={() => handleResetAndCreateSinglePayment(totalCabecera)}
+                                disabled={isSaving}
+                                className="flex items-center space-x-1 px-3 py-1.5 rounded-lg bg-rose-950/40 hover:bg-rose-900/40 disabled:opacity-50 text-rose-300 transition-all text-xs font-medium border border-rose-500/25 shadow-md active:scale-95"
+                            >
+                                <Trash2 className="w-3.5 h-3.5" />
+                                <span>Reemplazar todo con pago único (${totalCabecera.toLocaleString('es-AR', { minimumFractionDigits: 2 })})</span>
+                            </button>
+                        )}
+                    </div>
+                )}
+            </div>
 
             {/* Ajuste de Cabecera */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-950/45 p-4 rounded-xl border border-slate-850">
@@ -313,13 +548,18 @@ const OperationDetails = ({ operacionId, tipoOperacion, onRefresh, cabeceraOrigi
                                                 <td className="py-2 text-center">
                                                     {isEditing ? (
                                                         <div className="flex justify-center items-center space-x-1">
-                                                            <button onClick={() => handleSavePayment(p.movimiento_id)} disabled={isSaving} className="p-1 hover:bg-emerald-500/10 text-emerald-400 rounded transition-colors"><Check className="w-3.5 h-3.5" /></button>
-                                                            <button onClick={() => setEditingPaymentId(null)} disabled={isSaving} className="p-1 hover:bg-red-500/10 text-red-400 rounded transition-colors"><X className="w-3.5 h-3.5" /></button>
+                                                            <button onClick={() => handleSavePayment(p.movimiento_id)} disabled={isSaving} className="p-1 hover:bg-emerald-500/10 text-emerald-400 rounded transition-colors" title="Guardar"><Check className="w-3.5 h-3.5" /></button>
+                                                            <button onClick={() => setEditingPaymentId(null)} disabled={isSaving} className="p-1 hover:bg-red-500/10 text-red-400 rounded transition-colors" title="Cancelar"><X className="w-3.5 h-3.5" /></button>
                                                         </div>
                                                     ) : (
-                                                        <button onClick={() => { setEditingPaymentId(p.movimiento_id); setPaymentForm({ monto: p.monto || '0' }) }} disabled={isSaving} className="p-1 hover:bg-slate-800 text-slate-400 hover:text-slate-200 rounded transition-colors">
-                                                            <Edit2 className="w-3.5 h-3.5" />
-                                                        </button>
+                                                        <div className="flex justify-center items-center space-x-1">
+                                                            <button onClick={() => { setEditingPaymentId(p.movimiento_id); setPaymentForm({ monto: p.monto || '0' }) }} disabled={isSaving} className="p-1 hover:bg-slate-800 text-slate-400 hover:text-slate-200 rounded transition-colors" title="Editar monto">
+                                                                <Edit2 className="w-3.5 h-3.5" />
+                                                            </button>
+                                                            <button onClick={() => handleDeletePayment(p.movimiento_id)} disabled={isSaving} className="p-1 hover:bg-slate-800 text-rose-400 hover:text-rose-300 rounded transition-colors" title="Eliminar pago">
+                                                                <Trash2 className="w-3.5 h-3.5" />
+                                                            </button>
+                                                        </div>
                                                     )}
                                                 </td>
                                             </tr>

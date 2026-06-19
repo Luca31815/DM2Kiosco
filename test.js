@@ -25,7 +25,7 @@ const getWords = (name) => {
         .replace(/\bC\/\b/g, 'CON ')
         .replace(/\bP\/\b/g, 'PARA ')
         .replace(/\bGFA\b/g, 'GARRAFA')
-        .replace(/[.,\/#!$%\^&\*;:{}=\-_~()]/g, ' ')
+        .replace(/[.,/#!$%^&*;:{}=\-_~()]/g, ' ')
         .replace(/(\d+)\s*(LTS|LT)\b/g, '$1L')
         .replace(/(\d+)\s*(CM3|CC)\b/g, '$1ML')
         .replace(/(\d+)\s*(GRS|GR|GRAMOS)\b/g, '$1G')

@@ -5,7 +5,6 @@ import { Loader2, Edit2, Check, X, Search, Package, Receipt, CreditCard, Users }
 import * as api from '../services/api'
 import { useSWRConfig } from 'swr'
 import ProductAutocomplete from '../components/ProductAutocomplete'
-import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'react-hot-toast'
 
 const ExpandedRow = ({ row }) => {
@@ -18,7 +17,7 @@ const ExpandedRow = ({ row }) => {
     const [editingSupplier, setEditingSupplier] = useState(false)
     const [editForm, setEditForm] = useState({})
     const [supplierName, setSupplierName] = useState(row.proveedor || '')
-    const [isSaving, setIsSaving] = useState(false)
+    const [, setIsSaving] = useState(false)
 
     if (loadingDetails || loadingDinero || loadingStock) {
         return (

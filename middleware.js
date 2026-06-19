@@ -1,3 +1,4 @@
+/* global process */
 // middleware.js - Versión ultra-compatible para Vercel Edge
 export const config = {
     // Forzamos que corra en la raíz y rutas principales

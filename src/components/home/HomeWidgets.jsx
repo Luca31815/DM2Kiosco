@@ -1,6 +1,6 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
-import { colorMap } from '../../components/home/HomeStatCards'
+import { colorMap } from './colorMap'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // StockBar — Barra de progreso de stock crítico

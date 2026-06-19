@@ -4,7 +4,6 @@ import { useRetiros } from '../hooks/useData'
 import { Banknote, Plus, Search, Loader2, Calendar, FileText, Check, X } from 'lucide-react'
 import * as api from '../services/api'
 import { useSWRConfig } from 'swr'
-import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'react-hot-toast'
 
 const RetirosView = () => {

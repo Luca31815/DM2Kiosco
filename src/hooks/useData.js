@@ -123,7 +123,7 @@ export function useProductosDuplicadosTrigram() {
         try {
             const saved = localStorage.getItem('ignoredDuplicatesTrigram');
             return saved ? JSON.parse(saved) : [];
-        } catch (e) { return []; }
+        } catch { return []; }
     });
 
     const ignoreDuplicate = (id1, id2) => {

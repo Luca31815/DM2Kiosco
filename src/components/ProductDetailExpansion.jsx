@@ -34,7 +34,6 @@ const ProductDetailExpansion = ({ product }) => {
 
     if (!details) return null
 
-    const hasSinonimos = details.sinonimos && details.sinonimos.length > 0
     const hasVentas = details.ventas && details.ventas.length > 0
     const hasCompras = details.compras && details.compras.length > 0
     const hasReservas = details.reservas && details.reservas.length > 0

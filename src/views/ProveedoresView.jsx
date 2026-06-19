@@ -23,7 +23,6 @@ import {
 import ProductAutocomplete from '../components/ProductAutocomplete'
 import * as api from '../services/api'
 import { mutate } from 'swr'
-import { motion, AnimatePresence } from 'framer-motion'
 import { 
     LineChart, 
     Line, 
@@ -74,7 +73,7 @@ const ProveedoresView = () => {
     }, [productosProveedor, searchProduct])
 
     // 4. Fetch Price Comparison for selected product
-    const { data: comparativaPrecios, loading: loadingComparativa } = useHistorialCompras({
+    const { data: comparativaPrecios } = useHistorialCompras({
         filterColumn: 'producto',
         filterValue: selectedProduct,
         pageSize: 1000

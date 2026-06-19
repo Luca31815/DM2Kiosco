@@ -1,11 +1,10 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useCallback } from 'react'
 import DataTable from '../components/DataTable'
 import { useProductos, usePredictiveStock } from '../hooks/useData'
 import { Edit2, Check, X, Loader2, Package, TrendingUp, TrendingDown, Clock, Search, Timer, Trash2, PackagePlus, DollarSign, FileText, Bookmark } from 'lucide-react'
 import * as api from '../services/api'
 import { useSWRConfig } from 'swr'
 import ProductAutocomplete from '../components/ProductAutocomplete'
-import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'react-hot-toast'
 import ProductDetailExpansion from '../components/ProductDetailExpansion'
 import { generateProductsPDF } from '../utils/pdfGenerator'
@@ -62,7 +61,7 @@ const ProductosView = () => {
         setEditForm({ ...product, p_guardar_alias: true })
     }
 
-    const handleSave = async () => {
+    const handleSave = useCallback(async () => {
         const nombreNormalizado = editForm.nombre?.trim().toUpperCase()
         const stockNum = parseInt(editForm.stock_actual)
         const precioVentaNum = parseFloat(editForm.ultimo_precio_venta)
@@ -110,7 +109,7 @@ const ProductosView = () => {
         } finally {
             setIsSaving(false)
         }
-    }
+    }, [editForm, mutate])
 
     const handleCleanup = async () => {
         if (!window.confirm('¿Estás seguro de que deseas eliminar permanentemente todos los productos que no tienen NINGUNA operación (Ventas, Compras o Reservas)?')) {
@@ -354,7 +353,7 @@ const ProductosView = () => {
                 </div>
             )
         }
-    ], [editingId, editForm, isSaving])
+    ], [editingId, editForm, isSaving, handleSave])
 
     const handleSort = (column) => {
         if (column === 'acciones') return

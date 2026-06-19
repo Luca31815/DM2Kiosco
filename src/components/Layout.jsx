@@ -83,7 +83,6 @@ LiveClock.displayName = 'LiveClock'
 
 // ── TopBar — no longer re-renders on clock tick ──────────────────────────────
 const TopBar = React.memo(({ onMenuClick }) => {
-    const [lastUpdated] = useState(() => new Date())
     const [refreshing, setRefreshing] = useState(false)
     const isMobile = useIsMobile()
 

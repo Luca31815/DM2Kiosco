@@ -7,7 +7,6 @@ import {
     Activity, Clock, Tag, BarChart2, Percent, Sigma, ArrowRight, Target,
     CreditCard, PieChart, Sparkles
 } from 'lucide-react'
-import { motion } from 'framer-motion'
 import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
     ResponsiveContainer, BarChart, Bar, Cell, LabelList
@@ -15,6 +14,22 @@ import {
 import { KPICard } from './reportes/ReportesKPI'
 import ExpandedPeriodPanel from './reportes/ExpandedPeriodPanel'
 import { MES_NAMES } from './reportes/reportesHelpers'
+
+// ── Custom Tooltip for Chart ──────────────────────────────────────────────────
+const CustomTooltip = ({ active, payload, label }) => {
+    if (!active || !payload?.length) return null
+    return (
+        <div className="bg-slate-900 border border-white/10 rounded-2xl p-4 shadow-2xl min-w-[180px]">
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-3">{label}</p>
+            {payload.map((p, i) => (
+                <div key={i} className="flex justify-between items-center gap-4 text-xs font-bold mb-1">
+                    <span style={{ color: p.color }}>{p.name === 'ingresos' ? 'Ingresos' : p.name === 'egresos' ? 'Egresos' : 'Saldo'}</span>
+                    <span className="text-white tabular-nums">${Math.floor(p.value).toLocaleString()}</span>
+                </div>
+            ))}
+        </div>
+    )
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // COMPONENTE PRINCIPAL — ReportesView
@@ -224,20 +239,6 @@ const ReportesView = () => {
         return { total: conCosto.reduce((s, p) => s + p.ganancia_total, 0), productos: conCosto.length }
     }, [topProductsData])
 
-    const CustomTooltip = ({ active, payload, label }) => {
-        if (!active || !payload?.length) return null
-        return (
-            <div className="bg-slate-900 border border-white/10 rounded-2xl p-4 shadow-2xl min-w-[180px]">
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-3">{label}</p>
-                {payload.map((p, i) => (
-                    <div key={i} className="flex justify-between items-center gap-4 text-xs font-bold mb-1">
-                        <span style={{ color: p.color }}>{p.name === 'ingresos' ? 'Ingresos' : p.name === 'egresos' ? 'Egresos' : 'Saldo'}</span>
-                        <span className="text-white tabular-nums">${Math.floor(p.value).toLocaleString()}</span>
-                    </div>
-                ))}
-            </div>
-        )
-    }
 
     return (
         <div className="space-y-8 pb-32">

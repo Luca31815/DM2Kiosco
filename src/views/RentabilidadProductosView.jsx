@@ -2,7 +2,6 @@ import React, { useState, useMemo } from 'react'
 import DataTable from '../components/DataTable'
 import { useRentabilidadProductos } from '../hooks/useData'
 import { TrendingUp, AlertTriangle, CheckCircle, Ban } from 'lucide-react'
-import { motion } from 'framer-motion'
 
 const RentabilidadProductosView = () => {
     const [sortColumn, setSortColumn] = useState('ingresos_totales')

@@ -16,7 +16,7 @@ import {
     ChevronRight,
 } from 'lucide-react'
 import { useReporte, useReservas, useProductos, useProductosDuplicadosTrigram } from '../hooks/useData'
-import { StatCard, SkeletonCard, colorMap } from '../components/home/HomeStatCards'
+import { StatCard, SkeletonCard } from '../components/home/HomeStatCards'
 import { HomeChart } from '../components/home/HomeChart'
 import { StockBar, QuickAction, FileBarChart2 } from '../components/home/HomeWidgets'
 

@@ -5,11 +5,17 @@ import { Loader2 } from 'lucide-react'
 
 const ClientAutocomplete = ({ value, onChange, placeholder = 'Buscar cliente...', className = '' }) => {
     const [inputValue, setInputValue] = useState(value || '')
+    const [prevValue, setPrevValue] = useState(value)
     const [showSuggestions, setShowSuggestions] = useState(false)
     const [debouncedQuery, setDebouncedQuery] = useState('')
     const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 })
     const wrapperRef = useRef(null)
     const inputRef = useRef(null)
+
+    if (value !== prevValue) {
+        setInputValue(value || '')
+        setPrevValue(value)
+    }
 
     // Debounce logic
     useEffect(() => {
@@ -18,11 +24,6 @@ const ClientAutocomplete = ({ value, onChange, placeholder = 'Buscar cliente...'
         }, 400)
         return () => clearTimeout(timer)
     }, [inputValue])
-
-    // Sync external value changes
-    useEffect(() => {
-        setInputValue(value || '')
-    }, [value])
 
     // Fetch suggestions
     const { data: suggestions, loading } = useClientes({

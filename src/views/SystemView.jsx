@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback } from 'react'
 import useSWR from 'swr'
-import { getAuditLogs, getN8nErrors, getPredictiveStock, rollbackLog, getAISummaries, getSystemAlerts } from '../services/api'
+import { getAuditLogs, getN8nErrors, getPredictiveStock, rollbackLog, getAISummaries } from '../services/api'
 import DataTable from '../components/DataTable'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ShieldCheck, Activity, PackageSearch, AlertCircle, Clock, Database, Terminal, User, Cpu, ArrowRight, Code2, RotateCcw, Sparkles } from 'lucide-react'
@@ -180,10 +180,6 @@ const SystemView = () => {
         () => getAISummaries({ tipo: summaryType, pageSize: 12 })
     )
 
-    const { data: systemAlerts, isLoading: loadingAlerts } = useSWR(
-        activeTab === 'alerts' ? 'systemAlerts' : null,
-        () => getSystemAlerts()
-    )
 
     const handleRollback = async (id) => {
         if (!confirm('¿Seguro que querés deshacer este cambio?')) return

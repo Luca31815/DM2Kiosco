@@ -17,7 +17,7 @@ async function findDuplicates() {
 
     const normalize = (name) => {
       return name.toUpperCase()
-        .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "") 
+        .replace(/[.,/#!$%^&*;:{}=\-_`~()]/g, "") 
         .trim()
         .split(/\s+/)
         .sort()
