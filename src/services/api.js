@@ -474,5 +474,82 @@ export const fusionarProveedores = async (origen, destino) => {
         console.error('Error calling fn_fusionar_proveedores:', error)
         throw error
     }
-    return data
+    return data;
 }
+
+export const getCarteraActual = async () => {
+    if (isDemo()) {
+        return [
+            { metodo: 'Efectivo', entradas: 100000, salidas: 20000, balance_neto: 80000, cantidad_movimientos: 150 },
+            { metodo: 'Mercado Pago', entradas: 50000, salidas: 5000, balance_neto: 45000, cantidad_movimientos: 80 },
+            { metodo: 'Transferencia', entradas: 30000, salidas: 0, balance_neto: 30000, cantidad_movimientos: 10 }
+        ];
+    }
+    const { data, error } = await supabase
+        .from('v_cartera_actual')
+        .select('*')
+        .order('balance_neto', { ascending: false });
+    if (error) {
+        console.error('Error al obtener cartera actual:', error);
+        throw error;
+    }
+    return data;
+};
+
+export const getReemplazosMetodosPago = async () => {
+    if (isDemo()) {
+        return [
+            { metodo_origen: 'mp', metodo_destino: 'Mercado Pago', fecha_creacion: new Date().toISOString() },
+            { metodo_origen: 'efectivo', metodo_destino: 'Efectivo', fecha_creacion: new Date().toISOString() }
+        ];
+    }
+    const { data, error } = await supabase
+        .from('reemplazos_metodos_pago')
+        .select('*')
+        .order('fecha_creacion', { ascending: false });
+    if (error) {
+        console.error('Error al obtener reemplazos de métodos de pago:', error);
+        throw error;
+    }
+    return data;
+};
+
+export const crearReemplazoMetodoPago = async (origen, destino) => {
+    if (isDemo()) return { success: true };
+    const { data, error } = await supabase.rpc('fn_crear_reemplazo_y_actualizar_movimientos', {
+        p_origen: origen,
+        p_destino: destino
+    });
+    if (error) {
+        console.error('Error al crear reemplazo de método de pago:', error);
+        throw error;
+    }
+    return data;
+};
+
+export const eliminarReemplazoMetodoPago = async (origen) => {
+    if (isDemo()) return { success: true };
+    const { data, error } = await supabase
+        .from('reemplazos_metodos_pago')
+        .delete()
+        .eq('metodo_origen', origen)
+        .select();
+    if (error) {
+        console.error('Error al eliminar reemplazo de método de pago:', error);
+        throw error;
+    }
+    return data;
+};
+
+export const ejecutarCronReemplazosManual = async () => {
+    if (isDemo()) {
+        return { ejecutado_en: new Date().toISOString(), movimientos_actualizados: 0, detalles: [] };
+    }
+    const { data, error } = await supabase.rpc('fn_cron_revisar_reemplazos_metodo_pago');
+    if (error) {
+        console.error('Error al ejecutar cron de reemplazos:', error);
+        throw error;
+    }
+    return data;
+};
+

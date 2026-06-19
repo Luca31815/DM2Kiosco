@@ -15,6 +15,7 @@ import {
     AlertTriangle,
     Users,
     Wallet,
+    CreditCard,
     CandlestickChart,
     ScanSearch,
     Scale,
@@ -37,6 +38,7 @@ const navGroups = [
             { to: '/proveedores', label: 'Proveedores', icon: Users },
             { to: '/reservas', label: 'Reservas', icon: Calendar },
             { to: '/retiros', label: 'Gestión de Caja', icon: Wallet },
+            { to: '/cartera', label: 'Cartera & Pagos', icon: CreditCard },
         ]
     },
     {
