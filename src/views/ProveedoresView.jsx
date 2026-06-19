@@ -34,6 +34,8 @@ import {
     AreaChart,
     Area
 } from 'recharts'
+import { AnimatePresence } from 'framer-motion'
+
 
 // Helper Component for Close Icon
 const X = ({ size }) => (

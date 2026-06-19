@@ -11,6 +11,8 @@ import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
     ResponsiveContainer, BarChart, Bar, Cell, LabelList
 } from 'recharts'
+import { motion } from 'framer-motion'
+
 import { KPICard } from './reportes/ReportesKPI'
 import ExpandedPeriodPanel from './reportes/ExpandedPeriodPanel'
 import { MES_NAMES } from './reportes/reportesHelpers'
