@@ -131,7 +131,7 @@ const SynonymManagerModal = ({ isOpen, onClose }) => {
                             <p className="text-slate-500 text-xs font-medium uppercase tracking-widest">Auditoría y Resolución de Conflictos</p>
                         </div>
                     </div>
-                    <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-xl transition-colors text-slate-400">
+                    <button type="button" onClick={onClose} className="p-2 hover:bg-white/10 rounded-xl transition-colors text-slate-400">
                         <X size={20} />
                     </button>
                 </div>
@@ -139,13 +139,13 @@ const SynonymManagerModal = ({ isOpen, onClose }) => {
                 {/* Tabs & Search */}
                 <div className="p-4 bg-white/[0.01] border-b border-white/5 flex flex-col md:flex-row gap-4">
                     <div className="flex bg-slate-800/50 p-1 rounded-xl border border-white/5">
-                        <button 
+                        <button type="button" 
                             onClick={() => setView('all')}
                             className={`px-4 py-2 rounded-lg text-xs font-black transition-all ${view === 'all' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'text-slate-500 hover:text-slate-300'}`}
                         >
                             DICCIONARIO ({synonyms.length})
                         </button>
-                        <button 
+                        <button type="button" 
                             onClick={() => setView('conflicts')}
                             className={`px-4 py-2 rounded-lg text-xs font-black transition-all ${view === 'conflicts' ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/20' : 'text-slate-500 hover:text-slate-300'}`}
                         >
@@ -177,9 +177,10 @@ const SynonymManagerModal = ({ isOpen, onClose }) => {
                         ).filter(([_, group]) => group.length > 1).map(([dest, group]) => (
                             <motion.div 
                                 key={`bulk-${dest}`}
-                                initial={{ height: 0, opacity: 0 }}
-                                animate={{ height: 'auto', opacity: 1 }}
-                                exit={{ height: 0, opacity: 0 }}
+                                initial={{ scaleY: 0, opacity: 0 }}
+                                animate={{ scaleY: 1, opacity: 1 }}
+                                exit={{ scaleY: 0, opacity: 0 }}
+                                style={{ originY: 0 }}
                                 className="px-6 py-3 bg-amber-500/10 border-b border-amber-500/20 flex items-center justify-between gap-4"
                             >
                                 <div className="flex items-center gap-3">
@@ -190,7 +191,7 @@ const SynonymManagerModal = ({ isOpen, onClose }) => {
                                         Hay <b className="text-amber-400">{group.length}</b> conflictos apuntando a <b className="text-white">"{dest}"</b>
                                     </span>
                                 </div>
-                                <button 
+                                <button type="button" 
                                     onClick={async () => {
                                         if (confirm(`¿Resolver los ${group.length} conflictos de "${dest}" en lote sin confirmaciones individuales?`)) {
                                             for (const c of group) {
@@ -274,7 +275,7 @@ const SynonymManagerModal = ({ isOpen, onClose }) => {
                                             <td className="px-6 py-4 text-right">
                                                 <div className="flex items-center justify-end gap-2">
                                                     {conflict && (
-                                                        <button 
+                                                        <button type="button" 
                                                             disabled={resolvingId === conflict.alias}
                                                             onClick={() => handleResolve(conflict)}
                                                             className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95 flex items-center gap-2 ${
@@ -288,7 +289,7 @@ const SynonymManagerModal = ({ isOpen, onClose }) => {
                                                              (conflict.flatten_target ? 'Aplanar' : 'Corregir')}
                                                         </button>
                                                     )}
-                                                    <button 
+                                                    <button type="button" 
                                                         onClick={() => handleDelete(s.alias)}
                                                         title="Eliminar de forma permanente"
                                                         className="p-2 text-slate-600 hover:text-rose-400 hover:bg-rose-400/10 rounded-xl transition-all opacity-0 group-hover:opacity-100"

@@ -1,6 +1,7 @@
 import React, { Suspense, lazy } from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { SpeedInsights } from "@vercel/speed-insights/react"
+import { MotionConfig, useReducedMotion } from 'framer-motion'
 import Layout from './components/Layout'
 import { Loader2 } from 'lucide-react'
 
@@ -29,7 +30,9 @@ const LoadingScreen = () => (
 )
 
 function App() {
+  const shouldReduceMotion = useReducedMotion()
   return (
+    <MotionConfig transition={shouldReduceMotion ? { duration: 0 } : undefined}>
     <Router>
       <Layout>
         <Suspense fallback={<LoadingScreen />}>
@@ -55,6 +58,7 @@ function App() {
       </Layout>
       <SpeedInsights />
     </Router>
+    </MotionConfig>
   )
 }
 

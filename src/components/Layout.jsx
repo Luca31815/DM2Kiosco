@@ -102,7 +102,7 @@ const TopBar = React.memo(({ onMenuClick }) => {
             <div className="relative flex items-center justify-between h-full px-4 md:px-6">
                 {/* Left: Menu + Logo */}
                 <div className="flex items-center gap-3">
-                    <button
+                    <button type="button"
                         id="sidebar-toggle"
                         onClick={onMenuClick}
                         className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/8 transition-all active:scale-95"
@@ -125,7 +125,7 @@ const TopBar = React.memo(({ onMenuClick }) => {
                     </div>
 
                     {/* Refresh button */}
-                    <button
+                    <button type="button"
                         id="refresh-btn"
                         onClick={handleRefresh}
                         title="Recargar datos"

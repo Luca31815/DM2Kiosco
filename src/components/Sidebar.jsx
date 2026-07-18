@@ -111,7 +111,7 @@ const Sidebar = memo(({ isOpen, onClose }) => {
                                     <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Panel de Control</p>
                                 </div>
                             </div>
-                            <button
+                            <button type="button"
                                 onClick={onClose}
                                 className="p-2 hover:bg-white/10 rounded-xl text-slate-400 hover:text-white transition-all active:scale-95"
                             >

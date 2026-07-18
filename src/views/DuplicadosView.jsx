@@ -302,7 +302,7 @@ Producto 2: [${d.p2.producto_id || d.p2.id}] ${d.p2.nombre} ($${d.p2.ultimo_prec
                 </div>
                 {/* Contadores y Botón IA */}
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
-                    <button 
+                    <button type="button" 
                         onClick={handleAiScan}
                         disabled={isAiScanning}
                         className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white rounded-xl font-bold transition-all shadow-[0_0_20px_rgba(99,102,241,0.3)] hover:shadow-[0_0_25px_rgba(99,102,241,0.5)] active:scale-95 disabled:opacity-50 min-h-[44px]"
@@ -311,7 +311,7 @@ Producto 2: [${d.p2.producto_id || d.p2.id}] ${d.p2.nombre} ($${d.p2.ultimo_prec
                         <span>Auditoría IA</span>
                     </button>
                     {aiDuplicates.length > 0 && (
-                        <button 
+                        <button type="button" 
                             onClick={handleCopyAiReport}
                             className="flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-800 border border-slate-700 hover:bg-slate-700 text-slate-300 rounded-xl font-bold transition-all active:scale-95 min-h-[44px]"
                             title="Copiar reporte técnico para soporte"
@@ -319,7 +319,7 @@ Producto 2: [${d.p2.producto_id || d.p2.id}] ${d.p2.nombre} ($${d.p2.ultimo_prec
                             <Copy className="h-5 w-5" />
                         </button>
                     )}
-                    <button 
+                    <button type="button" 
                         onClick={handleCleanup}
                         className="flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-800 border border-slate-700 hover:bg-slate-700 text-red-400 rounded-xl font-bold transition-all active:scale-95 min-h-[44px]"
                         title="Eliminar productos que no tienen ventas, compras ni reservas"
@@ -335,14 +335,14 @@ Producto 2: [${d.p2.producto_id || d.p2.id}] ${d.p2.nombre} ($${d.p2.ultimo_prec
 
             {/* Tabs de Selección */}
             <div className="flex items-center gap-2 p-1 bg-slate-900 border border-slate-800 rounded-2xl w-full sm:w-fit">
-                <button
+                <button type="button"
                     onClick={() => setActiveTab('sugerencias')}
                     className={`flex-1 sm:flex-none px-6 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 min-h-[44px] ${activeTab === 'sugerencias' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'text-slate-500 hover:text-slate-300'}`}
                 >
                     <CheckCircle2 className="h-4 w-4" />
                     Sugerencias ({duplicados.length})
                 </button>
-                <button
+                <button type="button"
                     onClick={() => setActiveTab('conflictos')}
                     className={`flex-1 sm:flex-none px-6 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 min-h-[44px] ${activeTab === 'conflictos' ? 'bg-amber-600 text-white shadow-lg shadow-amber-500/20' : 'text-slate-500 hover:text-slate-300'}`}
                 >
@@ -462,14 +462,14 @@ const DuplicateCard = ({ d, uniqueKey, selections, setSelections, handleMergeSel
                 </div>
 
                 <div className="flex flex-col gap-2 shrink-0 w-full md:w-48 self-stretch md:self-auto justify-end">
-                    <button 
+                    <button type="button" 
                         onClick={() => handleMergeSelection(d)}
                         disabled={!selections[uniqueKey] || mergingId !== null}
                         className="w-full flex justify-center items-center gap-2 px-4 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:hover:bg-blue-600 text-white text-sm font-bold transition-transform active:scale-95 shadow-lg shadow-blue-500/20"
                     >
                         {(mergingId === d.p1.producto_id || mergingId === d.p2.producto_id) ? <Loader2 className="h-4 w-4 animate-spin"/> : <CheckCircle2 className="h-4 w-4"/>} Fusionar aquí
                     </button>
-                    <button 
+                    <button type="button" 
                         onClick={() => {
                             ignoreSQL(id1, id2);
                             setAiDuplicates(prev => prev.filter(item => {
@@ -521,7 +521,7 @@ const ConflictCard = ({ d, ignoreSQL }) => {
                 </div>
 
                 <div className="flex flex-col gap-2 shrink-0 w-full md:w-48 self-stretch md:self-auto justify-end">
-                    <button 
+                    <button type="button" 
                         onClick={() => ignoreSQL(id1, id2)}
                         className="w-full flex justify-center items-center gap-2 px-4 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-bold transition-transform active:scale-95 border border-white/5"
                     >

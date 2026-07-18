@@ -22,7 +22,7 @@ StockBar.displayName = 'StockBar'
 export const QuickAction = React.memo(({ icon: Icon, label, to, color = 'blue', delay = 0 }) => {
     const navigate = useNavigate()
     return (
-        <button
+        <button type="button"
             onClick={() => navigate(to)}
             className={`flex flex-col items-center gap-2 p-4 rounded-xl bg-slate-800/50 border border-white/5 hover:border-white/10 hover:bg-slate-800 transition-all duration-200 hover:-translate-y-0.5 active:scale-95 animate-fade-in-up group`}
             style={{ animationDelay: `${delay}ms` }}

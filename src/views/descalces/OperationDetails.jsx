@@ -334,7 +334,7 @@ const OperationDetails = ({ operacionId, tipoOperacion, onRefresh, cabeceraOrigi
                     <div className="mt-4 flex flex-wrap gap-2 pt-3 border-t border-slate-800/40">
                         {/* Option A: Align single payment to Cabecera (Case 1: exactly 1 payment) */}
                         {payments.length === 1 && (
-                            <button
+                            <button type="button"
                                 onClick={handleAlinearPagoACabecera}
                                 disabled={isSaving}
                                 className="flex items-center space-x-1 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white transition-all text-xs font-medium border border-emerald-500/20 shadow-md hover:shadow-lg active:scale-95"
@@ -346,7 +346,7 @@ const OperationDetails = ({ operacionId, tipoOperacion, onRefresh, cabeceraOrigi
 
                         {/* Option B: Add payment for the difference (if diff > 0) */}
                         {diferencia > 0 && (
-                            <button
+                            <button type="button"
                                 onClick={() => handleCreateDifferencePayment(diferencia)}
                                 disabled={isSaving}
                                 className="flex items-center space-x-1 px-3 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white transition-all text-xs font-medium border border-violet-500/20 shadow-md hover:shadow-lg active:scale-95"
@@ -358,7 +358,7 @@ const OperationDetails = ({ operacionId, tipoOperacion, onRefresh, cabeceraOrigi
 
                         {/* Option C: Adjust last payment to absorb the difference (if payments.length > 0) */}
                         {payments.length > 0 && (
-                            <button
+                            <button type="button"
                                 onClick={() => handleAdjustLastPayment(diferencia)}
                                 disabled={isSaving}
                                 className="flex items-center space-x-1 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white transition-all text-xs font-medium border border-blue-500/20 shadow-md hover:shadow-lg active:scale-95"
@@ -369,7 +369,7 @@ const OperationDetails = ({ operacionId, tipoOperacion, onRefresh, cabeceraOrigi
                         )}
 
                         {/* Option D: Adjust Cabecera to Payments sum */}
-                        <button
+                        <button type="button"
                             onClick={() => handleAlinearCabeceraAPagos(totalPagos)}
                             disabled={isSaving}
                             className="flex items-center space-x-1 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-slate-200 transition-all text-xs font-medium border border-slate-700 shadow-md hover:shadow-lg active:scale-95"
@@ -380,7 +380,7 @@ const OperationDetails = ({ operacionId, tipoOperacion, onRefresh, cabeceraOrigi
 
                         {/* Option E: Reset and create single payment */}
                         {payments.length > 0 && (
-                            <button
+                            <button type="button"
                                 onClick={() => handleResetAndCreateSinglePayment(totalCabecera)}
                                 disabled={isSaving}
                                 className="flex items-center space-x-1 px-3 py-1.5 rounded-lg bg-rose-950/40 hover:bg-rose-900/40 disabled:opacity-50 text-rose-300 transition-all text-xs font-medium border border-rose-500/25 shadow-md active:scale-95"
@@ -410,10 +410,10 @@ const OperationDetails = ({ operacionId, tipoOperacion, onRefresh, cabeceraOrigi
                                         onChange={e => setCabeceraForm({ total: e.target.value })}
                                         disabled={isSaving}
                                     />
-                                    <button onClick={handleSaveCabecera} disabled={isSaving} className="p-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 rounded-lg transition-colors border border-emerald-500/20">
+                                    <button type="button" onClick={handleSaveCabecera} disabled={isSaving} className="p-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 rounded-lg transition-colors border border-emerald-500/20">
                                         <Check className="w-4 h-4" />
                                     </button>
-                                    <button onClick={() => setEditingCabecera(false)} disabled={isSaving} className="p-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg transition-colors border border-red-500/20">
+                                    <button type="button" onClick={() => setEditingCabecera(false)} disabled={isSaving} className="p-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg transition-colors border border-red-500/20">
                                         <X className="w-4 h-4" />
                                     </button>
                                 </div>
@@ -426,7 +426,7 @@ const OperationDetails = ({ operacionId, tipoOperacion, onRefresh, cabeceraOrigi
                     </div>
                 </div>
                 {!editingCabecera && (
-                    <button
+                    <button type="button"
                         onClick={() => { setEditingCabecera(true); setCabeceraForm({ total: cabeceraOriginal }) }}
                         disabled={isSaving}
                         className="flex items-center space-x-1.5 px-3 py-1.5 text-xs bg-slate-850 hover:bg-slate-800 text-slate-300 rounded-lg transition-colors border border-slate-750"
@@ -483,11 +483,11 @@ const OperationDetails = ({ operacionId, tipoOperacion, onRefresh, cabeceraOrigi
                                                 <td className="py-2 text-center">
                                                     {isEditing ? (
                                                         <div className="flex justify-center items-center space-x-1">
-                                                            <button onClick={() => handleSaveItem(it)} disabled={isSaving} className="p-1 hover:bg-emerald-500/10 text-emerald-400 rounded transition-colors"><Check className="w-3.5 h-3.5" /></button>
-                                                            <button onClick={() => setEditingItemId(null)} disabled={isSaving} className="p-1 hover:bg-red-500/10 text-red-400 rounded transition-colors"><X className="w-3.5 h-3.5" /></button>
+                                                            <button type="button" onClick={() => handleSaveItem(it)} disabled={isSaving} className="p-1 hover:bg-emerald-500/10 text-emerald-400 rounded transition-colors"><Check className="w-3.5 h-3.5" /></button>
+                                                            <button type="button" onClick={() => setEditingItemId(null)} disabled={isSaving} className="p-1 hover:bg-red-500/10 text-red-400 rounded transition-colors"><X className="w-3.5 h-3.5" /></button>
                                                         </div>
                                                     ) : (
-                                                        <button onClick={() => { setEditingItemId(it.id); setItemForm({ cantidad: it.cantidad, precio_unitario: it.precio_unitario || it.precio || '0' }) }} disabled={isSaving} className="p-1 hover:bg-slate-800 text-slate-400 hover:text-slate-200 rounded transition-colors">
+                                                        <button type="button" onClick={() => { setEditingItemId(it.id); setItemForm({ cantidad: it.cantidad, precio_unitario: it.precio_unitario || it.precio || '0' }) }} disabled={isSaving} className="p-1 hover:bg-slate-800 text-slate-400 hover:text-slate-200 rounded transition-colors">
                                                             <Edit2 className="w-3.5 h-3.5" />
                                                         </button>
                                                     )}
@@ -509,7 +509,7 @@ const OperationDetails = ({ operacionId, tipoOperacion, onRefresh, cabeceraOrigi
                             <span>Movimientos registrados en caja</span>
                         </div>
                         {payments.length === 0 && (
-                            <button onClick={handleCreatePayment} disabled={isSaving} className="flex items-center space-x-1 text-[10px] font-bold text-emerald-400 hover:text-emerald-350 transition-colors uppercase">
+                            <button type="button" onClick={handleCreatePayment} disabled={isSaving} className="flex items-center space-x-1 text-[10px] font-bold text-emerald-400 hover:text-emerald-350 transition-colors uppercase">
                                 <Plus className="w-3 h-3" /><span>Crear Pago Compensante</span>
                             </button>
                         )}
@@ -548,15 +548,15 @@ const OperationDetails = ({ operacionId, tipoOperacion, onRefresh, cabeceraOrigi
                                                 <td className="py-2 text-center">
                                                     {isEditing ? (
                                                         <div className="flex justify-center items-center space-x-1">
-                                                            <button onClick={() => handleSavePayment(p.movimiento_id)} disabled={isSaving} className="p-1 hover:bg-emerald-500/10 text-emerald-400 rounded transition-colors" title="Guardar"><Check className="w-3.5 h-3.5" /></button>
-                                                            <button onClick={() => setEditingPaymentId(null)} disabled={isSaving} className="p-1 hover:bg-red-500/10 text-red-400 rounded transition-colors" title="Cancelar"><X className="w-3.5 h-3.5" /></button>
+                                                            <button type="button" onClick={() => handleSavePayment(p.movimiento_id)} disabled={isSaving} className="p-1 hover:bg-emerald-500/10 text-emerald-400 rounded transition-colors" title="Guardar"><Check className="w-3.5 h-3.5" /></button>
+                                                            <button type="button" onClick={() => setEditingPaymentId(null)} disabled={isSaving} className="p-1 hover:bg-red-500/10 text-red-400 rounded transition-colors" title="Cancelar"><X className="w-3.5 h-3.5" /></button>
                                                         </div>
                                                     ) : (
                                                         <div className="flex justify-center items-center space-x-1">
-                                                            <button onClick={() => { setEditingPaymentId(p.movimiento_id); setPaymentForm({ monto: p.monto || '0' }) }} disabled={isSaving} className="p-1 hover:bg-slate-800 text-slate-400 hover:text-slate-200 rounded transition-colors" title="Editar monto">
+                                                            <button type="button" onClick={() => { setEditingPaymentId(p.movimiento_id); setPaymentForm({ monto: p.monto || '0' }) }} disabled={isSaving} className="p-1 hover:bg-slate-800 text-slate-400 hover:text-slate-200 rounded transition-colors" title="Editar monto">
                                                                 <Edit2 className="w-3.5 h-3.5" />
                                                             </button>
-                                                            <button onClick={() => handleDeletePayment(p.movimiento_id)} disabled={isSaving} className="p-1 hover:bg-slate-800 text-rose-400 hover:text-rose-300 rounded transition-colors" title="Eliminar pago">
+                                                            <button type="button" onClick={() => handleDeletePayment(p.movimiento_id)} disabled={isSaving} className="p-1 hover:bg-slate-800 text-rose-400 hover:text-rose-300 rounded transition-colors" title="Eliminar pago">
                                                                 <Trash2 className="w-3.5 h-3.5" />
                                                             </button>
                                                         </div>

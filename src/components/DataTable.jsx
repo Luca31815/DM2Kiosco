@@ -149,7 +149,7 @@ const DataTable = ({
                 </div>
                 {/* Row 2: Export + loading */}
                 <div className="flex items-center justify-between">
-                    <button
+                    <button type="button"
                         onClick={exportToCSV}
                         disabled={isLoading || data.length === 0}
                         className="flex items-center gap-2 px-4 py-2.5 bg-white/5 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed border border-white/10 rounded-xl text-sm font-semibold text-slate-300 hover:text-white transition-all active:scale-95"
@@ -234,7 +234,7 @@ const DataTable = ({
                     </span>
 
                     <div className="flex items-center gap-1.5 order-1 sm:order-2">
-                        <button
+                        <button type="button"
                             onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                             disabled={currentPage === 1}
                             className="p-2 bg-white/5 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed border border-white/10 rounded-xl text-slate-400 hover:text-white transition-all active:scale-95 min-w-[36px] min-h-[36px] flex items-center justify-center"
@@ -253,7 +253,7 @@ const DataTable = ({
                                     (page >= currentPage - 1 && page <= currentPage + 1)
                                 ) {
                                     return (
-                                        <button
+                                        <button type="button"
                                             key={page}
                                             onClick={() => setCurrentPage(page)}
                                             className={`min-w-[32px] min-h-[32px] rounded-lg text-xs font-black transition-all ${currentPage === page ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'bg-white/5 text-slate-500 hover:bg-white/10 hover:text-slate-300'}`}
@@ -271,7 +271,7 @@ const DataTable = ({
                             })}
                         </div>
 
-                        <button
+                        <button type="button"
                             onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                             disabled={currentPage === totalPages}
                             className="p-2 bg-white/5 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed border border-white/10 rounded-xl text-slate-400 hover:text-white transition-all active:scale-95 min-w-[36px] min-h-[36px] flex items-center justify-center"

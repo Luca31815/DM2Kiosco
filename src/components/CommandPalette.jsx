@@ -17,7 +17,8 @@ const CommandPalette = ({ isOpen, onClose }) => {
             setQuery('')
             setResults({ products: [], clients: [], sales: [], reservations: [] })
             setSelectedIndex(0)
-            setTimeout(() => inputRef.current?.focus(), 100)
+            const id = setTimeout(() => inputRef.current?.focus(), 100)
+            return () => clearTimeout(id)
         }
     }, [isOpen])
 
@@ -148,7 +149,8 @@ const CommandPalette = ({ isOpen, onClose }) => {
                                 <div className="space-y-1">
                                     {allResults.map((item, index) => (
                                         <button
-                                            key={`${item.type}-${index}`}
+                                            type="button"
+                                            key={`${item.type}-${item.id ?? index}`}
                                             onClick={() => handleSelect(item)}
                                             onMouseEnter={() => setSelectedIndex(index)}
                                             className={`w-full flex items-center justify-between p-3 rounded-xl transition-all ${selectedIndex === index ? 'bg-blue-600 shadow-lg shadow-blue-500/20' : 'hover:bg-white/5'

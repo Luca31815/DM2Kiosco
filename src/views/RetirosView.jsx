@@ -83,7 +83,7 @@ const RetirosView = () => {
                     <p className="text-slate-400 font-medium mt-1 text-sm">Control de retiros manuales y salidas de dinero.</p>
                 </div>
 
-                <button
+                <button type="button"
                     onClick={() => setIsAdding(!isAdding)}
                     className={`w-full md:w-auto flex items-center justify-center gap-2 px-6 py-3 rounded-2xl font-black uppercase tracking-widest text-xs transition-all min-h-[44px] ${
                         isAdding 
