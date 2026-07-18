@@ -21,7 +21,7 @@ import {
     Scale,
     Zap
 } from 'lucide-react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { LazyMotion, domAnimation, m, AnimatePresence } from 'framer-motion'
 
 const navGroups = [
     {
@@ -71,17 +71,21 @@ const Sidebar = memo(({ isOpen, onClose }) => {
     const location = useLocation()
 
     return (
-        <>
+        <LazyMotion features={domAnimation}>
             {/* Overlay */}
             <AnimatePresence>
                 {isOpen && (
-                    <motion.div
+                    <m.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.2 }}
                         className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-40"
                         onClick={onClose}
+                        role="button"
+                        tabIndex={0}
+                        aria-label="Cerrar menú"
+                        onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && onClose()}
                     />
                 )}
             </AnimatePresence>
@@ -89,7 +93,7 @@ const Sidebar = memo(({ isOpen, onClose }) => {
             {/* Sidebar Drawer */}
             <AnimatePresence>
                 {isOpen && (
-                    <motion.div
+                    <m.div
                         initial={{ x: '-100%' }}
                         animate={{ x: 0 }}
                         exit={{ x: '-100%' }}
@@ -113,6 +117,7 @@ const Sidebar = memo(({ isOpen, onClose }) => {
                             </div>
                             <button type="button"
                                 onClick={onClose}
+                                aria-label="Cerrar navegación"
                                 className="p-2 hover:bg-white/10 rounded-xl text-slate-400 hover:text-white transition-all active:scale-95"
                             >
                                 <X className="h-5 w-5" />
@@ -144,7 +149,7 @@ const Sidebar = memo(({ isOpen, onClose }) => {
                                                     }`}
                                                 >
                                                     {isActive && (
-                                                        <motion.div
+                                                        <m.div
                                                             layoutId="activeIndicator"
                                                             className="absolute left-0 w-1 h-5 bg-gradient-to-b from-blue-400 to-indigo-500 rounded-r-full shadow-[0_0_8px_rgba(59,130,246,0.6)]"
                                                         />
@@ -177,10 +182,10 @@ const Sidebar = memo(({ isOpen, onClose }) => {
                                 <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Sistema Activo</span>
                             </div>
                         </div>
-                    </motion.div>
+                    </m.div>
                 )}
             </AnimatePresence>
-        </>
+        </LazyMotion>
     )
 })
 

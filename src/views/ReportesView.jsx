@@ -11,7 +11,7 @@ import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
     ResponsiveContainer, BarChart, Bar, Cell, LabelList
 } from 'recharts'
-import { motion } from 'framer-motion'
+import { LazyMotion, domAnimation, m } from 'framer-motion'
 
 import { KPICard } from './reportes/ReportesKPI'
 import ExpandedPeriodPanel from './reportes/ExpandedPeriodPanel'
@@ -24,7 +24,7 @@ const CustomTooltip = ({ active, payload, label }) => {
         <div className="bg-slate-900 border border-white/10 rounded-2xl p-4 shadow-2xl min-w-[180px]">
             <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-3">{label}</p>
             {payload.map((p, i) => (
-                <div key={i} className="flex justify-between items-center gap-4 text-xs font-bold mb-1">
+                <div key={p.dataKey || p.name || i} className="flex justify-between items-center gap-4 text-xs font-bold mb-1">
                     <span style={{ color: p.color }}>{p.name === 'ingresos' ? 'Ingresos' : p.name === 'egresos' ? 'Egresos' : 'Saldo'}</span>
                     <span className="text-white tabular-nums">${Math.floor(p.value).toLocaleString()}</span>
                 </div>
@@ -278,9 +278,9 @@ const ReportesView = () => {
                     {reportType !== 'mensual' && (
                         <div className="flex items-center gap-1 bg-slate-900 p-1.5 rounded-xl border border-white/5 flex-wrap">
                             <Calendar className="h-4 w-4 text-slate-600 ml-1" />
-                            <input type="date" className="bg-transparent border-none text-white text-xs font-bold focus:ring-0 w-28 outline-none" value={dateRange.start} onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })} />
+                            <input type="date" aria-label="Fecha de inicio" className="bg-transparent border-none text-white text-xs font-bold focus:ring-0 w-28 outline-none" value={dateRange.start} onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })} />
                             <ChevronRight className="h-3 w-3 text-slate-700" />
-                            <input type="date" className="bg-transparent border-none text-white text-xs font-bold focus:ring-0 w-28 outline-none" value={dateRange.end} onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })} />
+                            <input type="date" aria-label="Fecha de fin" className="bg-transparent border-none text-white text-xs font-bold focus:ring-0 w-28 outline-none" value={dateRange.end} onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })} />
                         </div>
                     )}
                 </div>
@@ -294,7 +294,7 @@ const ReportesView = () => {
                 <KPICard title="Balance Neto" value={`$${Math.floor(totals.balance).toLocaleString()}`} subValue={`Margen: ${margenNetoTotal.toFixed(1)}%`} trend={trends.balance} icon={totals.balance >= 0 ? TrendingUp : TrendingDown} colorClass={totals.balance >= 0 ? 'text-emerald-400' : 'text-rose-400'} accentBg={totals.balance >= 0 ? 'bg-emerald-500' : 'bg-rose-500'} />
 
                 {/* Ganancia Real */}
-                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.1 }} className="relative overflow-hidden p-6 rounded-3xl border border-amber-500/20 bg-gradient-to-br from-amber-500/8 via-slate-900 to-slate-900 shadow-xl hover:border-amber-500/35 transition-all duration-300">
+                <m.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.1 }} className="relative overflow-hidden p-6 rounded-3xl border border-amber-500/20 bg-gradient-to-br from-amber-500/8 via-slate-900 to-slate-900 shadow-xl hover:border-amber-500/35 transition-all duration-300">
                     <div className="absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl opacity-15 bg-amber-400" />
                     <div className="relative z-10">
                         <div className="flex justify-between items-start mb-5">
@@ -309,7 +309,7 @@ const ReportesView = () => {
                             <span className="text-[10px] font-bold text-amber-700 uppercase tracking-wider">Solo prods. con costo registrado</span>
                         </div>
                     </div>
-                </motion.div>
+                </m.div>
             </div>
 
             {/* ── Gráficos ──────────────────────────────────────────────────── */}
@@ -381,7 +381,7 @@ const ReportesView = () => {
                                     }} />
                                     <Bar dataKey="ganancia_total" radius={[0, 6, 6, 0]} barSize={18}>
                                         {aggregatedTopData.map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={index === 0 ? '#10b981' : `rgba(16,185,129,${0.6 - index * 0.1})`} />
+                                            <Cell key={entry.producto || `cell-${index}`} fill={index === 0 ? '#10b981' : `rgba(16,185,129,${0.6 - index * 0.1})`} />
                                         ))}
                                         <LabelList dataKey="ganancia_total" position="right" fill="#64748b" fontSize={10} fontWeight="bold" formatter={(val) => `$${Math.floor(val / 1000)}k`} />
                                     </Bar>
@@ -414,7 +414,7 @@ const ReportesView = () => {
 
             {/* ── Barra flotante inferior ───────────────────────────────────── */}
             <div className="fixed bottom-0 left-0 right-0 z-50 pointer-events-none px-2 pb-2 sm:pb-6 sm:px-4">
-                <motion.div
+                <m.div
                     initial={{ y: 20, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
                     transition={{ delay: 0.5 }}
@@ -446,7 +446,7 @@ const ReportesView = () => {
                             <span className={`text-base font-black tabular-nums ${margenNetoTotal >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>{margenNetoTotal.toFixed(1)}%</span>
                         </div>
                     </div>
-                </motion.div>
+                </m.div>
             </div>
         </div>
     )

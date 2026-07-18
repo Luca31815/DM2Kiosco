@@ -103,9 +103,9 @@ const ProductAutocomplete = ({ value, onChange, placeholder = 'Buscar producto..
                 marginTop: '4px'
             }}
         >
-            {suggestions.map((product, idx) => (
+            {suggestions.map((product) => (
                 <li
-                    key={idx}
+                    key={product.producto_id || product.id || product.codigo || product.nombre}
                     className="px-4 py-2 hover:bg-white/5 cursor-pointer text-gray-300 transition-colors"
                     onMouseDown={(e) => handleSelect(e, product.nombre)}
                 >
@@ -132,6 +132,7 @@ const ProductAutocomplete = ({ value, onChange, placeholder = 'Buscar producto..
             <input
                 ref={inputRef}
                 type="text"
+                aria-label={placeholder || "Buscar producto"}
                 className={`bg-gray-800 border border-gray-600 rounded px-2 py-1 w-full text-white focus:ring-1 focus:ring-blue-500 outline-none ${className}`}
                 placeholder={placeholder}
                 value={inputValue}

@@ -446,6 +446,10 @@ const DuplicateCard = ({ d, uniqueKey, selections, setSelections, handleMergeSel
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div 
                             onClick={() => setSelections(prev => ({ ...prev, [uniqueKey]: 'p1' }))}
+                            role="button"
+                            tabIndex={0}
+                            aria-label={`Seleccionar ${d.p1.nombre} como principal`}
+                            onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && setSelections(prev => ({ ...prev, [uniqueKey]: 'p1' }))}
                             className={`p-4 rounded-xl border transition-all cursor-pointer ${selections[uniqueKey] === 'p1' ? 'bg-blue-600/20 border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.2)]' : 'bg-white/5 border-white/5 hover:border-white/10'}`}
                         >
                             <p className="text-lg font-bold text-white leading-tight mt-2">{d.p1.nombre}</p>
@@ -453,6 +457,10 @@ const DuplicateCard = ({ d, uniqueKey, selections, setSelections, handleMergeSel
                         </div>
                         <div 
                             onClick={() => setSelections(prev => ({ ...prev, [uniqueKey]: 'p2' }))}
+                            role="button"
+                            tabIndex={0}
+                            aria-label={`Seleccionar ${d.p2.nombre} como principal`}
+                            onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && setSelections(prev => ({ ...prev, [uniqueKey]: 'p2' }))}
                             className={`p-4 rounded-xl border transition-all cursor-pointer ${selections[uniqueKey] === 'p2' ? 'bg-blue-600/20 border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.2)]' : 'bg-white/5 border-white/5 hover:border-white/10'}`}
                         >
                             <p className="text-lg font-bold text-white leading-tight mt-2">{d.p2.nombre}</p>

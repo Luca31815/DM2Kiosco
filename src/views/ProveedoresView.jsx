@@ -298,14 +298,21 @@ const ProveedoresView = () => {
             <AnimatePresence>
                 {selectedProduct && (
                     <>
-                        <div onClick={() => setSelectedProduct(null)} className="fixed inset-0 bg-slate-950/80 z-[60]" />
+                        <div 
+                            onClick={() => setSelectedProduct(null)} 
+                            role="button"
+                            tabIndex={0}
+                            aria-label="Cerrar análisis"
+                            onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && setSelectedProduct(null)}
+                            className="fixed inset-0 bg-slate-950/80 z-[60]" 
+                        />
                         <div className="fixed top-0 right-0 h-full w-full sm:max-w-xl bg-slate-900 border-l border-white/10 z-[70] shadow-2xl flex flex-col">
                             <div className="p-5 sm:p-8 border-b border-white/5 flex justify-between items-start bg-slate-950/40">
                                 <div>
                                     <span className="text-[10px] font-black uppercase text-blue-400 tracking-widest">Análisis</span>
                                     <h2 className="text-2xl font-black text-white">{selectedProduct}</h2>
                                 </div>
-                                <button type="button" onClick={() => setSelectedProduct(null)} className="p-3 hover:bg-white/5 rounded-2xl text-slate-500"><X size={24} /></button>
+                                <button type="button" onClick={() => setSelectedProduct(null)} aria-label="Cerrar" className="p-3 hover:bg-white/5 rounded-2xl text-slate-500"><X size={24} /></button>
                             </div>
                             <div className="flex-1 overflow-y-auto p-5 sm:p-8 space-y-8 sm:space-y-10 custom-scrollbar">
                                 <section className="h-64 bg-slate-800/50 p-4 rounded-3xl border border-white/5">
@@ -323,7 +330,7 @@ const ProveedoresView = () => {
                                     <h3 className="text-xs font-black uppercase text-slate-500">Historial Comparativo</h3>
                                     <div className="space-y-3">
                                         {comparativaAgrupada.map((g, i) => (
-                                            <div key={i} className="p-5 bg-white/5 rounded-2xl border border-white/5 flex justify-between items-center">
+                                            <div key={g.proveedor || i} className="p-5 bg-white/5 rounded-2xl border border-white/5 flex justify-between items-center">
                                                 <div>
                                                     <h4 className="font-black text-white uppercase">{g.proveedor}</h4>
                                                     <p className="text-[10px] text-slate-500">{new Date(g.ultimaFecha).toLocaleDateString()}</p>
@@ -342,12 +349,20 @@ const ProveedoresView = () => {
             <AnimatePresence>
                 {isMergeModalOpen && (
                     <>
-                        <div onClick={() => !isMergingProgress && setIsMergeModalOpen(false)} className="fixed inset-0 bg-slate-950/80 z-[100]" />
+                        <div 
+                            onClick={() => !isMergingProgress && setIsMergeModalOpen(false)} 
+                            role="button"
+                            tabIndex={0}
+                            aria-label="Cerrar modal de fusión"
+                            onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && !isMergingProgress && setIsMergeModalOpen(false)}
+                            className="fixed inset-0 bg-slate-950/80 z-[100]" 
+                        />
                         <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-slate-900 rounded-3xl border border-white/10 z-[110] shadow-2xl p-8 space-y-6">
                             <h3 className="text-xl font-black text-white">Fusionar Proveedor</h3>
                             <select 
                                 className="w-full bg-slate-800 border border-white/10 rounded-xl px-4 py-3 text-white outline-none"
                                 value={targetSupplierName}
+                                aria-label="Seleccionar proveedor de destino"
                                 onChange={(e) => setTargetSupplierName(e.target.value)}
                             >
                                 <option value="">-- Seleccionar destino --</option>

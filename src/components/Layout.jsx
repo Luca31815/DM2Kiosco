@@ -105,6 +105,7 @@ const TopBar = React.memo(({ onMenuClick }) => {
                     <button type="button"
                         id="sidebar-toggle"
                         onClick={onMenuClick}
+                        aria-label="Abrir menú de navegación"
                         className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/8 transition-all active:scale-95"
                     >
                         <Menu className="h-5 w-5" />
@@ -165,7 +166,14 @@ const LogoTrigger = () => {
     }
 
     return (
-        <div onClick={handleClick} className="flex items-center gap-2.5 cursor-default select-none">
+        <div 
+            onClick={handleClick} 
+            role="button"
+            tabIndex={0}
+            aria-label="Autorizar dispositivo"
+            onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && handleClick()}
+            className="flex items-center gap-2.5 cursor-default select-none"
+        >
             <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-600/30">
                 <span className="text-white text-xs font-black">D</span>
             </div>
@@ -201,6 +209,10 @@ const AuthBadge = () => {
     return (
         <div
             onClick={handleLock}
+            role="button"
+            tabIndex={0}
+            aria-label="Bloquear sistema"
+            onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && handleLock()}
             className="fixed bottom-20 sm:bottom-4 right-4 z-50 px-3 py-1.5 rounded-full border border-emerald-500/20 text-[10px] font-bold uppercase tracking-wider cursor-pointer transition-all active:scale-95 shadow-lg backdrop-blur-md bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 group"
         >
             <div className="flex items-center gap-2">

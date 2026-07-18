@@ -192,6 +192,7 @@ const ExpandedRow = ({ row }) => {
                                             {editingId === detail.id ? (
                                                 <input
                                                     type="number"
+                                                    aria-label="Cantidad"
                                                     className="bg-slate-800 border-none rounded-lg px-2 py-1 w-16 text-right text-white focus:ring-1 focus:ring-blue-500 outline-none"
                                                     value={editForm.cantidad}
                                                     onChange={e => setEditForm({ ...editForm, cantidad: e.target.value })}
@@ -206,6 +207,7 @@ const ExpandedRow = ({ row }) => {
                                                     <span className="mr-1 text-slate-500">$</span>
                                                     <input
                                                         type="number"
+                                                        aria-label="Precio unitario"
                                                         className="bg-slate-800 border-none rounded-lg px-2 py-1 w-20 text-right text-white focus:ring-1 focus:ring-blue-500 outline-none"
                                                         value={editForm.precio_unitario}
                                                         onChange={e => setEditForm({ ...editForm, precio_unitario: e.target.value })}
@@ -221,12 +223,14 @@ const ExpandedRow = ({ row }) => {
                                                 <div className="flex gap-1">
                                                     <button type="button"
                                                         onClick={() => handleSave(detail)}
+                                                        aria-label="Guardar"
                                                         className="p-1.5 bg-green-500/20 text-green-400 rounded-lg hover:bg-green-500/30 transition-all active:scale-95"
                                                     >
                                                         <Check size={14} />
                                                     </button>
                                                     <button type="button"
                                                         onClick={() => setEditingId(null)}
+                                                        aria-label="Cancelar"
                                                         className="p-1.5 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-all active:scale-95"
                                                     >
                                                         <X size={14} />
@@ -235,6 +239,7 @@ const ExpandedRow = ({ row }) => {
                                             ) : (
                                                 <button type="button"
                                                     onClick={() => handleEditStart(detail)}
+                                                    aria-label="Editar"
                                                     className="p-1.5 text-slate-500 hover:text-white hover:bg-white/5 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
                                                 >
                                                     <Edit2 size={14} />
@@ -266,6 +271,7 @@ const ExpandedRow = ({ row }) => {
                                             <div className="flex gap-2">
                                                 <select
                                                     value={editPaymentForm.metodo}
+                                                    aria-label="Método de pago"
                                                     onChange={e => setEditPaymentForm({ ...editPaymentForm, metodo: e.target.value })}
                                                     className="bg-slate-900 border-none rounded-lg text-xs px-2 py-1 text-slate-200 outline-none focus:ring-1 focus:ring-blue-500 w-1/2"
                                                 >
@@ -277,6 +283,7 @@ const ExpandedRow = ({ row }) => {
                                                     <span className="text-xs text-slate-500 mr-1">$</span>
                                                     <input
                                                         type="number"
+                                                        aria-label="Monto"
                                                         value={editPaymentForm.monto}
                                                         onChange={e => setEditPaymentForm({ ...editPaymentForm, monto: e.target.value })}
                                                         className="bg-transparent border-none text-xs text-right text-slate-200 outline-none w-full tabular-nums"
@@ -288,6 +295,7 @@ const ExpandedRow = ({ row }) => {
                                                     onClick={() => handleSavePayment(m)}
                                                     className="p-1 bg-green-500/20 text-green-400 rounded hover:bg-green-500/30 transition-all"
                                                     title="Guardar"
+                                                    aria-label="Guardar pago"
                                                 >
                                                     <Check size={12} />
                                                 </button>
@@ -295,6 +303,7 @@ const ExpandedRow = ({ row }) => {
                                                     onClick={() => handleDeletePayment(m)}
                                                     className="p-1 bg-red-500/20 text-red-400 rounded hover:bg-red-500/30 transition-all"
                                                     title="Eliminar"
+                                                    aria-label="Eliminar pago"
                                                 >
                                                     <Trash2 size={12} />
                                                 </button>
@@ -302,6 +311,7 @@ const ExpandedRow = ({ row }) => {
                                                     onClick={() => setEditingPaymentId(null)}
                                                     className="p-1 bg-slate-800 text-slate-400 rounded hover:bg-slate-700 transition-all"
                                                     title="Cancelar"
+                                                    aria-label="Cancelar edición"
                                                 >
                                                     <X size={12} />
                                                 </button>
@@ -320,6 +330,7 @@ const ExpandedRow = ({ row }) => {
                                                         setEditingPaymentId(m.movimiento_id)
                                                         setEditPaymentForm({ metodo: m.metodo, monto: m.monto })
                                                     }}
+                                                    aria-label="Editar pago"
                                                     className="p-1 text-slate-600 hover:text-white hover:bg-white/5 rounded transition-all opacity-0 group-hover/pay:opacity-100"
                                                 >
                                                     <Edit2 size={12} />

@@ -34,7 +34,7 @@ const CustomTooltip = ({ active, payload, label }) => {
         <div className="bg-slate-900/95 border border-white/10 rounded-xl p-3 shadow-2xl backdrop-blur-md min-w-[160px]">
             <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2">{label}</p>
             {payload.map((entry, i) => (
-                <div key={i} className="flex items-center justify-between gap-4">
+                <div key={entry.dataKey || entry.name || i} className="flex items-center justify-between gap-4">
                     <div className="flex items-center gap-1.5">
                         <div className="w-2 h-2 rounded-full" style={{ background: entry.color }} />
                         <span className="text-[11px] font-semibold text-slate-300">{entry.name}</span>

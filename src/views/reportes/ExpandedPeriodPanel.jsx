@@ -1,5 +1,5 @@
 import React from 'react'
-import { motion } from 'framer-motion'
+import { LazyMotion, domAnimation, m } from 'framer-motion'
 import { Calendar, Activity, CreditCard, Tag } from 'lucide-react'
 import { MiniStat } from './ReportesKPI'
 import { PeriodTopProducts, PeriodGananciaRealStat } from './PeriodProducts'
@@ -27,12 +27,13 @@ const ExpandedPeriodPanel = ({ item, reportType }) => {
     const periodShortLabel = reportType === 'diario' ? 'Día' : reportType === 'semanal' ? 'Semana' : 'Mes'
 
     return (
-        <motion.div
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.25 }}
-            className="space-y-4"
-        >
+        <LazyMotion features={domAnimation}>
+            <m.div
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.25 }}
+                className="space-y-4"
+            >
             {/* Encabezado del periodo */}
             <div className="flex items-center gap-3 px-1">
                 <div className="flex items-center gap-2 text-[10px] font-black text-slate-500 uppercase tracking-widest">
@@ -133,8 +134,9 @@ const ExpandedPeriodPanel = ({ item, reportType }) => {
                     </div>
                 </div>
             </div>
-        </motion.div>
-    )
+        </m.div>
+    </LazyMotion>
+)
 }
 
 export default ExpandedPeriodPanel

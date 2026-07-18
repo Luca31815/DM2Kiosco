@@ -279,6 +279,10 @@ const HomeView = () => {
                                         key={r.reserva_id}
                                         className="flex justify-between items-center p-2.5 rounded-xl bg-white/3 hover:bg-white/5 border border-transparent hover:border-white/5 transition-all cursor-pointer"
                                         onClick={goToReservas}
+                                        role="button"
+                                        tabIndex={0}
+                                        aria-label={`Ver reserva de ${r.cliente}`}
+                                        onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && goToReservas()}
                                     >
                                         <div className="flex items-center gap-2">
                                             <div className="h-6 w-6 rounded-full bg-purple-500/20 flex items-center justify-center">
@@ -330,9 +334,13 @@ const HomeView = () => {
                             ) : (
                                 duplicados.slice(0, 3).map((d, i) => (
                                     <div
-                                        key={i}
+                                        key={d.p1?.id ? `${d.p1.id}_${d.p2?.id || i}` : i}
                                         className="p-2.5 rounded-xl bg-red-500/5 border border-red-500/10 hover:border-red-500/25 transition-all cursor-pointer"
                                         onClick={goToDuplicados}
+                                        role="button"
+                                        tabIndex={0}
+                                        aria-label={`Ver duplicado de ${d.p1?.nombre}`}
+                                        onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && goToDuplicados()}
                                     >
                                         <div className="text-[9px] font-black uppercase tracking-wider text-red-400 mb-1">{d.reason}</div>
                                         <div className="text-[11px] font-bold text-slate-300 truncate">{d.p1?.nombre}</div>
@@ -357,6 +365,10 @@ const HomeView = () => {
                     <div
                         className="bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 p-5 rounded-2xl text-white shadow-2xl relative overflow-hidden group cursor-pointer transition-all hover:scale-[1.02] hover:shadow-blue-600/30 animate-fade-in-up animation-delay-500"
                         onClick={goToAnalisis}
+                        role="button"
+                        tabIndex={0}
+                        aria-label="Ver análisis de horarios"
+                        onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && goToAnalisis()}
                     >
                         <div className="absolute inset-0 bg-grid-pattern opacity-20 pointer-events-none" />
                         <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-2xl -mr-8 -mt-8 pointer-events-none" />

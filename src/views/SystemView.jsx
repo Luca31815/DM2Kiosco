@@ -2,7 +2,7 @@ import React, { useState, useMemo, useCallback } from 'react'
 import useSWR from 'swr'
 import { getAuditLogs, getN8nErrors, getPredictiveStock, rollbackLog, getAISummaries } from '../services/api'
 import DataTable from '../components/DataTable'
-import { motion, AnimatePresence } from 'framer-motion'
+import { LazyMotion, domAnimation, m, AnimatePresence } from 'framer-motion'
 import { ShieldCheck, Activity, PackageSearch, AlertCircle, Clock, Database, Terminal, User, Cpu, ArrowRight, Code2, RotateCcw, Sparkles } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 
@@ -23,35 +23,15 @@ const getChanges = (oldVal, newVal) => {
     const changes = []
     const keys = Object.keys(newVal)
 
-    keys.forEach(key => {
-        const vOld = oldVal[key]
-        const vNew = newVal[key]
-
-        if (JSON.stringify(vOld) !== JSON.stringify(vNew)) {
-            // Ignorar campos de timestamp internos
-            if (['fecha_actualizacion', 'updated_at'].includes(key)) return
-
-            // Lógica especial para fechas: ignorar si la diferencia es < 5 minutos
-            if (key.includes('fecha') || key.includes('_at')) {
-                const dOld = new Date(vOld).getTime()
-                const dNew = new Date(vNew).getTime()
-                if (!isNaN(dOld) && !isNaN(dNew)) {
-                    const diffMinutes = Math.abs(dNew - dOld) / 1000 / 60
-                    if (diffMinutes < 5) return // Omitir cambio de ruido temporal
-                }
-            }
-
-            changes.push({
-                key,
-                from: vOld,
-                to: vNew
-            })
+    keys.forEach(k => {
+        if (JSON.stringify(oldVal[k]) !== JSON.stringify(newVal[k])) {
+            changes.push({ key: k, from: oldVal[k], to: newVal[k] })
         }
     })
     return changes
 }
 
-const calculateDiff = (oldVal, newVal) => {
+const RenderChanges = ({ oldVal, newVal }) => {
     if (!newVal) return null
     if (!oldVal) return <span className="text-green-400 font-bold italic">Registro Nuevo</span>
 
@@ -63,7 +43,7 @@ const calculateDiff = (oldVal, newVal) => {
     return (
         <div className="flex flex-col gap-1">
             {changes.map((c, i) => (
-                <div key={i} className="flex items-center gap-2 text-[10px]">
+                <div key={c.key || i} className="flex items-center gap-2 text-[10px]">
                     <span className="text-slate-500 uppercase font-black">{c.key}:</span>
                     <span className="text-red-400/80 line-through truncate max-w-[60px]">{String(c.from)}</span>
                     <ArrowRight className="h-2 w-2 text-slate-600" />
@@ -79,15 +59,14 @@ const DailyAISummary = ({ data, isLoading }) => {
     if (!data || data.length === 0) return (
         <div className="p-8 text-center bg-white/5 rounded-2xl border border-white/5 space-y-3">
             <Sparkles className="h-8 w-8 text-slate-600 mx-auto" />
-            <p className="text-slate-400 font-medium tracking-tight">No hay resúmenes generados para hoy todavía.</p>
-            <p className="text-slate-500 text-xs">El sistema genera el resumen automáticamente cada día a las 22:00.</p>
+            <p className="text-xs text-slate-500 font-medium">No hay resúmenes de inteligencia generados aún.</p>
         </div>
     )
 
     const latest = data[0]
 
     return (
-        <motion.div
+        <m.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             className="relative overflow-hidden group"
@@ -110,7 +89,7 @@ const DailyAISummary = ({ data, isLoading }) => {
                     <ReactMarkdown>{latest.contenido}</ReactMarkdown>
                 </div>
             </div>
-        </motion.div>
+        </m.div>
     )
 }
 
@@ -303,49 +282,50 @@ const SystemView = () => {
     ), [])
 
     return (
-        <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="p-4 sm:p-6 space-y-6"
-        >
-            <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-                <div className="space-y-1">
-                    <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white flex items-center gap-3">
-                        <Activity className="h-7 w-7 sm:h-8 sm:w-8 text-blue-500 shrink-0" />
-                        <span className="bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-500">Centro de Control</span>
-                    </h1>
-                    <p className="text-slate-400 font-medium text-sm">Observabilidad técnica y predicciones comerciales</p>
-                </div>
+        <LazyMotion features={domAnimation}>
+            <m.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="p-4 sm:p-6 space-y-6"
+            >
+                <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                    <div className="space-y-1">
+                        <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white flex items-center gap-3">
+                            <Activity className="h-7 w-7 sm:h-8 sm:w-8 text-blue-500 shrink-0" />
+                            <span className="bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-500">Centro de Control</span>
+                        </h1>
+                        <p className="text-slate-400 font-medium text-sm">Observabilidad técnica y predicciones comerciales</p>
+                    </div>
 
-                <div className="flex bg-white/5 p-1 rounded-2xl border border-white/5 backdrop-blur-xl shrink-0 overflow-x-auto scroll-touch max-w-full">
-                    {tabs.map(tab => (
-                        <button type="button"
-                            key={tab.id}
-                            onClick={() => setActiveTab(tab.id)}
-                            className={`flex items-center gap-2 px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all relative shrink-0 ${activeTab === tab.id ? 'text-white' : 'text-slate-500 hover:text-slate-300'
-                                }`}
-                        >
-                            {activeTab === tab.id && (
-                                <motion.div
-                                    layoutId="active-tab-bg"
-                                    className={`absolute inset-0 ${tab.bg} rounded-xl border ${tab.border} -z-10`}
-                                />
-                            )}
-                            <tab.icon className={`h-4 w-4 ${activeTab === tab.id ? tab.color : 'text-slate-500'} shrink-0`} />
-                            <span>{tab.label}</span>
-                        </button>
-                    ))}
-                </div>
-            </header>
+                    <div className="flex bg-white/5 p-1 rounded-2xl border border-white/5 backdrop-blur-xl shrink-0 overflow-x-auto scroll-touch max-w-full">
+                        {tabs.map(tab => (
+                            <button type="button"
+                                key={tab.id}
+                                onClick={() => setActiveTab(tab.id)}
+                                className={`flex items-center gap-2 px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all relative shrink-0 ${activeTab === tab.id ? 'text-white' : 'text-slate-500 hover:text-slate-300'
+                                    }`}
+                            >
+                                {activeTab === tab.id && (
+                                    <m.div
+                                        layoutId="active-tab-bg"
+                                        className={`absolute inset-0 ${tab.bg} rounded-xl border ${tab.border} -z-10`}
+                                    />
+                                )}
+                                <tab.icon className={`h-4 w-4 ${activeTab === tab.id ? tab.color : 'text-slate-500'} shrink-0`} />
+                                <span>{tab.label}</span>
+                            </button>
+                        ))}
+                    </div>
+                </header>
 
-            <AnimatePresence mode="wait">
-                <motion.div
-                    key={activeTab}
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -20 }}
-                    transition={{ duration: 0.2 }}
-                >
+                <AnimatePresence mode="wait">
+                    <m.div
+                        key={activeTab}
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -20 }}
+                        transition={{ duration: 0.2 }}
+                    >
                     {activeTab === 'ia' && (
                         <div className="space-y-6">
                             <div className="flex items-center gap-2 p-1 bg-white/5 rounded-2xl border border-white/5 w-fit">
@@ -372,7 +352,7 @@ const SystemView = () => {
                                     </div>
                                     <div className="space-y-3">
                                         {aiSummaries?.data?.slice(1).map((s, i) => (
-                                            <div key={i} className="p-3 bg-white/5 rounded-xl border border-white/5 hover:border-white/10 transition-colors cursor-pointer group">
+                                            <div key={s.id || s.fecha || i} className="p-3 bg-white/5 rounded-xl border border-white/5 hover:border-white/10 transition-colors cursor-pointer group">
                                                 <div className="flex items-center justify-between">
                                                     <span className="text-xs font-bold text-slate-400">{formatDate(s.fecha)}</span>
                                                     <ArrowRight className="h-3 w-3 text-slate-600 group-hover:text-cyan-400 transition-colors" />
@@ -464,7 +444,7 @@ const SystemView = () => {
                             )}
                         />
                     )}
-                </motion.div>
+                </m.div>
             </AnimatePresence>
 
             <footer className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -496,8 +476,9 @@ const SystemView = () => {
                     </div>
                 </div>
             </footer>
-        </motion.div>
-    )
+        </m.div>
+    </LazyMotion>
+)
 }
 
 export default SystemView

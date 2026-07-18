@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { X, Search, AlertTriangle, CheckCircle2, Trash2, Loader2, Info, Filter, RefreshCcw, Check, Sparkles } from 'lucide-react'
 import * as api from '../services/api'
-import { motion, AnimatePresence } from 'framer-motion'
+import { LazyMotion, domAnimation, m, AnimatePresence } from 'framer-motion'
 import { toast } from 'react-hot-toast'
 
 const SynonymManagerModal = ({ isOpen, onClose }) => {
@@ -105,65 +105,71 @@ const SynonymManagerModal = ({ isOpen, onClose }) => {
     if (!isOpen) return null
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <motion.div 
-                initial={{ opacity: 0 }} 
-                animate={{ opacity: 1 }} 
-                exit={{ opacity: 0 }}
-                onClick={onClose}
-                className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" 
-            />
-            
-            <motion.div 
-                initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                className="relative w-full max-w-5xl bg-slate-900 border border-white/10 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]"
-            >
-                {/* Header */}
-                <div className="p-6 border-b border-white/5 flex justify-between items-center bg-white/[0.02]">
-                    <div className="flex items-center gap-4">
-                        <div className="p-3 bg-blue-500/10 rounded-2xl">
-                            <Sparkles className="h-6 w-6 text-blue-400" />
+        <LazyMotion features={domAnimation}>
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                <m.div 
+                    initial={{ opacity: 0 }} 
+                    animate={{ opacity: 1 }} 
+                    exit={{ opacity: 0 }}
+                    onClick={onClose}
+                    role="button"
+                    tabIndex={0}
+                    aria-label="Cerrar modal"
+                    onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && onClose()}
+                    className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" 
+                />
+                
+                <m.div 
+                    initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                    className="relative w-full max-w-5xl bg-slate-900 border border-white/10 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]"
+                >
+                    {/* Header */}
+                    <div className="p-6 border-b border-white/5 flex justify-between items-center bg-white/[0.02]">
+                        <div className="flex items-center gap-4">
+                            <div className="p-3 bg-blue-500/10 rounded-2xl">
+                                <Sparkles className="h-6 w-6 text-blue-400" />
+                            </div>
+                            <div>
+                                <h3 className="text-xl font-black text-white tracking-tight text-shadow-glow">Diccionario de Inteligencia</h3>
+                                <p className="text-slate-500 text-xs font-medium uppercase tracking-widest">Auditoría y Resolución de Conflictos</p>
+                            </div>
                         </div>
-                        <div>
-                            <h3 className="text-xl font-black text-white tracking-tight text-shadow-glow">Diccionario de Inteligencia</h3>
-                            <p className="text-slate-500 text-xs font-medium uppercase tracking-widest">Auditoría y Resolución de Conflictos</p>
-                        </div>
-                    </div>
-                    <button type="button" onClick={onClose} className="p-2 hover:bg-white/10 rounded-xl transition-colors text-slate-400">
-                        <X size={20} />
-                    </button>
-                </div>
-
-                {/* Tabs & Search */}
-                <div className="p-4 bg-white/[0.01] border-b border-white/5 flex flex-col md:flex-row gap-4">
-                    <div className="flex bg-slate-800/50 p-1 rounded-xl border border-white/5">
-                        <button type="button" 
-                            onClick={() => setView('all')}
-                            className={`px-4 py-2 rounded-lg text-xs font-black transition-all ${view === 'all' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'text-slate-500 hover:text-slate-300'}`}
-                        >
-                            DICCIONARIO ({synonyms.length})
-                        </button>
-                        <button type="button" 
-                            onClick={() => setView('conflicts')}
-                            className={`px-4 py-2 rounded-lg text-xs font-black transition-all ${view === 'conflicts' ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/20' : 'text-slate-500 hover:text-slate-300'}`}
-                        >
-                            CONFLICTOS ({conflicts.length})
+                        <button type="button" onClick={onClose} aria-label="Cerrar" className="p-2 hover:bg-white/10 rounded-xl transition-colors text-slate-400">
+                            <X size={20} />
                         </button>
                     </div>
 
-                    <div className="relative flex-1 group">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 group-focus-within:text-blue-400 transition-colors" />
-                        <input 
-                            type="text"
-                            placeholder="Buscar alias o producto oficial..."
-                            value={filter}
-                            onChange={(e) => setFilter(e.target.value)}
-                            className="w-full bg-slate-800/40 border border-white/5 rounded-xl pl-11 pr-4 py-2 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/40 transition-all font-medium"
-                        />
+                    {/* Tabs & Search */}
+                    <div className="p-4 bg-white/[0.01] border-b border-white/5 flex flex-col md:flex-row gap-4">
+                        <div className="flex bg-slate-800/50 p-1 rounded-xl border border-white/5">
+                            <button type="button" 
+                                onClick={() => setView('all')}
+                                className={`px-4 py-2 rounded-lg text-xs font-black transition-all ${view === 'all' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'text-slate-500 hover:text-slate-300'}`}
+                            >
+                                DICCIONARIO ({synonyms.length})
+                            </button>
+                            <button type="button" 
+                                onClick={() => setView('conflicts')}
+                                className={`px-4 py-2 rounded-lg text-xs font-black transition-all ${view === 'conflicts' ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/20' : 'text-slate-500 hover:text-slate-300'}`}
+                            >
+                                CONFLICTOS ({conflicts.length})
+                            </button>
+                        </div>
+
+                        <div className="relative flex-1 group">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 group-focus-within:text-blue-400 transition-colors" />
+                            <input 
+                                type="text"
+                                placeholder="Buscar alias o producto oficial..."
+                                aria-label="Buscar alias o producto oficial"
+                                value={filter}
+                                onChange={(e) => setFilter(e.target.value)}
+                                className="w-full bg-slate-800/40 border border-white/5 rounded-xl pl-11 pr-4 py-2 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/40 transition-all font-medium"
+                            />
+                        </div>
                     </div>
-                </div>
 
                 {/* Bulk Actions Bar */}
                 {view === 'conflicts' && !loading && (
@@ -175,7 +181,7 @@ const SynonymManagerModal = ({ isOpen, onClose }) => {
                                 return acc;
                             }, {})
                         ).filter(([_, group]) => group.length > 1).map(([dest, group]) => (
-                            <motion.div 
+                            <m.div 
                                 key={`bulk-${dest}`}
                                 initial={{ scaleY: 0, opacity: 0 }}
                                 animate={{ scaleY: 1, opacity: 1 }}
@@ -205,7 +211,7 @@ const SynonymManagerModal = ({ isOpen, onClose }) => {
                                     <Check size={14} strokeWidth={3} />
                                     Resolver Grupo
                                 </button>
-                            </motion.div>
+                            </m.div>
                         ))}
                     </AnimatePresence>
                 )}
@@ -236,7 +242,7 @@ const SynonymManagerModal = ({ isOpen, onClose }) => {
                                 {filtered.map((s, idx) => {
                                     const conflict = conflicts.find(c => c.alias === s.alias)
                                     return (
-                                        <motion.tr 
+                                        <m.tr 
                                             key={s.alias}
                                             initial={{ opacity: 0, y: 5 }}
                                             animate={{ opacity: 1, y: 0 }}
@@ -298,7 +304,7 @@ const SynonymManagerModal = ({ isOpen, onClose }) => {
                                                     </button>
                                                 </div>
                                             </td>
-                                        </motion.tr>
+                                        </m.tr>
                                     )
                                 })}
                             </tbody>
@@ -319,8 +325,10 @@ const SynonymManagerModal = ({ isOpen, onClose }) => {
                         </p>
                     </div>
                 </div>
-            </motion.div>
+            </m.div>
         </div>
+        </LazyMotion>
+    )
     )
 }
 

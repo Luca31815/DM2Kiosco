@@ -139,11 +139,12 @@ export function useProductosDuplicadosTrigram() {
 
     const duplicados = useMemo(() => {
         if (!rawDups || !involvedProducts) return []
+        const ignoredSet = new Set(ignoredPairs)
         return rawDups.map(d => {
             const p1 = involvedProducts.find(p => String(p.producto_id) === d.id1)
             const p2 = involvedProducts.find(p => String(p.producto_id) === d.id2)
             if (!p1 || !p2) return null
-            if (ignoredPairs.includes([d.id1, d.id2].sort().join('|'))) return null
+            if (ignoredSet.has([d.id1, d.id2].sort().join('|'))) return null
             return { p1, p2, reason: `Similitud SQL: ${Math.round(d.similitud * 100)}%` }
         }).filter(Boolean)
     }, [rawDups, involvedProducts, ignoredPairs])

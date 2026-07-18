@@ -101,6 +101,9 @@ export const StatCard = React.memo(({ title, value, icon: Icon, trend, trendValu
             className={`bg-slate-900 p-4 sm:p-5 rounded-xl sm:rounded-2xl relative overflow-hidden border border-white/5 shadow-xl transition-all duration-300 hover:-translate-y-1.5 hover:border-white/10 animate-fade-in-up ${c.glow} ${onClick ? 'cursor-pointer' : ''}`}
             style={{ animationDelay: `${delay}ms` }}
             onClick={onClick}
+            role={onClick ? "button" : undefined}
+            tabIndex={onClick ? 0 : undefined}
+            onKeyDown={onClick ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(e); } } : undefined}
         >
             {/* Ambient glow */}
             <div className={`absolute -top-8 -right-8 w-28 h-28 ${c.bg} rounded-full blur-2xl pointer-events-none transition-opacity duration-300`} />

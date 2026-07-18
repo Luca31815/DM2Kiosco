@@ -405,15 +405,16 @@ const OperationDetails = ({ operacionId, tipoOperacion, onRefresh, cabeceraOrigi
                                     <span className="text-slate-400 font-bold text-sm">$</span>
                                     <input
                                         type="number"
+                                        aria-label="Monto cabecera"
                                         className="bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1 w-28 text-slate-100 text-sm focus:outline-none focus:border-violet-500"
                                         value={cabeceraForm.total}
                                         onChange={e => setCabeceraForm({ total: e.target.value })}
                                         disabled={isSaving}
                                     />
-                                    <button type="button" onClick={handleSaveCabecera} disabled={isSaving} className="p-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 rounded-lg transition-colors border border-emerald-500/20">
+                                    <button type="button" onClick={handleSaveCabecera} disabled={isSaving} aria-label="Guardar cabecera" className="p-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 rounded-lg transition-colors border border-emerald-500/20">
                                         <Check className="w-4 h-4" />
                                     </button>
-                                    <button type="button" onClick={() => setEditingCabecera(false)} disabled={isSaving} className="p-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg transition-colors border border-red-500/20">
+                                    <button type="button" onClick={() => setEditingCabecera(false)} disabled={isSaving} aria-label="Cancelar edición cabecera" className="p-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg transition-colors border border-red-500/20">
                                         <X className="w-4 h-4" />
                                     </button>
                                 </div>
@@ -463,17 +464,17 @@ const OperationDetails = ({ operacionId, tipoOperacion, onRefresh, cabeceraOrigi
                                     {items.map((it, idx) => {
                                         const isEditing = editingItemId === it.id
                                         return (
-                                            <tr key={idx} className="hover:bg-slate-800/20 transition-colors">
+                                            <tr key={it.id || it.producto_id || idx} className="hover:bg-slate-800/20 transition-colors">
                                                 <td className="py-2 text-slate-300 font-medium max-w-[150px] truncate" title={it.nombre || it.producto_id}>{it.nombre || it.producto_id}</td>
                                                 <td className="py-2 text-right font-mono text-slate-400">
                                                     {isEditing
-                                                        ? <input type="number" className="bg-slate-800 border border-slate-700 rounded px-1.5 py-0.5 w-12 text-right text-slate-100 font-mono focus:outline-none" value={itemForm.cantidad} onChange={e => setItemForm({ ...itemForm, cantidad: e.target.value })} disabled={isSaving} />
+                                                        ? <input type="number" aria-label="Cantidad ítem" className="bg-slate-800 border border-slate-700 rounded px-1.5 py-0.5 w-12 text-right text-slate-100 font-mono focus:outline-none" value={itemForm.cantidad} onChange={e => setItemForm({ ...itemForm, cantidad: e.target.value })} disabled={isSaving} />
                                                         : it.cantidad
                                                     }
                                                 </td>
                                                 <td className="py-2 text-right font-mono text-slate-400">
                                                     {isEditing
-                                                        ? <input type="number" className="bg-slate-800 border border-slate-700 rounded px-1.5 py-0.5 w-16 text-right text-slate-100 font-mono focus:outline-none" value={itemForm.precio_unitario} onChange={e => setItemForm({ ...itemForm, precio_unitario: e.target.value })} disabled={isSaving} />
+                                                        ? <input type="number" aria-label="Precio unitario ítem" className="bg-slate-800 border border-slate-700 rounded px-1.5 py-0.5 w-16 text-right text-slate-100 font-mono focus:outline-none" value={itemForm.precio_unitario} onChange={e => setItemForm({ ...itemForm, precio_unitario: e.target.value })} disabled={isSaving} />
                                                         : `$${Number(it.precio_unitario || it.precio || 0).toLocaleString('es-AR')}`
                                                     }
                                                 </td>
@@ -483,11 +484,11 @@ const OperationDetails = ({ operacionId, tipoOperacion, onRefresh, cabeceraOrigi
                                                 <td className="py-2 text-center">
                                                     {isEditing ? (
                                                         <div className="flex justify-center items-center space-x-1">
-                                                            <button type="button" onClick={() => handleSaveItem(it)} disabled={isSaving} className="p-1 hover:bg-emerald-500/10 text-emerald-400 rounded transition-colors"><Check className="w-3.5 h-3.5" /></button>
-                                                            <button type="button" onClick={() => setEditingItemId(null)} disabled={isSaving} className="p-1 hover:bg-red-500/10 text-red-400 rounded transition-colors"><X className="w-3.5 h-3.5" /></button>
+                                                            <button type="button" onClick={() => handleSaveItem(it)} disabled={isSaving} aria-label="Guardar ítem" className="p-1 hover:bg-emerald-500/10 text-emerald-400 rounded transition-colors"><Check className="w-3.5 h-3.5" /></button>
+                                                            <button type="button" onClick={() => setEditingItemId(null)} disabled={isSaving} aria-label="Cancelar edición ítem" className="p-1 hover:bg-red-500/10 text-red-400 rounded transition-colors"><X className="w-3.5 h-3.5" /></button>
                                                         </div>
                                                     ) : (
-                                                        <button type="button" onClick={() => { setEditingItemId(it.id); setItemForm({ cantidad: it.cantidad, precio_unitario: it.precio_unitario || it.precio || '0' }) }} disabled={isSaving} className="p-1 hover:bg-slate-800 text-slate-400 hover:text-slate-200 rounded transition-colors">
+                                                        <button type="button" onClick={() => { setEditingItemId(it.id); setItemForm({ cantidad: it.cantidad, precio_unitario: it.precio_unitario || it.precio || '0' }) }} disabled={isSaving} aria-label="Editar ítem" className="p-1 hover:bg-slate-800 text-slate-400 hover:text-slate-200 rounded transition-colors">
                                                             <Edit2 className="w-3.5 h-3.5" />
                                                         </button>
                                                     )}
@@ -534,14 +535,14 @@ const OperationDetails = ({ operacionId, tipoOperacion, onRefresh, cabeceraOrigi
                                     {payments.map((p, idx) => {
                                         const isEditing = editingPaymentId === p.movimiento_id
                                         return (
-                                            <tr key={idx} className="hover:bg-slate-800/20 transition-colors">
+                                            <tr key={p.movimiento_id || idx} className="hover:bg-slate-800/20 transition-colors">
                                                 <td className="py-2 text-slate-300 font-medium">{p.cuenta_caja || p.tipo_movimiento || 'Caja Principal'}</td>
                                                 <td className="py-2 text-slate-400 italic max-w-[130px] truncate" title={p.notas || ''}>{p.notas || '-'}</td>
                                                 <td className="py-2 text-right font-mono text-emerald-400 font-medium">
                                                     {isEditing ? (
                                                         <div className="flex items-center justify-end space-x-1">
                                                             <span className="text-[10px] text-slate-500">$</span>
-                                                            <input type="number" className="bg-slate-805 border border-slate-700 rounded px-1.5 py-0.5 w-20 text-right text-emerald-400 font-mono font-medium focus:outline-none" value={paymentForm.monto} onChange={e => setPaymentForm({ monto: e.target.value })} disabled={isSaving} />
+                                                            <input type="number" aria-label="Monto pago" className="bg-slate-805 border border-slate-700 rounded px-1.5 py-0.5 w-20 text-right text-emerald-400 font-mono font-medium focus:outline-none" value={paymentForm.monto} onChange={e => setPaymentForm({ monto: e.target.value })} disabled={isSaving} />
                                                         </div>
                                                     ) : `$${Number(p.monto || 0).toLocaleString('es-AR', { minimumFractionDigits: 2 })}`}
                                                 </td>

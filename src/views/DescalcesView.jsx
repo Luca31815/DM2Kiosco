@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { LazyMotion, domAnimation, m, AnimatePresence } from 'framer-motion'
 import {
     AlertTriangle, Coins, ShieldCheck, RefreshCcw,
     ChevronDown, ChevronUp, Calendar, User, Info,
@@ -203,7 +203,7 @@ const DescalcesView = () => {
                                 const hasDetalleMismatch = d.diferencia_cabecera_detalles !== 0
 
                                 return (
-                                    <motion.div
+                                    <m.div
                                         key={d.operacion_id}
                                         layout
                                         initial={{ opacity: 0, y: 10 }}
@@ -212,7 +212,14 @@ const DescalcesView = () => {
                                         className={`bg-slate-900/20 border rounded-2xl transition-all duration-200 overflow-hidden hover:border-slate-700/60 ${isExpanded ? 'border-slate-750 bg-slate-900/30' : 'border-slate-800/50'}`}
                                     >
                                         {/* Card Header */}
-                                        <div onClick={() => toggleExpand(d.operacion_id)} className="p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4 cursor-pointer select-none">
+                                        <div 
+                                            onClick={() => toggleExpand(d.operacion_id)} 
+                                            role="button"
+                                            tabIndex={0}
+                                            aria-label={`Expandir operación ${d.operacion_id}`}
+                                            onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && toggleExpand(d.operacion_id)}
+                                            className="p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4 cursor-pointer select-none"
+                                        >
                                             <div className="flex items-start space-x-3.5 flex-1 min-w-0">
                                                 <div className={`mt-0.5 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${isVenta ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-sky-500/10 text-sky-400 border border-sky-500/20'}`}>{d.tipo_operacion}</div>
                                                 <div className="space-y-0.5 min-w-0">
@@ -260,7 +267,7 @@ const DescalcesView = () => {
                                         {/* Detalle Expandible */}
                                         <AnimatePresence>
                                             {isExpanded && (
-                                                <motion.div
+                                                <m.div
                                                     initial={{ scaleY: 0, opacity: 0 }}
                                                     animate={{ scaleY: 1, opacity: 1 }}
                                                     exit={{ scaleY: 0, opacity: 0 }}
@@ -273,10 +280,10 @@ const DescalcesView = () => {
                                                         cabeceraOriginal={d.monto_cabecera}
                                                         onRefresh={() => mutate()}
                                                     />
-                                                </motion.div>
+                                                </m.div>
                                             )}
                                         </AnimatePresence>
-                                    </motion.div>
+                                    </m.div>
                                 )
                             })}
                         </AnimatePresence>

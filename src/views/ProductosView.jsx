@@ -265,6 +265,7 @@ const ProductosView = () => {
             render: (val, row) => editingId === row.producto_id ? (
                 <input
                     type="number"
+                    aria-label="Stock actual"
                     className="bg-slate-800 border-none rounded-lg px-2 py-1 w-20 text-right text-white focus:ring-1 focus:ring-blue-500 outline-none font-bold"
                     value={editForm.stock_actual}
                     onChange={e => setEditForm({ ...editForm, stock_actual: e.target.value })}

@@ -106,10 +106,11 @@ const RetirosView = () => {
                         
                         <form onSubmit={handleSubmit} className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Motivo / Concepto</label>
+                                <label htmlFor="retiro-motivo" className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Motivo / Concepto</label>
                                 <div className="relative group">
                                     <FileText className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-rose-500 transition-colors h-4 w-4" />
                                     <input
+                                        id="retiro-motivo"
                                         type="text"
                                         placeholder="Ej: Pago de flete, Gastos diarios..."
                                         className="w-full bg-slate-950/40 border border-white/5 rounded-2xl py-3.5 pl-12 pr-4 text-white placeholder-slate-600 focus:ring-2 focus:ring-rose-500/30 transition-all outline-none"
@@ -121,10 +122,11 @@ const RetirosView = () => {
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Monto del Retiro</label>
+                                <label htmlFor="retiro-monto" className="text-[10px] font-black uppercase tracking-widest text-slate-500 ml-1">Monto del Retiro</label>
                                 <div className="relative group">
                                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-emerald-500 transition-colors font-bold">$</span>
                                     <input
+                                        id="retiro-monto"
                                         type="number"
                                         placeholder="0.00"
                                         className="w-full bg-slate-950/40 border border-white/5 rounded-2xl py-3.5 pl-12 pr-4 text-white text-xl font-black tabular-nums placeholder-slate-600 focus:ring-2 focus:ring-rose-500/30 transition-all outline-none"

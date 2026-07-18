@@ -61,14 +61,15 @@ export const normalizeName = (name) => {
         .replace(/\bSIN T.A.C.C\b/g, 'SIN TACC');
 };
 
+const UNITS_SET = new Set(['U', 'G', 'GR', 'GRS', 'KG', 'K', 'ML', 'L', 'CC', 'CM3']);
+
 export const getQuantity = (words) => {
-    const units = ['U', 'G', 'GR', 'GRS', 'KG', 'K', 'ML', 'L', 'CC', 'CM3'];
     for (const word of words) {
         const match = word.match(/^(\d+(?:\.\d+)?)([A-Z1-3]+)$/);
         if (match) {
             const value = parseFloat(match[1]);
             const unit = match[2];
-            if (units.includes(unit)) return { value, unit };
+            if (UNITS_SET.has(unit)) return { value, unit };
         }
         const xMatch = word.match(/^X(\d+)$/);
         if (xMatch) return { value: parseInt(xMatch[1]), unit: 'X' };
@@ -76,16 +77,21 @@ export const getQuantity = (words) => {
     return null;
 };
 
-const findAllAttrs = (nameNormalized, words, list) => list.filter(attr => {
-    if (attr.includes(' ')) return nameNormalized.includes(attr);
-    return words.includes(attr);
-});
+const findAllAttrs = (nameNormalized, words, list) => {
+    const wordsSet = new Set(words);
+    return list.filter(attr => {
+        if (attr.includes(' ')) return nameNormalized.includes(attr);
+        return wordsSet.has(attr);
+    });
+};
 
 const getContradiction = (attrs1, attrs2) => {
+    const set1 = new Set(attrs1);
+    const set2 = new Set(attrs2);
     // A. Contradicción Cruzada (Ambos tienen algo distinto)
     if (attrs1.length > 0 && attrs2.length > 0) {
-        const onlyIn1 = attrs1.filter(a => !attrs2.includes(a));
-        const onlyIn2 = attrs2.filter(a => !attrs1.includes(a));
+        const onlyIn1 = attrs1.filter(a => !set2.has(a));
+        const onlyIn2 = attrs2.filter(a => !set1.has(a));
         if (onlyIn1.length > 0 && onlyIn2.length > 0) {
             return `${onlyIn1.join('/')} vs ${onlyIn2.join('/')}`;
         }
@@ -93,11 +99,14 @@ const getContradiction = (attrs1, attrs2) => {
 
     // B. Contradicción Unilateral de "Atributos Estrictos"
     // Si uno especifica un atributo 'estricto' (ej Zero) y el otro no dice NADA, son distintos.
-    const strict1 = attrs1.filter(a => STRICT_ATTRIBUTES.includes(a));
-    const strict2 = attrs2.filter(a => STRICT_ATTRIBUTES.includes(a));
-    
-    const onlyStrictIn1 = strict1.filter(a => !strict2.includes(a));
-    const onlyStrictIn2 = strict2.filter(a => !strict1.includes(a));
+    const strictSet = new Set(STRICT_ATTRIBUTES);
+    const strict1 = attrs1.filter(a => strictSet.has(a));
+    const strict2 = attrs2.filter(a => strictSet.has(a));
+    const strictSet1 = new Set(strict1);
+    const strictSet2 = new Set(strict2);
+
+    const onlyStrictIn1 = strict1.filter(a => !strictSet2.has(a));
+    const onlyStrictIn2 = strict2.filter(a => !strictSet1.has(a));
 
     if (onlyStrictIn1.length > 0 && strict2.length === 0) {
         // P1 tiene algo estricto que P2 ignora totalmente

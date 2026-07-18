@@ -6,7 +6,7 @@ import * as api from '../services/api'
 import { useSWRConfig } from 'swr'
 import ProductAutocomplete from '../components/ProductAutocomplete'
 import ClientAutocomplete from '../components/ClientAutocomplete'
-import { motion } from 'framer-motion'
+import { LazyMotion, domAnimation, m } from 'framer-motion'
 import { toast } from 'react-hot-toast'
 import { useIsMobile } from '../hooks/useIsMobile'
 
@@ -59,11 +59,12 @@ const ExpandedRow = ({ row }) => {
     }
 
     return (
-        <motion.div
-            initial={{ opacity: 0, scale: 0.98 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="space-y-6"
-        >
+        <LazyMotion features={domAnimation}>
+            <m.div
+                initial={{ opacity: 0, scale: 0.98 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="space-y-6"
+            >
             <div className="glass-panel p-6 rounded-2xl bg-white/5 border-white/5">
                 <div className="flex justify-between items-center mb-6">
                     <h4 className="text-xs font-black uppercase tracking-widest text-slate-400">Detalles de Operación</h4>
@@ -96,6 +97,7 @@ const ExpandedRow = ({ row }) => {
                                         {editingId === detail.id ? (
                                             <input
                                                 type="number"
+                                                aria-label="Cantidad"
                                                 className="bg-slate-800 border-none rounded-lg px-2 py-1.5 w-20 text-right text-white focus:ring-2 focus:ring-blue-500/50 outline-none"
                                                 value={editForm.cantidad}
                                                 onChange={e => setEditForm({ ...editForm, cantidad: e.target.value })}
@@ -108,6 +110,7 @@ const ExpandedRow = ({ row }) => {
                                                 <span className="mr-1 text-slate-500 font-bold">$</span>
                                                 <input
                                                     type="number"
+                                                    aria-label="Precio unitario"
                                                     className="bg-slate-800 border-none rounded-lg px-2 py-1.5 w-24 text-right text-white focus:ring-2 focus:ring-blue-500/50 outline-none"
                                                     value={editForm.precio_unitario}
                                                     onChange={e => setEditForm({ ...editForm, precio_unitario: e.target.value })}
@@ -122,6 +125,7 @@ const ExpandedRow = ({ row }) => {
                                                 <button type="button"
                                                     onClick={() => handleSave(detail)}
                                                     disabled={isSaving}
+                                                    aria-label="Guardar"
                                                     className="p-2 hover:bg-green-500/20 text-green-500 rounded-lg transition-all active:scale-90"
                                                 >
                                                     <Check size={18} />
@@ -129,6 +133,7 @@ const ExpandedRow = ({ row }) => {
                                                 <button type="button"
                                                     onClick={() => setEditingId(null)}
                                                     disabled={isSaving}
+                                                    aria-label="Cancelar"
                                                     className="p-2 hover:bg-red-500/20 text-red-500 rounded-lg transition-all active:scale-90"
                                                 >
                                                     <X size={18} />
@@ -137,6 +142,7 @@ const ExpandedRow = ({ row }) => {
                                         ) : (
                                             <button type="button"
                                                 onClick={() => handleEditStart(detail)}
+                                                aria-label="Editar producto"
                                                 className="p-2 hover:bg-blue-500/20 text-blue-400 rounded-lg transition-all active:scale-90"
                                             >
                                                 <Edit2 size={16} />
@@ -197,8 +203,9 @@ const ExpandedRow = ({ row }) => {
                     </table>
                 </div>
             </div>
-        </motion.div>
-    )
+        </m.div>
+    </LazyMotion>
+)
 }
 
 const VentasView = () => {

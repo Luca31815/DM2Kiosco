@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import useSWR, { useSWRConfig } from 'swr'
 import * as api from '../services/api'
-import { motion, AnimatePresence } from 'framer-motion'
+import { LazyMotion, domAnimation, m, AnimatePresence } from 'framer-motion'
 import { 
     Wallet, 
     CreditCard, 
@@ -218,7 +218,7 @@ const CarteraView = () => {
             {/* Balances Summary Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {/* Cash Balance */}
-                <motion.div 
+                <m.div 
                     initial={{ opacity: 0, y: 15 }} 
                     animate={{ opacity: 1, y: 0 }}
                     className="glass-panel p-6 rounded-2xl bg-gradient-to-br from-emerald-500/10 to-teal-500/5 border-emerald-500/10 flex items-center justify-between"
@@ -232,10 +232,10 @@ const CarteraView = () => {
                     <div className="p-3 bg-emerald-500/10 rounded-2xl text-emerald-400">
                         <Coins className="size-6" />
                     </div>
-                </motion.div>
+                </m.div>
 
                 {/* Digital / Bank Balance */}
-                <motion.div 
+                <m.div 
                     initial={{ opacity: 0, y: 15 }} 
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.1 }}
@@ -250,10 +250,10 @@ const CarteraView = () => {
                     <div className="p-3 bg-blue-500/10 rounded-2xl text-blue-400">
                         <CreditCard className="size-6" />
                     </div>
-                </motion.div>
+                </m.div>
 
                 {/* Grand Total Portfolio */}
-                <motion.div 
+                <m.div 
                     initial={{ opacity: 0, y: 15 }} 
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.2 }}
@@ -268,7 +268,7 @@ const CarteraView = () => {
                     <div className="p-3 bg-purple-500/10 rounded-2xl text-purple-400">
                         <Wallet className="size-6" />
                     </div>
-                </motion.div>
+                </m.div>
             </div>
 
             {/* Detailed Wallet Grid */}
@@ -283,7 +283,7 @@ const CarteraView = () => {
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                         {cartera?.map((item, idx) => (
-                            <motion.div 
+                            <m.div 
                                 key={item.metodo}
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
@@ -313,7 +313,7 @@ const CarteraView = () => {
                                         </span>
                                     </div>
                                 </div>
-                            </motion.div>
+                            </m.div>
                         ))}
                     </div>
                 )}
@@ -335,10 +335,11 @@ const CarteraView = () => {
                         <form onSubmit={handleCreateRule} className="space-y-4">
                             {/* Original Method */}
                             <div className="space-y-1.5">
-                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Método Original (Origen)</label>
+                                <label htmlFor="orig-method-rule" className="text-[10px] font-black uppercase tracking-widest text-slate-500">Método Original (Origen)</label>
                                 {!showCustomOrig ? (
                                     <div className="flex gap-2">
                                         <select 
+                                            id="orig-method-rule"
                                             value={origMethodRule}
                                             onChange={e => setOrigMethodRule(e.target.value)}
                                             className="flex-1 bg-slate-800 border-none rounded-xl px-4 py-2.5 text-sm text-white focus:ring-2 focus:ring-blue-500/50 outline-none"
@@ -361,6 +362,7 @@ const CarteraView = () => {
                                         <input 
                                             type="text"
                                             placeholder="Escribe método original (ej: mp)..."
+                                            aria-label="Escribe método original"
                                             value={customOrigRule}
                                             onChange={e => setCustomOrigRule(e.target.value)}
                                             className="flex-1 bg-slate-800 border-none rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:ring-2 focus:ring-blue-500/50 outline-none"
@@ -368,6 +370,7 @@ const CarteraView = () => {
                                         <button 
                                             type="button"
                                             onClick={() => { setShowCustomOrig(false); setCustomOrigRule(''); }}
+                                            aria-label="Cancelar método personalizado"
                                             className="p-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl transition-all"
                                         >
                                             <X size={16} />
@@ -378,10 +381,11 @@ const CarteraView = () => {
 
                             {/* Destination Method */}
                             <div className="space-y-1.5">
-                                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Método de Reemplazo (Destino)</label>
+                                <label htmlFor="dest-method-rule" className="text-[10px] font-black uppercase tracking-widest text-slate-500">Método de Reemplazo (Destino)</label>
                                 {!showCustomDest ? (
                                     <div className="flex gap-2">
                                         <select 
+                                            id="dest-method-rule"
                                             value={destMethodRule}
                                             onChange={e => setDestMethodRule(e.target.value)}
                                             className="flex-1 bg-slate-800 border-none rounded-xl px-4 py-2.5 text-sm text-white focus:ring-2 focus:ring-blue-500/50 outline-none"
@@ -404,6 +408,7 @@ const CarteraView = () => {
                                         <input 
                                             type="text"
                                             placeholder="Escribe método de destino (ej: Mercado Pago)..."
+                                            aria-label="Escribe método de destino"
                                             value={customDestRule}
                                             onChange={e => setCustomDestRule(e.target.value)}
                                             className="flex-1 bg-slate-800 border-none rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:ring-2 focus:ring-blue-500/50 outline-none"
@@ -411,6 +416,7 @@ const CarteraView = () => {
                                         <button 
                                             type="button"
                                             onClick={() => { setShowCustomDest(false); setCustomDestRule(''); }}
+                                            aria-label="Cancelar método de destino personalizado"
                                             className="p-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl transition-all"
                                         >
                                             <X size={16} />
@@ -537,6 +543,7 @@ const CarteraView = () => {
                                                                     <div className="flex gap-1.5 items-center">
                                                                         <select
                                                                             value={editMethodVal}
+                                                                            aria-label="Editar método de pago"
                                                                             onChange={e => {
                                                                                 if (e.target.value === '__custom__') {
                                                                                     setShowCustomInput(true);
@@ -558,6 +565,7 @@ const CarteraView = () => {
                                                                     <div className="flex gap-1.5 items-center">
                                                                         <input
                                                                             type="text"
+                                                                            aria-label="Otro método de pago"
                                                                             className="bg-slate-800 border-none rounded px-2 py-1 text-xs text-white w-28 focus:ring-1 focus:ring-blue-500 outline-none"
                                                                             placeholder="Otro método..."
                                                                             value={customMethodVal}
@@ -566,6 +574,7 @@ const CarteraView = () => {
                                                                         <button 
                                                                             type="button"
                                                                             onClick={() => { setShowCustomInput(false); setCustomMethodVal(''); setEditMethodVal(mov.metodo); }}
+                                                                            aria-label="Cancelar edición de método"
                                                                             className="p-1 hover:bg-slate-700 rounded text-slate-400"
                                                                         >
                                                                             <X size={12} />
@@ -672,7 +681,7 @@ const CarteraView = () => {
                 {/* Audit details / logs output */}
                 <AnimatePresence>
                     {cronResult && (
-                        <motion.div
+                        <m.div
                             initial={{ opacity: 0, scaleY: 0 }}
                             animate={{ opacity: 1, scaleY: 1 }}
                             exit={{ opacity: 0, scaleY: 0 }}
@@ -714,7 +723,7 @@ const CarteraView = () => {
                                     </div>
                                 </div>
                             )}
-                        </motion.div>
+                        </m.div>
                     )}
                 </AnimatePresence>
             </div>

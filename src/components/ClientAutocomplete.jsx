@@ -88,9 +88,9 @@ const ClientAutocomplete = ({ value, onChange, placeholder = 'Buscar cliente...'
                 marginTop: '4px'
             }}
         >
-            {suggestions.map((client, index) => (
+            {suggestions.map((client) => (
                 <li
-                    key={index}
+                    key={client.id || client.cliente_id || client.nombre}
                     className="px-4 py-2 hover:bg-white/5 cursor-pointer text-gray-300 transition-colors"
                     onMouseDown={(e) => handleSelect(e, client.nombre)}
                 >
@@ -105,6 +105,7 @@ const ClientAutocomplete = ({ value, onChange, placeholder = 'Buscar cliente...'
             <input
                 ref={inputRef}
                 type="text"
+                aria-label={placeholder || "Buscar cliente"}
                 className={`bg-gray-800 border border-gray-600 rounded px-2 py-1 w-full text-white focus:ring-1 focus:ring-blue-500 outline-none ${className}`}
                 placeholder={placeholder}
                 value={inputValue}

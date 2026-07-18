@@ -96,6 +96,7 @@ const ExpandedRow = ({ row }) => {
                     {editingSupplier ? (
                         <input 
                             type="text"
+                            aria-label="Nombre del proveedor"
                             className="bg-slate-800 border border-blue-500/50 rounded-lg px-3 py-1.5 text-white font-bold outline-none focus:ring-2 focus:ring-blue-500/50 w-full sm:w-64"
                             value={supplierName}
                             onChange={e => setSupplierName(e.target.value)}
@@ -173,6 +174,7 @@ const ExpandedRow = ({ row }) => {
                                             {editingId === detail.id ? (
                                                 <input
                                                     type="number"
+                                                    aria-label="Cantidad"
                                                     className="bg-slate-800 border-none rounded-lg px-2 py-1 w-16 text-right text-white focus:ring-1 focus:ring-blue-500 outline-none"
                                                     value={editForm.cantidad}
                                                     onChange={e => setEditForm({ ...editForm, cantidad: e.target.value })}
@@ -187,6 +189,7 @@ const ExpandedRow = ({ row }) => {
                                                     <span className="mr-1 text-slate-500">$</span>
                                                     <input
                                                         type="number"
+                                                        aria-label="Precio unitario"
                                                         className="bg-slate-800 border-none rounded-lg px-2 py-1 w-20 text-right text-white focus:ring-1 focus:ring-blue-500 outline-none"
                                                         value={editForm.precio_unitario}
                                                         onChange={e => setEditForm({ ...editForm, precio_unitario: e.target.value })}
@@ -202,12 +205,14 @@ const ExpandedRow = ({ row }) => {
                                                 <div className="flex gap-1">
                                                     <button type="button"
                                                         onClick={() => handleSave(detail)}
+                                                        aria-label="Guardar"
                                                         className="p-1.5 bg-green-500/20 text-green-400 rounded-lg hover:bg-green-500/30 transition-all active:scale-95"
                                                     >
                                                         <Check size={14} />
                                                     </button>
                                                     <button type="button"
                                                         onClick={() => setEditingId(null)}
+                                                        aria-label="Cancelar"
                                                         className="p-1.5 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-all active:scale-95"
                                                     >
                                                         <X size={14} />
@@ -216,6 +221,7 @@ const ExpandedRow = ({ row }) => {
                                             ) : (
                                                 <button type="button"
                                                     onClick={() => handleEditStart(detail)}
+                                                    aria-label="Editar producto"
                                                     className="p-1.5 text-slate-500 hover:text-white hover:bg-white/5 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
                                                 >
                                                     <Edit2 size={14} />
