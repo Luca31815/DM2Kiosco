@@ -324,7 +324,7 @@ const ProductosView = () => {
                 <div className="flex justify-center gap-1">
                     {editingId === row.producto_id ? (
                         <>
-                            <button
+                            <button type="button"
                                 onClick={handleSave}
                                 disabled={isSaving}
                                 className="p-2 bg-emerald-500/20 text-emerald-400 rounded-xl hover:bg-emerald-500/30 transition-all active:scale-95"
@@ -332,7 +332,7 @@ const ProductosView = () => {
                             >
                                 {isSaving ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
                             </button>
-                            <button
+                            <button type="button"
                                 onClick={() => setEditingId(null)}
                                 disabled={isSaving}
                                 className="p-2 bg-rose-500/20 text-rose-400 rounded-xl hover:bg-rose-500/30 transition-all active:scale-95"
@@ -342,7 +342,7 @@ const ProductosView = () => {
                             </button>
                         </>
                     ) : (
-                        <button
+                        <button type="button"
                             onClick={() => handleEditStart(row)}
                             className="p-2 text-slate-500 hover:text-white hover:bg-white/5 rounded-xl transition-all"
                             title="Editar / Unificar"
@@ -385,7 +385,7 @@ const ProductosView = () => {
                 </div>
 
                 <div className="flex flex-wrap gap-2 w-full md:w-auto">
-                    <button
+                    <button type="button"
                         onClick={handleSyncPrecios}
                         disabled={isSyncingPrecios}
                         className="flex-1 sm:flex-none px-3 sm:px-5 py-2.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-emerald-500/20 transition-all flex items-center justify-center gap-2 group min-h-[44px]"
@@ -394,7 +394,7 @@ const ProductosView = () => {
                         {isSyncingPrecios ? <Loader2 size={14} className="animate-spin" /> : <DollarSign size={14} className="group-hover:scale-110 transition-transform" />}
                         <span className="hidden xs:inline sm:inline">{isSyncingPrecios ? '...' : 'Precios'}</span>
                     </button>
-                    <button
+                    <button type="button"
                         onClick={handleExportPDF}
                         disabled={isExporting}
                         className="flex-1 sm:flex-none px-3 sm:px-5 py-2.5 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-blue-500/20 transition-all flex items-center justify-center gap-2 group min-h-[44px]"
@@ -403,7 +403,7 @@ const ProductosView = () => {
                         {isExporting ? <Loader2 size={14} className="animate-spin" /> : <FileText size={14} className="group-hover:scale-110 transition-transform" />}
                         <span>{isExporting ? '...' : 'PDF'}</span>
                     </button>
-                    <button
+                    <button type="button"
                         onClick={handleSyncFaltantes}
                         disabled={isSyncing}
                         className="flex-1 sm:flex-none px-3 sm:px-5 py-2.5 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-amber-500/20 transition-all flex items-center justify-center gap-2 group min-h-[44px]"
@@ -412,7 +412,7 @@ const ProductosView = () => {
                         {isSyncing ? <Loader2 size={14} className="animate-spin" /> : <PackagePlus size={14} className="group-hover:scale-110 transition-transform" />}
                         <span>{isSyncing ? '...' : 'Sync'}</span>
                     </button>
-                    <button
+                    <button type="button"
                         onClick={handleCleanup}
                         disabled={isCleaning}
                         className="flex-1 sm:flex-none px-3 sm:px-5 py-2.5 bg-rose-500/10 text-rose-400 border border-rose-500/20 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-rose-500/20 transition-all flex items-center justify-center gap-2 group min-h-[44px]"
@@ -421,7 +421,7 @@ const ProductosView = () => {
                         <span>{isCleaning ? '...' : 'Limpiar'}</span>
                     </button>
                     
-                    <button
+                    <button type="button"
                         onClick={() => setIsSynonymModalOpen(true)}
                         className="flex-1 sm:flex-none px-3 sm:px-5 py-2.5 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-indigo-500/20 transition-all flex items-center justify-center gap-2 group min-h-[44px]"
                         title="Gestionar el diccionario de sinónimos y resolver conflictos de nombres"

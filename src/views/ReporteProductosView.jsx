@@ -150,7 +150,7 @@ const ReporteProductosView = () => {
                 <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center bg-gray-900 p-2 rounded-xl border border-gray-800 w-full lg:w-auto">
                     <div className="flex bg-gray-800 p-1 rounded-lg justify-center sm:justify-start">
                         {['DIARIO', 'SEMANAL', 'MENSUAL'].map((type) => (
-                            <button
+                            <button type="button"
                                 key={type}
                                 onClick={() => setPeriodType(type)}
                                 className={`flex-1 sm:flex-none px-3 py-1.5 rounded-md text-xs font-semibold uppercase tracking-wider transition-all min-h-[36px] ${periodType === type
@@ -166,7 +166,7 @@ const ReporteProductosView = () => {
                     <div className="h-6 w-px bg-gray-700 hidden sm:block"></div>
 
                     <div className="flex bg-gray-800 p-1 rounded-lg justify-center sm:justify-start">
-                        <button
+                        <button type="button"
                             onClick={() => setViewMode('PIVOT')}
                             className={`flex-1 sm:flex-none px-3 py-1.5 rounded-md text-xs font-semibold uppercase tracking-wider transition-all min-h-[36px] ${viewMode === 'PIVOT'
                                 ? 'bg-indigo-600 text-white shadow-lg'
@@ -175,7 +175,7 @@ const ReporteProductosView = () => {
                         >
                             Pivote
                         </button>
-                        <button
+                        <button type="button"
                             onClick={() => setViewMode('LIST')}
                             className={`flex-1 sm:flex-none px-3 py-1.5 rounded-md text-xs font-semibold uppercase tracking-wider transition-all min-h-[36px] ${viewMode === 'LIST'
                                 ? 'bg-indigo-600 text-white shadow-lg'
@@ -184,7 +184,7 @@ const ReporteProductosView = () => {
                         >
                             Lista
                         </button>
-                        <button
+                        <button type="button"
                             onClick={() => setViewMode('PREDICTION')}
                             className={`flex-1 sm:flex-none px-3 py-1.5 rounded-md text-xs font-semibold uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 min-h-[36px] ${viewMode === 'PREDICTION'
                                 ? 'bg-emerald-600 text-white shadow-lg'
@@ -234,14 +234,14 @@ const ReporteProductosView = () => {
                     </div>
 
                     {/* Navigation Buttons */}
-                    <button
+                    <button type="button"
                         onClick={() => scroll('left')}
                         className="absolute left-[200px] top-1/2 -translate-y-1/2 z-30 p-2 bg-gray-900/80 border border-gray-700 rounded-full text-white shadow-xl hover:bg-gray-800 transition-all opacity-0 group-hover:opacity-100 hidden md:block"
                         title="Desplazar a la izquierda"
                     >
                         <ChevronLeft className="h-6 w-6" />
                     </button>
-                    <button
+                    <button type="button"
                         onClick={() => scroll('right')}
                         className="absolute right-4 top-1/2 -translate-y-1/2 z-30 p-2 bg-gray-900/80 border border-gray-700 rounded-full text-white shadow-xl hover:bg-gray-800 transition-all opacity-0 group-hover:opacity-100 hidden md:block"
                         title="Desplazar a la derecha"

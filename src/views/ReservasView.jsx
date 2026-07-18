@@ -56,6 +56,7 @@ const ExpandedRow = ({ row }) => {
             mutate(['movimientos_dinero', row.reserva_id])
             mutate(['stock_movimientos', row.reserva_id])
             mutate(['reservas'])
+            mutate(key => Array.isArray(key) && key[0] === 'productos')
             setEditingId(null)
             toast.success('Reserva actualizada correctamente', { id: loadingToast })
         } catch (error) {
@@ -120,6 +121,7 @@ const ExpandedRow = ({ row }) => {
             await api.entregarReserva(row.reserva_id)
             mutate(['stock_movimientos', row.reserva_id])
             mutate(['reservas'])
+            mutate(key => Array.isArray(key) && key[0] === 'productos')
             toast.success('Reserva marcada como entregada correctamente', { id: loadingToast })
         } catch (error) {
             toast.error('Error al entregar: ' + (error.message || 'Error desconocido'), { id: loadingToast })
@@ -141,7 +143,7 @@ const ExpandedRow = ({ row }) => {
                     </span>
                 </div>
                 {row.estado_entrega !== 'Entregado' && (
-                    <button
+                    <button type="button"
                         onClick={handleDeliver}
                         disabled={isSaving}
                         className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 disabled:from-blue-600/50 disabled:to-indigo-600/50 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-lg shadow-blue-500/20 active:scale-95 transition-all disabled:pointer-events-none"
@@ -217,13 +219,13 @@ const ExpandedRow = ({ row }) => {
                                         <td className="px-4 py-3 flex justify-center">
                                             {editingId === detail.id ? (
                                                 <div className="flex gap-1">
-                                                    <button
+                                                    <button type="button"
                                                         onClick={() => handleSave(detail)}
                                                         className="p-1.5 bg-green-500/20 text-green-400 rounded-lg hover:bg-green-500/30 transition-all active:scale-95"
                                                     >
                                                         <Check size={14} />
                                                     </button>
-                                                    <button
+                                                    <button type="button"
                                                         onClick={() => setEditingId(null)}
                                                         className="p-1.5 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-all active:scale-95"
                                                     >
@@ -231,7 +233,7 @@ const ExpandedRow = ({ row }) => {
                                                     </button>
                                                 </div>
                                             ) : (
-                                                <button
+                                                <button type="button"
                                                     onClick={() => handleEditStart(detail)}
                                                     className="p-1.5 text-slate-500 hover:text-white hover:bg-white/5 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
                                                 >
@@ -282,21 +284,21 @@ const ExpandedRow = ({ row }) => {
                                                 </div>
                                             </div>
                                             <div className="flex justify-end gap-1">
-                                                <button
+                                                <button type="button"
                                                     onClick={() => handleSavePayment(m)}
                                                     className="p-1 bg-green-500/20 text-green-400 rounded hover:bg-green-500/30 transition-all"
                                                     title="Guardar"
                                                 >
                                                     <Check size={12} />
                                                 </button>
-                                                <button
+                                                <button type="button"
                                                     onClick={() => handleDeletePayment(m)}
                                                     className="p-1 bg-red-500/20 text-red-400 rounded hover:bg-red-500/30 transition-all"
                                                     title="Eliminar"
                                                 >
                                                     <Trash2 size={12} />
                                                 </button>
-                                                <button
+                                                <button type="button"
                                                     onClick={() => setEditingPaymentId(null)}
                                                     className="p-1 bg-slate-800 text-slate-400 rounded hover:bg-slate-700 transition-all"
                                                     title="Cancelar"
@@ -313,7 +315,7 @@ const ExpandedRow = ({ row }) => {
                                             </div>
                                             <div className="flex items-center gap-2">
                                                 <span className="text-sm font-black text-emerald-400 tabular-nums">${m.monto}</span>
-                                                <button
+                                                <button type="button"
                                                     onClick={() => {
                                                         setEditingPaymentId(m.movimiento_id)
                                                         setEditPaymentForm({ metodo: m.metodo, monto: m.monto })
@@ -501,13 +503,13 @@ const ReservasView = () => {
                 </div>
 
                 <div className="flex gap-2 bg-slate-900 p-1 rounded-xl border border-white/5 w-full md:w-auto justify-center md:justify-start">
-                    <button
+                    <button type="button"
                         onClick={() => { setShowOpenOnly(true); setPage(1); }}
                         className={`flex-1 md:flex-none px-5 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all min-h-[38px] ${showOpenOnly ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'text-slate-500 hover:text-slate-300'}`}
                     >
                         Abiertas
                     </button>
-                    <button
+                    <button type="button"
                         onClick={() => { setShowOpenOnly(false); setPage(1); }}
                         className={`flex-1 md:flex-none px-5 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all min-h-[38px] ${!showOpenOnly ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'text-slate-500 hover:text-slate-300'}`}
                     >

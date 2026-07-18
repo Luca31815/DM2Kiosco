@@ -170,7 +170,7 @@ const ProveedoresView = () => {
                         {loadingProveedores ? (
                             <div className="p-8 flex justify-center"><Loader2 className="animate-spin text-blue-500" /></div>
                         ) : proveedores.map(p => (
-                            <button
+                            <button type="button"
                                 key={p.nombre}
                                 onClick={() => { setSelectedSupplier(p); setSelectedProduct(null); }}
                                 className={`w-full text-left p-3 rounded-xl transition-all group relative overflow-hidden ${
@@ -227,7 +227,7 @@ const ProveedoresView = () => {
                                 </p>
                             </div>
                             <div className="flex flex-wrap gap-4">
-                                <button 
+                                <button type="button" 
                                     onClick={() => setIsMergeModalOpen(true)}
                                     className="flex items-center gap-2 px-4 py-2 bg-amber-500/10 border border-amber-500/20 rounded-2xl text-amber-500 hover:bg-amber-500/20 transition-all text-xs font-black"
                                 >
@@ -263,7 +263,7 @@ const ProveedoresView = () => {
                                 ) : (
                                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                                         {filteredProducts.map(p => (
-                                            <button
+                                            <button type="button"
                                                 key={p.producto}
                                                 onClick={() => setSelectedProduct(p.producto)}
                                                 className={`p-4 rounded-2xl border transition-all text-left group ${
@@ -305,7 +305,7 @@ const ProveedoresView = () => {
                                     <span className="text-[10px] font-black uppercase text-blue-400 tracking-widest">Análisis</span>
                                     <h2 className="text-2xl font-black text-white">{selectedProduct}</h2>
                                 </div>
-                                <button onClick={() => setSelectedProduct(null)} className="p-3 hover:bg-white/5 rounded-2xl text-slate-500"><X size={24} /></button>
+                                <button type="button" onClick={() => setSelectedProduct(null)} className="p-3 hover:bg-white/5 rounded-2xl text-slate-500"><X size={24} /></button>
                             </div>
                             <div className="flex-1 overflow-y-auto p-5 sm:p-8 space-y-8 sm:space-y-10 custom-scrollbar">
                                 <section className="h-64 bg-slate-800/50 p-4 rounded-3xl border border-white/5">
@@ -356,8 +356,8 @@ const ProveedoresView = () => {
                                 ))}
                             </select>
                             <div className="flex gap-3">
-                                <button onClick={() => setIsMergeModalOpen(false)} className="flex-1 py-3 bg-slate-800 text-white rounded-xl font-black text-xs uppercase">Cancelar</button>
-                                <button onClick={handleMerge} className="flex-1 py-3 bg-blue-600 text-white rounded-xl font-black text-xs uppercase">Confirmar</button>
+                                <button type="button" onClick={() => setIsMergeModalOpen(false)} className="flex-1 py-3 bg-slate-800 text-white rounded-xl font-black text-xs uppercase">Cancelar</button>
+                                <button type="button" onClick={handleMerge} className="flex-1 py-3 bg-blue-600 text-white rounded-xl font-black text-xs uppercase">Confirmar</button>
                             </div>
                         </div>
                     </>

@@ -259,7 +259,7 @@ const HomeView = () => {
                                 <Wallet className="h-4 w-4 text-purple-400" />
                                 <h3 className="text-sm font-black text-white tracking-tight">Saldos Pendientes</h3>
                             </div>
-                            <button
+                            <button type="button"
                                 onClick={goToReservas}
                                 className="text-[10px] font-black text-slate-500 hover:text-blue-400 uppercase tracking-wider transition-colors flex items-center gap-1"
                             >
@@ -343,7 +343,7 @@ const HomeView = () => {
                         </div>
 
                         {!loadingDuplicados && duplicados.length > 0 && (
-                            <button
+                            <button type="button"
                                 onClick={goToDuplicados}
                                 className="mt-3 w-full py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/15 text-red-400 text-[11px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2"
                             >

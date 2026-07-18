@@ -5,7 +5,10 @@ CREATE TABLE IF NOT EXISTS public.reemplazos_metodos_pago (
     fecha_creacion TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Deshabilitar RLS para facilitar acceso desde REST/RPC
+-- RLS: access to this table is controlled exclusively through SECURITY DEFINER
+-- functions (fn_crear_reemplazo_y_actualizar_movimientos, fn_cron_revisar_reemplazos_metodo_pago).
+-- Direct REST/anon access is intentionally blocked by the RLS-disabled state plus no
+-- public grants. If direct row access is ever needed, add a policy here first.
 ALTER TABLE public.reemplazos_metodos_pago DISABLE ROW LEVEL SECURITY;
 
 -- 2. Crear vista de cartera actual (saldos agrupados y netos)

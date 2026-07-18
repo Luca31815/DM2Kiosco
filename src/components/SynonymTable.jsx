@@ -76,7 +76,7 @@ const SynonymTable = ({ product, initialSinonimos = [], onUpdate }) => {
                                         {s}
                                     </td>
                                     <td className="px-4 py-2 text-right">
-                                        <button 
+                                        <button type="button" 
                                             onClick={() => handleDelete(s)}
                                             disabled={loading !== null}
                                             className="p-1.5 text-slate-600 hover:text-rose-400 hover:bg-rose-400/10 rounded-lg transition-all"
@@ -115,7 +115,7 @@ const SynonymTable = ({ product, initialSinonimos = [], onUpdate }) => {
                         className="w-full bg-slate-900/60 border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500/50 transition-all"
                     />
                 </div>
-                <button 
+                <button type="button" 
                     onClick={handleAdd}
                     disabled={loading !== null || !newAlias.trim()}
                     className="px-3 py-2 bg-blue-500 hover:bg-blue-400 disabled:bg-slate-800 disabled:text-slate-600 text-white rounded-xl transition-all shadow-lg shadow-blue-500/10 flex items-center justify-center min-w-[40px]"

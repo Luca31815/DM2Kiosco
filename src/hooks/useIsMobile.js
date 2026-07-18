@@ -9,14 +9,8 @@ export function useIsMobile(maxWidth = 768) {
     useEffect(() => {
         const mediaQuery = window.matchMedia(`(max-width: ${maxWidth}px)`)
         const handler = (e) => setIsMobile(e.matches)
-        
-        if (mediaQuery.addEventListener) {
-            mediaQuery.addEventListener('change', handler)
-            return () => mediaQuery.removeEventListener('change', handler)
-        } else {
-            mediaQuery.addListener(handler)
-            return () => mediaQuery.removeListener(handler)
-        }
+        mediaQuery.addEventListener('change', handler)
+        return () => mediaQuery.removeEventListener('change', handler)
     }, [maxWidth])
 
     return isMobile

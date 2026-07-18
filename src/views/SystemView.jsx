@@ -241,7 +241,7 @@ const SystemView = () => {
         },
         {
             key: 'acciones', label: '', render: (_, row) => (
-                <button
+                <button type="button"
                     onClick={() => handleRollback(row.id)}
                     disabled={rollbackStatus.id === row.id && rollbackStatus.status === 'loading'}
                     className={`p-2 rounded-lg border transition-all hover:scale-110 active:scale-95 ${rollbackStatus.id === row.id && rollbackStatus.status === 'loading'
@@ -319,7 +319,7 @@ const SystemView = () => {
 
                 <div className="flex bg-white/5 p-1 rounded-2xl border border-white/5 backdrop-blur-xl shrink-0 overflow-x-auto scroll-touch max-w-full">
                     {tabs.map(tab => (
-                        <button
+                        <button type="button"
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
                             className={`flex items-center gap-2 px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all relative shrink-0 ${activeTab === tab.id ? 'text-white' : 'text-slate-500 hover:text-slate-300'
@@ -350,7 +350,7 @@ const SystemView = () => {
                         <div className="space-y-6">
                             <div className="flex items-center gap-2 p-1 bg-white/5 rounded-2xl border border-white/5 w-fit">
                                 {['diario', 'semanal', 'mensual'].map(type => (
-                                    <button
+                                    <button type="button"
                                         key={type}
                                         onClick={() => setSummaryType(type)}
                                         className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${summaryType === type

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react'
+import React, { useMemo, useState, useEffect } from 'react'
 import useSWR from 'swr'
 import * as api from '../services/api'
 import { useAuth } from '../context/AuthContext'
@@ -126,13 +126,15 @@ export function useProductosDuplicadosTrigram() {
         } catch { return []; }
     });
 
+    useEffect(() => {
+        try {
+            localStorage.setItem('ignoredDuplicatesTrigram', JSON.stringify(ignoredPairs));
+        } catch { /* storage unavailable */ }
+    }, [ignoredPairs]);
+
     const ignoreDuplicate = (id1, id2) => {
         const pair = [String(id1), String(id2)].sort().join('|');
-        setIgnoredPairs(prev => {
-            const next = [...prev, pair];
-            localStorage.setItem('ignoredDuplicatesTrigram', JSON.stringify(next));
-            return next;
-        });
+        setIgnoredPairs(prev => [...prev, pair]);
     };
 
     const duplicados = useMemo(() => {

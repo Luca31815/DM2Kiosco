@@ -14,7 +14,7 @@ import { useIsMobile } from '../../hooks/useIsMobile'
 
 // ── Period Selector ──────────────────────────────────────────────────────────
 export const PeriodButton = React.memo(({ label, active, onClick }) => (
-    <button
+    <button type="button"
         onClick={onClick}
         className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all ${
             active

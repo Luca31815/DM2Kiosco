@@ -200,7 +200,7 @@ const CarteraView = () => {
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
-                    <button 
+                    <button type="button" 
                         onClick={() => {
                             mutate('cartera_actual')
                             mutate('reemplazos_metodos_pago')
@@ -455,7 +455,7 @@ const CarteraView = () => {
                                                 {regla.metodo_destino}
                                             </span>
                                         </div>
-                                        <button 
+                                        <button type="button" 
                                             onClick={() => handleDeleteRule(regla.metodo_origen)}
                                             className="p-1.5 hover:bg-red-500/10 text-slate-500 hover:text-red-400 rounded-lg transition-all"
                                             title="Eliminar regla automática"
@@ -582,14 +582,14 @@ const CarteraView = () => {
                                                         <td className="px-4 py-3 text-center whitespace-nowrap">
                                                             {isEditing ? (
                                                                 <div className="flex justify-center gap-1.5">
-                                                                    <button
+                                                                    <button type="button"
                                                                         onClick={() => handleSaveMethod(mov.movimiento_id)}
                                                                         className="p-1 bg-green-500/10 hover:bg-green-500/20 text-green-400 rounded transition-all"
                                                                         title="Guardar"
                                                                     >
                                                                         <Check size={14} />
                                                                     </button>
-                                                                    <button
+                                                                    <button type="button"
                                                                         onClick={() => setEditingMovId(null)}
                                                                         className="p-1 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded transition-all"
                                                                         title="Cancelar"
@@ -598,7 +598,7 @@ const CarteraView = () => {
                                                                     </button>
                                                                 </div>
                                                             ) : (
-                                                                <button
+                                                                <button type="button"
                                                                     onClick={() => handleEditStart(mov)}
                                                                     className="p-1 hover:bg-white/10 text-slate-400 hover:text-blue-400 rounded transition-all"
                                                                     title="Editar método de pago"
@@ -621,14 +621,14 @@ const CarteraView = () => {
                                             Página {page} de {totalPages}
                                         </span>
                                         <div className="flex gap-1">
-                                            <button
+                                            <button type="button"
                                                 disabled={page === 1}
                                                 onClick={() => setPage(p => Math.max(1, p - 1))}
                                                 className="px-2.5 py-1.5 bg-white/5 hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-white/5 text-slate-300 hover:text-white rounded-lg transition-all text-xs font-bold"
                                             >
                                                 Anterior
                                             </button>
-                                            <button
+                                            <button type="button"
                                                 disabled={page === totalPages}
                                                 onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                                                 className="px-2.5 py-1.5 bg-white/5 hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-white/5 text-slate-300 hover:text-white rounded-lg transition-all text-xs font-bold"
@@ -659,7 +659,7 @@ const CarteraView = () => {
                             La tarea automática `auditoria_reemplazos_metodos_pago_diaria` se ejecuta a las 3:15 AM y corrige desvíos residuales.
                         </p>
                     </div>
-                    <button
+                    <button type="button"
                         onClick={handleRunCron}
                         disabled={isExecutingCron}
                         className="px-4 py-2.5 bg-blue-600/10 hover:bg-blue-600/20 border border-blue-500/10 text-blue-400 disabled:opacity-50 hover:text-blue-300 font-bold text-xs rounded-xl transition-all active:scale-95 flex items-center gap-2"
@@ -673,9 +673,10 @@ const CarteraView = () => {
                 <AnimatePresence>
                     {cronResult && (
                         <motion.div
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: 'auto' }}
-                            exit={{ opacity: 0, height: 0 }}
+                            initial={{ opacity: 0, scaleY: 0 }}
+                            animate={{ opacity: 1, scaleY: 1 }}
+                            exit={{ opacity: 0, scaleY: 0 }}
+                            style={{ originY: 0 }}
                             className="p-4 rounded-xl bg-white/3 border border-white/5 space-y-3"
                         >
                             <div className="flex items-center justify-between text-xs text-slate-400 font-semibold">

@@ -48,6 +48,7 @@ const ExpandedRow = ({ row }) => {
             mutate(['movimientos_dinero', row.venta_id])
             mutate(['stock_movimientos', row.venta_id])
             mutate(['ventas'])
+            mutate(key => Array.isArray(key) && key[0] === 'productos')
             setEditingId(null)
             toast.success('Venta actualizada correctamente')
         } catch (error) {
@@ -118,14 +119,14 @@ const ExpandedRow = ({ row }) => {
                                     <td className="px-6 py-3 text-center">
                                         {editingId === detail.id ? (
                                             <div className="flex justify-center gap-2">
-                                                <button
+                                                <button type="button"
                                                     onClick={() => handleSave(detail)}
                                                     disabled={isSaving}
                                                     className="p-2 hover:bg-green-500/20 text-green-500 rounded-lg transition-all active:scale-90"
                                                 >
                                                     <Check size={18} />
                                                 </button>
-                                                <button
+                                                <button type="button"
                                                     onClick={() => setEditingId(null)}
                                                     disabled={isSaving}
                                                     className="p-2 hover:bg-red-500/20 text-red-500 rounded-lg transition-all active:scale-90"
@@ -134,7 +135,7 @@ const ExpandedRow = ({ row }) => {
                                                 </button>
                                             </div>
                                         ) : (
-                                            <button
+                                            <button type="button"
                                                 onClick={() => handleEditStart(detail)}
                                                 className="p-2 hover:bg-blue-500/20 text-blue-400 rounded-lg transition-all active:scale-90"
                                             >

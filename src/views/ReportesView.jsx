@@ -262,7 +262,7 @@ const ReportesView = () => {
             <div className="flex flex-wrap gap-2 items-center w-full xl:w-auto">
                     <div className="flex bg-slate-900 p-1 rounded-xl border border-white/5">
                         {['diario', 'semanal', 'mensual'].map((type) => (
-                            <button
+                            <button type="button"
                                 key={type}
                                 onClick={() => handleReportTypeChange(type)}
                                 className={`px-3 sm:px-5 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all duration-200 ${

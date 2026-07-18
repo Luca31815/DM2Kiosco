@@ -73,6 +73,7 @@ const ExpandedRow = ({ row }) => {
             mutate(['movimientos_dinero', row.compra_id])
             mutate(['stock_movimientos', row.compra_id])
             mutate(['compras'])
+            mutate(key => Array.isArray(key) && key[0] === 'productos')
             setEditingId(null)
             toast.success('Compra actualizada correctamente', { id: loadingToast })
         } catch (error) {
@@ -110,13 +111,13 @@ const ExpandedRow = ({ row }) => {
                 <div className="flex gap-2 w-full sm:w-auto">
                     {editingSupplier ? (
                         <>
-                            <button 
+                            <button type="button" 
                                 onClick={handleSaveSupplier}
                                 className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-green-500 text-white rounded-xl text-xs font-black hover:bg-green-600 transition-all shadow-lg shadow-green-500/20 min-h-[44px]"
                             >
                                 <Check size={14} /> Confirmar
                             </button>
-                            <button 
+                            <button type="button" 
                                 onClick={() => { setEditingSupplier(false); setSupplierName(row.proveedor); }}
                                 className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-white/5 text-slate-400 rounded-xl text-xs font-black hover:bg-white/10 transition-all min-h-[44px]"
                             >
@@ -124,7 +125,7 @@ const ExpandedRow = ({ row }) => {
                             </button>
                         </>
                     ) : (
-                        <button 
+                        <button type="button" 
                             onClick={() => setEditingSupplier(true)}
                             className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-xl text-xs font-black hover:bg-blue-500/20 transition-all min-h-[44px]"
                         >
@@ -199,13 +200,13 @@ const ExpandedRow = ({ row }) => {
                                         <td className="px-4 py-3 flex justify-center">
                                             {editingId === detail.id ? (
                                                 <div className="flex gap-1">
-                                                    <button
+                                                    <button type="button"
                                                         onClick={() => handleSave(detail)}
                                                         className="p-1.5 bg-green-500/20 text-green-400 rounded-lg hover:bg-green-500/30 transition-all active:scale-95"
                                                     >
                                                         <Check size={14} />
                                                     </button>
-                                                    <button
+                                                    <button type="button"
                                                         onClick={() => setEditingId(null)}
                                                         className="p-1.5 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-all active:scale-95"
                                                     >
@@ -213,7 +214,7 @@ const ExpandedRow = ({ row }) => {
                                                     </button>
                                                 </div>
                                             ) : (
-                                                <button
+                                                <button type="button"
                                                     onClick={() => handleEditStart(detail)}
                                                     className="p-1.5 text-slate-500 hover:text-white hover:bg-white/5 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
                                                 >

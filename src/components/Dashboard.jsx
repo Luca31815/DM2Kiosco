@@ -42,7 +42,7 @@ export default function Dashboard() {
                         Visualizando los últimos movimientos
                     </p>
                 </div>
-                <button
+                <button type="button"
                     onClick={fetchData}
                     disabled={loading}
                     className="flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-all shadow-lg shadow-indigo-500/20 disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
