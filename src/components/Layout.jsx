@@ -184,6 +184,12 @@ const LogoTrigger = () => {
     )
 }
 
+const handleLock = () => {
+    if (confirm('¿Querés BLOQUEAR el dashboard y volver al modo restringido?')) {
+        window.location.search = '?logout=true'
+    }
+}
+
 // ── AuthBadge — useEffect siempre se llama (hooks rule fix) ──────────────────
 const AuthBadge = () => {
     const { isDemoMode } = useAuth()
@@ -199,12 +205,6 @@ const AuthBadge = () => {
     }, [isDemoMode])
 
     if (isDemoMode) return null
-
-    const handleLock = () => {
-        if (confirm('¿Querés BLOQUEAR el dashboard y volver al modo restringido?')) {
-            window.location.search = '?logout=true'
-        }
-    }
 
     return (
         <div

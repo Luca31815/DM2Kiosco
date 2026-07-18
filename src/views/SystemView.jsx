@@ -5,17 +5,24 @@ import DataTable from '../components/DataTable'
 import { LazyMotion, domAnimation, m, AnimatePresence } from 'framer-motion'
 import { ShieldCheck, Activity, PackageSearch, AlertCircle, Clock, Database, Terminal, User, Cpu, ArrowRight, Code2, RotateCcw, Sparkles } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
+import { DailyAISummary } from '../components/system/DailyAISummary'
+import { SystemViewFooter } from '../components/system/SystemViewFooter'
+
+const dateOnlyFormatter = new Intl.DateTimeFormat('es-AR', { day: 'numeric', month: 'short' })
+const dateTimeFormatter = new Intl.DateTimeFormat('es-AR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+
+const SYSTEM_TABS = [
+    { id: 'audit', label: 'Cámara de Seguridad', icon: ShieldCheck, color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20' },
+    { id: 'ia', label: 'Resúmenes IA', icon: Sparkles, color: 'text-cyan-400', bg: 'bg-cyan-500/10', border: 'border-cyan-500/20' },
+    { id: 'stock', label: 'Radar de Stock', icon: PackageSearch, color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20' },
+    { id: 'n8n', label: 'Monitor n8n', icon: Terminal, color: 'text-purple-400', bg: 'bg-purple-500/10', border: 'border-purple-500/20' }
+]
 
 // Helper para formatear fechas usando Intl nativo
 const formatDate = (dateStr, includeTime = false) => {
     if (!dateStr) return '-'
     const date = new Date(dateStr)
-    const options = {
-        day: 'numeric',
-        month: 'short',
-        ...(includeTime ? { hour: '2-digit', minute: '2-digit' } : {})
-    }
-    return new Intl.DateTimeFormat('es-AR', options).format(date)
+    return (includeTime ? dateTimeFormatter : dateOnlyFormatter).format(date)
 }
 
 const getChanges = (oldVal, newVal) => {
@@ -51,45 +58,6 @@ const RenderChanges = ({ oldVal, newVal }) => {
                 </div>
             ))}
         </div>
-    )
-}
-
-const DailyAISummary = ({ data, isLoading }) => {
-    if (isLoading) return <div className="h-32 flex items-center justify-center bg-white/5 rounded-2xl border border-white/5 animate-pulse">Cargando inteligencia...</div>
-    if (!data || data.length === 0) return (
-        <div className="p-8 text-center bg-white/5 rounded-2xl border border-white/5 space-y-3">
-            <Sparkles className="h-8 w-8 text-slate-600 mx-auto" />
-            <p className="text-xs text-slate-500 font-medium">No hay resúmenes de inteligencia generados aún.</p>
-        </div>
-    )
-
-    const latest = data[0]
-
-    return (
-        <m.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="relative overflow-hidden group"
-        >
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-purple-500/5 to-transparent -z-10" />
-            <div className="p-6 bg-slate-900/40 rounded-3xl border border-white/10 backdrop-blur-2xl space-y-4">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 bg-blue-500/20 rounded-xl">
-                            <Sparkles className="h-5 w-5 text-blue-400" />
-                        </div>
-                        <div>
-                            <h3 className="text-lg font-black text-white tracking-tight italic">Resumen del Auditor IA</h3>
-                            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{formatDate(latest.fecha)}</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="prose prose-invert prose-sm max-w-none text-slate-300 leading-relaxed font-medium">
-                    <ReactMarkdown>{latest.contenido}</ReactMarkdown>
-                </div>
-            </div>
-        </m.div>
     )
 }
 
@@ -178,12 +146,7 @@ const SystemView = () => {
         }
     }
 
-    const tabs = [
-        { id: 'audit', label: 'Cámara de Seguridad', icon: ShieldCheck, color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20' },
-        { id: 'ia', label: 'Resúmenes IA', icon: Sparkles, color: 'text-cyan-400', bg: 'bg-cyan-500/10', border: 'border-cyan-500/20' },
-        { id: 'stock', label: 'Radar de Stock', icon: PackageSearch, color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20' },
-        { id: 'n8n', label: 'Monitor n8n', icon: Terminal, color: 'text-purple-400', bg: 'bg-purple-500/10', border: 'border-purple-500/20' }
-    ]
+    const tabs = SYSTEM_TABS
 
     const auditColumns = useMemo(() => [
         { key: 'fecha', label: 'Fecha/Hora', width: 'w-40', render: (val) => formatDate(val, true) },
@@ -447,35 +410,7 @@ const SystemView = () => {
                 </m.div>
             </AnimatePresence>
 
-            <footer className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="glass-panel p-6 rounded-2xl border border-white/5 flex gap-4 items-center shadow-lg shadow-blue-500/5">
-                    <div className="p-3 bg-blue-500/20 rounded-xl">
-                        <Database className="h-6 w-6 text-blue-400" />
-                    </div>
-                    <div>
-                        <div className="text-2xl font-black text-white">v2.0</div>
-                        <div className="text-[10px] uppercase tracking-widest font-bold text-slate-500">Esquema BD</div>
-                    </div>
-                </div>
-                <div className="glass-panel p-6 rounded-2xl border border-white/5 flex gap-4 items-center shadow-lg shadow-purple-500/5">
-                    <div className="p-3 bg-purple-500/20 rounded-xl">
-                        <Terminal className="h-6 w-6 text-purple-400" />
-                    </div>
-                    <div>
-                        <div className="text-2xl font-black text-white">Activo</div>
-                        <div className="text-[10px] uppercase tracking-widest font-bold text-slate-500">Monitor n8n</div>
-                    </div>
-                </div>
-                <div className="glass-panel p-6 rounded-2xl border border-white/5 flex gap-4 items-center shadow-lg shadow-amber-500/5">
-                    <div className="p-3 bg-amber-500/20 rounded-xl">
-                        <PackageSearch className="h-6 w-6 text-amber-400" />
-                    </div>
-                    <div>
-                        <div className="text-2xl font-black text-white">IA Pred.</div>
-                        <div className="text-[10px] uppercase tracking-widest font-bold text-slate-500">Radar de Stock</div>
-                    </div>
-                </div>
-            </footer>
+            <SystemViewFooter />
         </m.div>
     </LazyMotion>
 )

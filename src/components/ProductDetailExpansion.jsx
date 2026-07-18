@@ -91,8 +91,8 @@ const ProductDetailExpansion = ({ product }) => {
                     
                     {hasVentas ? (
                         <div className="space-y-2 max-h-[250px] overflow-y-auto pr-2 custom-scrollbar">
-                            {details.ventas.map((v, i) => (
-                                <div key={v.movimiento_id || v.ref || v.fecha_registro || i} className="flex justify-between items-center p-2.5 bg-white/5 rounded-xl border border-white/5 hover:bg-white/10 transition-colors">
+                            {details.ventas.map((v) => (
+                                <div key={v.movimiento_id || v.id || v.ref || `v-${v.fecha_registro}-${v.precio_unitario}`} className="flex justify-between items-center p-2.5 bg-white/5 rounded-xl border border-white/5 hover:bg-white/10 transition-colors">
                                     <div className="flex flex-col">
                                         <span className="text-[10px] text-slate-500 font-medium">#{v.ref}</span>
                                         <div className="flex items-center gap-1.5 text-white font-black text-xs">
@@ -125,8 +125,8 @@ const ProductDetailExpansion = ({ product }) => {
                             <span className="text-[10px] text-slate-500 font-bold uppercase block mb-2 px-1">Últimas Compras</span>
                             {hasCompras ? (
                                 <div className="space-y-2">
-                                    {details.compras.slice(0, 5).map((c, i) => (
-                                        <div key={c.movimiento_id || c.compra_id || c.fecha_registro || i} className="flex justify-between items-center p-2 bg-white/5 rounded-lg border border-white/5">
+                                    {details.compras.slice(0, 5).map((c) => (
+                                        <div key={c.movimiento_id || c.compra_id || c.id || `c-${c.fecha_registro}-${c.precio_unitario}`} className="flex justify-between items-center p-2 bg-white/5 rounded-lg border border-white/5">
                                             <span className="text-[10px] text-slate-400">{new Date(c.fecha_registro).toLocaleDateString()}</span>
                                             <span className="text-amber-400 font-bold text-xs tabular-nums">${c.precio_unitario}</span>
                                         </div>
@@ -140,8 +140,8 @@ const ProductDetailExpansion = ({ product }) => {
                             <span className="text-[10px] text-slate-500 font-bold uppercase block mb-2 px-1">Precios en Reservas</span>
                             {hasReservas ? (
                                 <div className="space-y-2">
-                                    {details.reservas.slice(0, 5).map((r, i) => (
-                                        <div key={r.reserva_id || r.fecha_registro || i} className="flex justify-between items-center p-2 bg-white/5 rounded-lg border border-white/5">
+                                    {details.reservas.slice(0, 5).map((r) => (
+                                        <div key={r.reserva_id || r.id || `r-${r.fecha_registro}-${r.precio_unitario}`} className="flex justify-between items-center p-2 bg-white/5 rounded-lg border border-white/5">
                                             <span className="text-[10px] text-slate-400">{new Date(r.fecha_registro).toLocaleDateString()}</span>
                                             <span className="text-blue-400 font-bold text-xs tabular-nums">${r.precio_unitario}</span>
                                         </div>

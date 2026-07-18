@@ -17,8 +17,10 @@ import {
 } from 'lucide-react'
 import { useReporte, useReservas, useProductos, useProductosDuplicadosTrigram } from '../hooks/useData'
 import { StatCard, SkeletonCard } from '../components/home/HomeStatCards'
-import { HomeChart } from '../components/home/HomeChart'
+const HomeChart = React.lazy(() => import('../components/home/HomeChart').then(m => ({ default: m.HomeChart })))
 import { StockBar, QuickAction, FileBarChart2 } from '../components/home/HomeWidgets'
+
+const currencyFormatter = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 })
 
 // ── Main HomeView ─────────────────────────────────────────────────────────────
 const HomeView = () => {
@@ -77,7 +79,7 @@ const HomeView = () => {
             trend = cantHoy > yesterdayData.cant_ventas ? 'up' : cantHoy < yesterdayData.cant_ventas ? 'down' : 'neutral'
         }
 
-        const fmt = (v) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(v)
+        const fmt = (v) => currencyFormatter.format(v)
 
         return {
             today: fmt(ingresosHoy),
@@ -226,11 +228,13 @@ const HomeView = () => {
                 <div className="lg:col-span-2 space-y-6">
 
                     {/* Evolución Chart */}
-                    <HomeChart
-                        chartData={chartData}
-                        chartPeriod={chartPeriod}
-                        setChartPeriod={setChartPeriod}
-                    />
+                    <React.Suspense fallback={<div className="h-64 bg-slate-900/50 border border-white/5 rounded-2xl animate-pulse" />}>
+                        <HomeChart
+                            chartData={chartData}
+                            chartPeriod={chartPeriod}
+                            setChartPeriod={setChartPeriod}
+                        />
+                    </React.Suspense>
 
                     {/* Quick Actions */}
                     <div className="bg-slate-900/50 p-5 rounded-2xl border border-white/5 animate-fade-in-up animation-delay-300">
@@ -324,7 +328,7 @@ const HomeView = () => {
 
                         <div className="space-y-2 relative z-10">
                             {loadingDuplicados ? (
-                                Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-14 skeleton rounded-xl" />)
+                                ['sk-dup-1', 'sk-dup-2', 'sk-dup-3'].map((skKey) => <div key={skKey} className="h-14 skeleton rounded-xl" />)
                             ) : duplicados.length === 0 ? (
                                 <div className="py-5 flex flex-col items-center gap-2">
                                     <CheckCircle2 className="h-7 w-7 text-emerald-400/50" />
@@ -332,9 +336,9 @@ const HomeView = () => {
                                     <span className="text-[11px] text-slate-600 text-center">Sin duplicados detectados</span>
                                 </div>
                             ) : (
-                                duplicados.slice(0, 3).map((d, i) => (
+                                duplicados.slice(0, 3).map((d) => (
                                     <div
-                                        key={d.p1?.id ? `${d.p1.id}_${d.p2?.id || i}` : i}
+                                        key={d.p1?.id ? `${d.p1.id}_${d.p2?.id || 'p2'}` : `${d.p1?.nombre || 'p1'}_${d.p2?.nombre || 'p2'}`}
                                         className="p-2.5 rounded-xl bg-red-500/5 border border-red-500/10 hover:border-red-500/25 transition-all cursor-pointer"
                                         onClick={goToDuplicados}
                                         role="button"

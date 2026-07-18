@@ -7,10 +7,8 @@ import {
     Activity, Clock, Tag, BarChart2, Percent, Sigma, ArrowRight, Target,
     CreditCard, PieChart, Sparkles
 } from 'lucide-react'
-import {
-    AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
-    ResponsiveContainer, BarChart, Bar, Cell, LabelList
-} from 'recharts'
+const ReportesEvolucionChart = React.lazy(() => import('./reportes/ReportesChartsPanel').then(m => ({ default: m.ReportesEvolucionChart })))
+const ReportesTopProductsChart = React.lazy(() => import('./reportes/ReportesChartsPanel').then(m => ({ default: m.ReportesTopProductsChart })))
 import { LazyMotion, domAnimation, m } from 'framer-motion'
 
 import { KPICard } from './reportes/ReportesKPI'
@@ -325,32 +323,9 @@ const ReportesView = () => {
                             <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-rose-500" />Egresos</div>
                         </div>
                     </div>
-                    <ResponsiveContainer width="100%" height="80%" debounce={50}>
-                        <AreaChart data={chartData} margin={{ top: 5, right: 5, left: 5, bottom: 0 }}>
-                            <defs>
-                                <linearGradient id="colorIngresos" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.25} />
-                                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                                </linearGradient>
-                                <linearGradient id="colorEgresos" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.25} />
-                                    <stop offset="95%" stopColor="#f43f5e" stopOpacity={0} />
-                                </linearGradient>
-                            </defs>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#ffffff06" vertical={false} />
-                            <XAxis dataKey="name" stroke="#475569" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(val) => {
-                                if (reportType === 'diario' && val?.includes('-')) {
-                                    const parts = val.split('-')
-                                    return `${parts[2]}/${parts[1]}`
-                                }
-                                return val
-                            }} />
-                            <YAxis stroke="#475569" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(val) => `$${(val / 1000).toFixed(0)}k`} />
-                            <Tooltip content={<CustomTooltip />} />
-                            <Area type="monotone" dataKey="ingresos" stroke="#10b981" strokeWidth={2.5} fillOpacity={1} fill="url(#colorIngresos)" dot={false} activeDot={{ r: 4, fill: '#10b981' }} />
-                            <Area type="monotone" dataKey="egresos" stroke="#f43f5e" strokeWidth={2.5} fillOpacity={1} fill="url(#colorEgresos)" dot={false} activeDot={{ r: 4, fill: '#f43f5e' }} />
-                        </AreaChart>
-                    </ResponsiveContainer>
+                    <React.Suspense fallback={<div className="h-full bg-white/5 rounded-2xl animate-pulse" />}>
+                        <ReportesEvolucionChart chartData={chartData} reportType={reportType} />
+                    </React.Suspense>
                 </div>
 
                 <div className="bg-slate-900 rounded-3xl border border-white/5 p-6 h-[340px] flex flex-col hover:border-white/10 transition-all">
@@ -359,35 +334,9 @@ const ReportesView = () => {
                         <p className="text-[10px] text-slate-600 mt-0.5 font-medium">Productos más rentables del periodo</p>
                     </div>
                     <div className="flex-1">
-                        {loadingTop ? (
-                            <div className="space-y-3 mt-4">{[1, 2, 3, 4, 5].map(i => <div key={i} className="h-8 bg-white/5 rounded-xl animate-pulse" />)}</div>
-                        ) : aggregatedTopData.length === 0 ? (
-                            <div className="flex items-center justify-center h-full text-slate-600 text-sm italic">Sin datos disponibles</div>
-                        ) : (
-                            <ResponsiveContainer width="100%" height="100%" debounce={50}>
-                                <BarChart layout="vertical" data={aggregatedTopData} margin={{ left: 15, right: 55, top: 0, bottom: 0 }}>
-                                    <XAxis type="number" hide />
-                                    <YAxis dataKey="producto" type="category" axisLine={false} tickLine={false} fontSize={10} width={100} tick={{ fill: '#94a3b8', fontWeight: 700 }} />
-                                    <Tooltip cursor={{ fill: '#ffffff04' }} content={({ active, payload }) => {
-                                        if (!active || !payload?.length) return null
-                                        const d = payload[0].payload
-                                        return (
-                                            <div className="bg-slate-900 border border-white/10 rounded-xl p-3 text-[10px] font-bold space-y-1">
-                                                <p className="text-white font-black">{d.producto}</p>
-                                                <p className="text-emerald-400">Ganancia: ${Math.floor(d.ganancia_total).toLocaleString()}</p>
-                                                <p className="text-slate-400">Cantidad: {Number(d.cantidad_total || 0).toLocaleString()}</p>
-                                            </div>
-                                        )
-                                    }} />
-                                    <Bar dataKey="ganancia_total" radius={[0, 6, 6, 0]} barSize={18}>
-                                        {aggregatedTopData.map((entry, index) => (
-                                            <Cell key={entry.producto || `cell-${index}`} fill={index === 0 ? '#10b981' : `rgba(16,185,129,${0.6 - index * 0.1})`} />
-                                        ))}
-                                        <LabelList dataKey="ganancia_total" position="right" fill="#64748b" fontSize={10} fontWeight="bold" formatter={(val) => `$${Math.floor(val / 1000)}k`} />
-                                    </Bar>
-                                </BarChart>
-                            </ResponsiveContainer>
-                        )}
+                        <React.Suspense fallback={<div className="h-full bg-white/5 rounded-2xl animate-pulse" />}>
+                            <ReportesTopProductsChart aggregatedTopData={aggregatedTopData} loadingTop={loadingTop} />
+                        </React.Suspense>
                     </div>
                 </div>
             </div>

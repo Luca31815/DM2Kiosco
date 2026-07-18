@@ -26,8 +26,8 @@ const HeatmapMode = React.memo(({ data }) => {
                     ))}
                 </div>
                 <div className="space-y-4">
-                    {data.slice(0, 10).map((row, idx) => (
-                        <div key={row.fecha || row.semana_del || row.id || idx} className="grid grid-cols-5 gap-4 items-center">
+                    {data.slice(0, 10).map((row) => (
+                        <div key={row.fecha || row.semana_del || row.id || `row-${row.cant_ventas}-${row.total_ventas}`} className="grid grid-cols-5 gap-4 items-center">
                             <div className="text-xs font-black text-slate-400 uppercase tracking-tighter">
                                 {new Date((row.fecha || row.semana_del) + 'T12:00:00').toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' })}
                             </div>

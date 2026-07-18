@@ -23,17 +23,9 @@ import {
 import ProductAutocomplete from '../components/ProductAutocomplete'
 import * as api from '../services/api'
 import { mutate } from 'swr'
-import { 
-    LineChart, 
-    Line, 
-    XAxis, 
-    YAxis, 
-    CartesianGrid, 
-    Tooltip, 
-    ResponsiveContainer,
-    AreaChart,
-    Area
-} from 'recharts'
+import { toast } from 'react-hot-toast'
+import { ProveedoresMergeModal } from './proveedores/ProveedoresMergeModal'
+const ProveedoresHistoryChart = React.lazy(() => import('./proveedores/ProveedoresHistoryChart'))
 import { AnimatePresence } from 'framer-motion'
 
 
@@ -316,21 +308,15 @@ const ProveedoresView = () => {
                             </div>
                             <div className="flex-1 overflow-y-auto p-5 sm:p-8 space-y-8 sm:space-y-10 custom-scrollbar">
                                 <section className="h-64 bg-slate-800/50 p-4 rounded-3xl border border-white/5">
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <AreaChart data={chartData}>
-                                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                                            <XAxis dataKey="fecha" stroke="#64748b" fontSize={10} />
-                                            <YAxis stroke="#64748b" fontSize={10} />
-                                            <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderRadius: '12px' }} />
-                                            <Area type="monotone" dataKey="costo" stroke="#3b82f6" fillOpacity={0.3} fill="#3b82f6" />
-                                        </AreaChart>
-                                    </ResponsiveContainer>
+                                    <React.Suspense fallback={<div className="w-full h-full bg-slate-800/50 rounded-2xl animate-pulse" />}>
+                                        <ProveedoresHistoryChart chartData={chartData} />
+                                    </React.Suspense>
                                 </section>
                                 <section className="space-y-4">
                                     <h3 className="text-xs font-black uppercase text-slate-500">Historial Comparativo</h3>
                                     <div className="space-y-3">
-                                        {comparativaAgrupada.map((g, i) => (
-                                            <div key={g.proveedor || i} className="p-5 bg-white/5 rounded-2xl border border-white/5 flex justify-between items-center">
+                                        {comparativaAgrupada.map((g) => (
+                                            <div key={g.proveedor || `prov-${g.ultimoCosto}-${g.ultimaFecha}`} className="p-5 bg-white/5 rounded-2xl border border-white/5 flex justify-between items-center">
                                                 <div>
                                                     <h4 className="font-black text-white uppercase">{g.proveedor}</h4>
                                                     <p className="text-[10px] text-slate-500">{new Date(g.ultimaFecha).toLocaleDateString()}</p>
@@ -346,38 +332,16 @@ const ProveedoresView = () => {
                 )}
             </AnimatePresence>
 
-            <AnimatePresence>
-                {isMergeModalOpen && (
-                    <>
-                        <div 
-                            onClick={() => !isMergingProgress && setIsMergeModalOpen(false)} 
-                            role="button"
-                            tabIndex={0}
-                            aria-label="Cerrar modal de fusión"
-                            onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && !isMergingProgress && setIsMergeModalOpen(false)}
-                            className="fixed inset-0 bg-slate-950/80 z-[100]" 
-                        />
-                        <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-slate-900 rounded-3xl border border-white/10 z-[110] shadow-2xl p-8 space-y-6">
-                            <h3 className="text-xl font-black text-white">Fusionar Proveedor</h3>
-                            <select 
-                                className="w-full bg-slate-800 border border-white/10 rounded-xl px-4 py-3 text-white outline-none"
-                                value={targetSupplierName}
-                                aria-label="Seleccionar proveedor de destino"
-                                onChange={(e) => setTargetSupplierName(e.target.value)}
-                            >
-                                <option value="">-- Seleccionar destino --</option>
-                                {proveedores.filter(p => p.nombre !== selectedSupplier?.nombre).map(p => (
-                                    <option key={p.nombre} value={p.nombre}>{p.nombre}</option>
-                                ))}
-                            </select>
-                            <div className="flex gap-3">
-                                <button type="button" onClick={() => setIsMergeModalOpen(false)} className="flex-1 py-3 bg-slate-800 text-white rounded-xl font-black text-xs uppercase">Cancelar</button>
-                                <button type="button" onClick={handleMerge} className="flex-1 py-3 bg-blue-600 text-white rounded-xl font-black text-xs uppercase">Confirmar</button>
-                            </div>
-                        </div>
-                    </>
-                )}
-            </AnimatePresence>
+            <ProveedoresMergeModal
+                isMergeModalOpen={isMergeModalOpen}
+                setIsMergeModalOpen={setIsMergeModalOpen}
+                isMergingProgress={isMergingProgress}
+                targetSupplierName={targetSupplierName}
+                setTargetSupplierName={setTargetSupplierName}
+                selectedSupplier={selectedSupplier}
+                proveedores={proveedores}
+                handleMerge={handleMerge}
+            />
         </div>
     )
 }

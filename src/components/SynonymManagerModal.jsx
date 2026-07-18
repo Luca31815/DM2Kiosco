@@ -329,7 +329,6 @@ const SynonymManagerModal = ({ isOpen, onClose }) => {
         </div>
         </LazyMotion>
     )
-    )
 }
 
 export default SynonymManagerModal

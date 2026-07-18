@@ -156,7 +156,7 @@ const CommandPalette = ({ isOpen, onClose }) => {
                                         {allResults.map((item, index) => (
                                             <button
                                                 type="button"
-                                                key={`${item.type}-${item.id || item.venta_id || item.reserva_id || item.cliente_id || item.producto_id || item.label || index}`}
+                                                key={`${item.type}-${item.id || item.venta_id || item.reserva_id || item.cliente_id || item.producto_id || item.label || item.path}`}
                                                 onClick={() => handleSelect(item)}
                                                 onMouseEnter={() => setSelectedIndex(index)}
                                                 className={`w-full flex items-center justify-between p-3 rounded-xl transition-all ${selectedIndex === index ? 'bg-blue-600 shadow-lg shadow-blue-500/20' : 'hover:bg-white/5'

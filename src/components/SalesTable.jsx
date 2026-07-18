@@ -85,15 +85,16 @@ export default function SalesTable({ data, loading, error }) {
                     </table>
                 </div>
             )}
-        </div>
     )
 }
+
+const currencyFormatter = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' })
 
 function formatValue(key, value) {
     if (value === null || value === undefined) return '-'
 
     if (key.toLowerCase().includes('precio') || key.toLowerCase().includes('monto') || key.toLowerCase().includes('total')) {
-        return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(Number(value))
+        return currencyFormatter.format(Number(value))
     }
 
     if (key.toLowerCase().includes('fecha') || key.toLowerCase().includes('date') || key.toLowerCase().includes('created_at')) {

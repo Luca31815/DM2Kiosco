@@ -438,9 +438,14 @@ export const sincronizarProductosFaltantes = async () => {
         if (total === 0) return { success: true, count: 0 };
         // Deduplicar por nombre_norm
         const seen = new Set();
-        const uniqueRows = faltantes
-            .filter(f => { if (seen.has(f.nombre_norm)) return false; seen.add(f.nombre_norm); return true; })
-            .map(f => ({ nombre: f.nombre_norm, ultimo_precio_venta: 0, fecha_actualizacion: new Date().toISOString() }));
+        const nowIso = new Date().toISOString();
+        const uniqueRows = faltantes.reduce((acc, f) => {
+            if (!seen.has(f.nombre_norm)) {
+                seen.add(f.nombre_norm);
+                acc.push({ nombre: f.nombre_norm, ultimo_precio_venta: 0, fecha_actualizacion: nowIso });
+            }
+            return acc;
+        }, []);
         const { error: insertError } = await supabase
             .from('productos_base')
             .upsert(uniqueRows, { onConflict: 'nombre', ignoreDuplicates: true });

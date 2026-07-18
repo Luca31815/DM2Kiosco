@@ -5,6 +5,12 @@ import { toast } from 'react-hot-toast'
 import * as api from '../services/api'
 import { useProductosDuplicadosTrigram, useProductos, useProductosSinonimos } from '../hooks/useData'
 import { checkDuplicateStatus, FLAVORS, BRANDS, FORMATS } from '../utils/duplicateRules'
+import { DuplicateCard, ConflictCard } from './duplicados/DuplicadosCards'
+
+const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0 }
+}
 
 const DuplicadosView = () => {
     const { mutate } = useSWRConfig()
@@ -63,13 +69,13 @@ const DuplicadosView = () => {
             });
 
             // Solo enviamos grupos que tengan más de un producto (sospechosos)
-            const suspiciousGroups = Object.entries(groups)
-                .filter(([_, list]) => list.length > 1)
-                .map(([name, list]) => {
+            const suspiciousGroups = Object.entries(groups).reduce((acc, [name, list]) => {
+                if (list.length > 1) {
                     const itemsText = list.map(p => `  ID: ${p.producto_id || p.id} | ${p.nombre} (Venta: $${p.ultimo_precio_venta || p.precio_venta || 0} | Costo: $${p.ultimo_costo_compra || 0})`).join('\n');
-                    return `### GRUPO SOSPECHOSO: ${name}\n${itemsText}`;
-                })
-                .join('\n\n');
+                    acc.push(`### GRUPO SOSPECHOSO: ${name}\n${itemsText}`);
+                }
+                return acc;
+            }, []).join('\n\n');
 
             if (!suspiciousGroups) {
                 toast.success('No se detectaron grupos sospechosos para auditar.', { id: loadingToast });
@@ -136,12 +142,12 @@ ${suspiciousGroups}`;
             if (aiParsed.duplicates) aiParsed = aiParsed.duplicates;
             if (!Array.isArray(aiParsed)) aiParsed = [];
 
-            const mappedAiResults = aiParsed.map(res => {
+            const mappedAiResults = aiParsed.flatMap(res => {
                 const p1 = allProducts.find(p => (p.producto_id || p.id) == res.idKeep)
                 const p2 = allProducts.find(p => (p.producto_id || p.id) == res.idDelete)
-                if (!p1 || !p2) return null;
-                return { p1, p2, reason: `[Auditoría IA] ${res.reason || 'Detección Semántica'}` }
-            }).filter(Boolean);
+                if (!p1 || !p2) return [];
+                return [{ p1, p2, reason: `[Auditoría IA] ${res.reason || 'Detección Semántica'}` }]
+            });
 
             // El filtrado por ignoredPairs y por isLikelyDuplicate se hace ahora en el useMemo global
             setAiDuplicates(mappedAiResults);
@@ -285,10 +291,7 @@ Producto 2: [${d.p2.producto_id || d.p2.id}] ${d.p2.nombre} ($${d.p2.ultimo_prec
 
 
 
-    const itemVariants = {
-        hidden: { opacity: 0, y: 20 },
-        visible: { opacity: 1, y: 0 }
-    }
+
 
     return (
         <div className="space-y-8">
@@ -419,124 +422,6 @@ Producto 2: [${d.p2.producto_id || d.p2.id}] ${d.p2.nombre} ($${d.p2.ultimo_prec
                     </div>
                 )
             ))}
-        </div>
-    );
-};
-
-const DuplicateCard = ({ d, uniqueKey, selections, setSelections, handleMergeSelection, ignoreSQL, setAiDuplicates, mergingId }) => {
-    const id1 = String(d.p1.producto_id || d.p1.id || '');
-    const id2 = String(d.p2.producto_id || d.p2.id || '');
-
-    return (
-        <div className="bg-slate-900 rounded-2xl p-6 relative overflow-hidden group border border-white/5 hover:border-red-500/20 transition-colors">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none group-hover:bg-red-500/10 transition-colors" />
-            
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10">
-                <div className="flex-1 w-full space-y-4">
-                    <div className="flex items-center gap-3">
-                        <div className="px-3 py-1 rounded-full bg-red-500/10 text-red-400 text-[10px] font-black uppercase tracking-widest border border-red-500/20">
-                            {d.reason || 'Sugerencia de Fusión'}
-                        </div>
-                        <div className="flex items-center gap-1.5 text-slate-400 text-sm font-bold">
-                            <Tag className="h-4 w-4" />
-                            ${parseFloat(d.p1.ultimo_precio_venta || d.p1.precio_venta || 0).toLocaleString('es-AR')}
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div 
-                            onClick={() => setSelections(prev => ({ ...prev, [uniqueKey]: 'p1' }))}
-                            role="button"
-                            tabIndex={0}
-                            aria-label={`Seleccionar ${d.p1.nombre} como principal`}
-                            onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && setSelections(prev => ({ ...prev, [uniqueKey]: 'p1' }))}
-                            className={`p-4 rounded-xl border transition-all cursor-pointer ${selections[uniqueKey] === 'p1' ? 'bg-blue-600/20 border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.2)]' : 'bg-white/5 border-white/5 hover:border-white/10'}`}
-                        >
-                            <p className="text-lg font-bold text-white leading-tight mt-2">{d.p1.nombre}</p>
-                            <span className="text-[10px] font-black tabular-nums text-slate-500 mt-1 block">ID: {id1.split('-')[0]} | Stock: {d.p1.stock_actual || 0}</span>
-                        </div>
-                        <div 
-                            onClick={() => setSelections(prev => ({ ...prev, [uniqueKey]: 'p2' }))}
-                            role="button"
-                            tabIndex={0}
-                            aria-label={`Seleccionar ${d.p2.nombre} como principal`}
-                            onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && setSelections(prev => ({ ...prev, [uniqueKey]: 'p2' }))}
-                            className={`p-4 rounded-xl border transition-all cursor-pointer ${selections[uniqueKey] === 'p2' ? 'bg-blue-600/20 border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.2)]' : 'bg-white/5 border-white/5 hover:border-white/10'}`}
-                        >
-                            <p className="text-lg font-bold text-white leading-tight mt-2">{d.p2.nombre}</p>
-                            <span className="text-[10px] font-black tabular-nums text-slate-500 mt-1 block">ID: {id2.split('-')[0]} | Stock: {d.p2.stock_actual || 0}</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="flex flex-col gap-2 shrink-0 w-full md:w-48 self-stretch md:self-auto justify-end">
-                    <button type="button" 
-                        onClick={() => handleMergeSelection(d)}
-                        disabled={!selections[uniqueKey] || mergingId !== null}
-                        className="w-full flex justify-center items-center gap-2 px-4 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:hover:bg-blue-600 text-white text-sm font-bold transition-transform active:scale-95 shadow-lg shadow-blue-500/20"
-                    >
-                        {(mergingId === d.p1.producto_id || mergingId === d.p2.producto_id) ? <Loader2 className="h-4 w-4 animate-spin"/> : <CheckCircle2 className="h-4 w-4"/>} Fusionar aquí
-                    </button>
-                    <button type="button" 
-                        onClick={() => {
-                            ignoreSQL(id1, id2);
-                            setAiDuplicates(prev => prev.filter(item => {
-                                const cId1 = String(item.p1.producto_id || item.p1.id);
-                                const cId2 = String(item.p2.producto_id || item.p2.id);
-                                return !((cId1 === id1 && cId2 === id2) || (cId1 === id2 && cId2 === id1));
-                            }));
-                        }}
-                        className="w-full flex justify-center items-center gap-2 px-4 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-bold transition-transform active:scale-95 border border-white/5"
-                    >
-                        Ignorar alerta
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
-};
-
-const ConflictCard = ({ d, ignoreSQL }) => {
-    const id1 = String(d.p1.producto_id || d.p1.id || '');
-    const id2 = String(d.p2.producto_id || d.p2.id || '');
-
-    return (
-        <div className="bg-slate-900 rounded-2xl p-6 relative overflow-hidden group border border-white/5 hover:border-amber-500/20 transition-colors">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none group-hover:bg-amber-500/10 transition-colors" />
-            
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10">
-                <div className="flex-1 w-full space-y-4">
-                    <div className="flex items-center gap-3">
-                        <div className="px-3 py-1 rounded-full bg-amber-500/10 text-amber-400 text-[10px] font-black uppercase tracking-widest border border-amber-500/20 flex items-center gap-2">
-                            <EyeOff className="h-3 w-3" />
-                            Conflicto Detectado
-                        </div>
-                        <span className="text-slate-400 text-sm font-medium italic">
-                            {d.conflictReason}
-                        </span>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="p-4 rounded-xl bg-white/5 border border-white/5">
-                            <p className="text-lg font-bold text-white leading-tight">{d.p1.nombre}</p>
-                            <span className="text-[10px] font-black tabular-nums text-slate-500 mt-1 block">Venta: ${parseFloat(d.p1.ultimo_precio_venta || d.p1.precio_venta || 0).toLocaleString()}</span>
-                        </div>
-                        <div className="p-4 rounded-xl bg-white/5 border border-white/5">
-                            <p className="text-lg font-bold text-white leading-tight">{d.p2.nombre}</p>
-                            <span className="text-[10px] font-black tabular-nums text-slate-500 mt-1 block">Venta: ${parseFloat(d.p2.ultimo_precio_venta || d.p2.precio_venta || 0).toLocaleString()}</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="flex flex-col gap-2 shrink-0 w-full md:w-48 self-stretch md:self-auto justify-end">
-                    <button type="button" 
-                        onClick={() => ignoreSQL(id1, id2)}
-                        className="w-full flex justify-center items-center gap-2 px-4 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-bold transition-transform active:scale-95 border border-white/5"
-                    >
-                        Ignorar Conflicto
-                    </button>
-                </div>
-            </div>
         </div>
     );
 };

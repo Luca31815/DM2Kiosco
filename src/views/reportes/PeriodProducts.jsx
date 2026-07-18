@@ -60,7 +60,7 @@ export const PeriodTopProducts = ({ item, type }) => {
                 const pct = Math.round((p.ganancia_total / maxGanancia) * 100)
                 const isTop = idx === 0
                 return (
-                    <div key={p.producto || p.id || idx} className="group/item relative overflow-hidden hover:bg-white/4 p-2.5 rounded-xl transition-all">
+                    <div key={p.producto || p.id || `prod-${p.ganancia_total}-${p.cantidad_total}`} className="group/item relative overflow-hidden hover:bg-white/4 p-2.5 rounded-xl transition-all">
                         <div
                             className={`absolute left-0 top-0 bottom-0 rounded-xl transition-all duration-500 opacity-10 ${
                                 isTop ? 'bg-emerald-400' : 'bg-blue-400'

@@ -24,6 +24,27 @@ const ExpandedRow = ({ row }) => {
     )
 }
 
+const SEARCH_COLUMNS = [
+    { key: 'tipo_accion', label: 'Acción' },
+    { key: 'mensaje_enviado', label: 'Mensaje Enviado' },
+    { key: 'mensaje_inicial', label: 'Mensaje Inicial' },
+    { key: 'log_id', label: 'ID Log' },
+]
+
+const columns = [
+    { key: 'log_id', label: 'ID', width: 'w-24', render: (val) => <span className="text-gray-500">#{val}</span> },
+    { key: 'fecha', label: 'Fecha', width: 'w-48', render: (val) => new Date(val).toLocaleString() },
+    { key: 'tipo_accion', label: 'Acción', width: 'w-32', render: (val) => <span className="uppercase text-xs font-bold tracking-wider text-purple-400">{val}</span> },
+    {
+        key: 'estado', label: 'Estado', width: 'w-24', render: (val) => {
+            if (val === 'exito') return <span className="flex items-center gap-1 text-green-400 font-bold"><CheckCircle size={14} /> EXITO</span>
+            if (val === 'error') return <span className="flex items-center gap-1 text-red-400 font-bold"><XCircle size={14} /> ERROR</span>
+            return <span className="text-gray-400">{val}</span>
+        }
+    },
+    { key: 'mensaje_enviado', label: 'Mensaje', width: 'w-1/2', wrap: true, render: (val) => <span className="text-gray-300 italic text-sm block" title={val}>{val}</span> },
+]
+
 const HistorialView = () => {
     const [sortColumn, setSortColumn] = useState('fecha')
     const [sortOrder, setSortOrder] = useState('desc')
@@ -36,27 +57,6 @@ const HistorialView = () => {
         filterColumn,
         filterValue
     })
-
-    const searchColumns = [
-        { key: 'tipo_accion', label: 'Acción' },
-        { key: 'mensaje_enviado', label: 'Mensaje Enviado' },
-        { key: 'mensaje_inicial', label: 'Mensaje Inicial' },
-        { key: 'log_id', label: 'ID Log' },
-    ]
-
-    const columns = [
-        { key: 'log_id', label: 'ID', width: 'w-24', render: (val) => <span className="text-gray-500">#{val}</span> },
-        { key: 'fecha', label: 'Fecha', width: 'w-48', render: (val) => new Date(val).toLocaleString() },
-        { key: 'tipo_accion', label: 'Acción', width: 'w-32', render: (val) => <span className="uppercase text-xs font-bold tracking-wider text-purple-400">{val}</span> },
-        {
-            key: 'estado', label: 'Estado', width: 'w-24', render: (val) => {
-                if (val === 'exito') return <span className="flex items-center gap-1 text-green-400 font-bold"><CheckCircle size={14} /> EXITO</span>
-                if (val === 'error') return <span className="flex items-center gap-1 text-red-400 font-bold"><XCircle size={14} /> ERROR</span>
-                return <span className="text-gray-400">{val}</span>
-            }
-        },
-        { key: 'mensaje_enviado', label: 'Mensaje', width: 'w-1/2', wrap: true, render: (val) => <span className="text-gray-300 italic text-sm block" title={val}>{val}</span> },
-    ]
 
     const handleSort = (column) => {
         if (sortColumn === column) {
@@ -84,7 +84,7 @@ const HistorialView = () => {
                 sortColumn={sortColumn}
                 sortOrder={sortOrder}
                 onFilter={setFilterValue}
-                searchColumns={searchColumns}
+                searchColumns={SEARCH_COLUMNS}
                 searchColumn={filterColumn}
                 onSearchColumnChange={setFilterColumn}
                 renderExpandedRow={(row) => <ExpandedRow row={row} />}

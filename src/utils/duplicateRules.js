@@ -40,6 +40,7 @@ export const STRICT_ATTRIBUTES = [
     'MARACUYA', 'UVA', 'ANANA', 'JAMON SERRANO', 'PIZZA', 'CEBOLLA', 'MARMOLADO', 'MIXTO', 'TRIPLE', 'SIMPLE',
     'EXTREME', 'INTENSO', 'SELECT', 'ECONOMICO', 'ORIGEN', 'BOX', 'COMUN'
 ];
+export const STRICT_SET = new Set(STRICT_ATTRIBUTES);
 
 export const FORMATS = ['GRANDE', 'MEDIANA', 'CHICA', 'CHICO', 'MINI', 'PACK', 'X1', 'X2', 'X3', 'X6', 'X12'];
 
@@ -99,9 +100,8 @@ const getContradiction = (attrs1, attrs2) => {
 
     // B. Contradicción Unilateral de "Atributos Estrictos"
     // Si uno especifica un atributo 'estricto' (ej Zero) y el otro no dice NADA, son distintos.
-    const strictSet = new Set(STRICT_ATTRIBUTES);
-    const strict1 = attrs1.filter(a => strictSet.has(a));
-    const strict2 = attrs2.filter(a => strictSet.has(a));
+    const strict1 = attrs1.filter(a => STRICT_SET.has(a));
+    const strict2 = attrs2.filter(a => STRICT_SET.has(a));
     const strictSet1 = new Set(strict1);
     const strictSet2 = new Set(strict2);
 
