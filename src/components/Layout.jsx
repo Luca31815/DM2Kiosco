@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import Sidebar from './Sidebar'
-import { Menu, RefreshCw, Clock } from 'lucide-react'
+import { Menu, RefreshCw, Clock, LogOut } from 'lucide-react'
 import { Toaster } from 'react-hot-toast'
 import { useAuth } from '../context/AuthContext'
 import { useIsMobile } from '../hooks/useIsMobile'
@@ -85,6 +85,7 @@ LiveClock.displayName = 'LiveClock'
 const TopBar = React.memo(({ onMenuClick }) => {
     const [refreshing, setRefreshing] = useState(false)
     const isMobile = useIsMobile()
+    const { session, signOut } = useAuth()
 
     const handleRefresh = useCallback(() => {
         setRefreshing(true)
@@ -113,7 +114,7 @@ const TopBar = React.memo(({ onMenuClick }) => {
                     <LogoTrigger />
                 </div>
 
-                {/* Right: Time + Status + Refresh */}
+                {/* Right: Time + Status + Refresh + Logout */}
                 <div className="flex items-center gap-2 md:gap-4">
                     {/* Live clock — only this component ticks on desktop */}
                     {!isMobile && <LiveClock />}
@@ -134,12 +135,25 @@ const TopBar = React.memo(({ onMenuClick }) => {
                     >
                         <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
                     </button>
+
+                    {/* Logout button */}
+                    {session && (
+                        <button type="button"
+                            id="logout-btn"
+                            onClick={signOut}
+                            title="Cerrar Sesión"
+                            className="p-2 rounded-xl text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 transition-all active:scale-95"
+                        >
+                            <LogOut className="h-4 w-4" />
+                        </button>
+                    )}
                 </div>
             </div>
         </div>
     )
 })
 TopBar.displayName = 'TopBar'
+
 
 const LogoTrigger = () => {
     const [clicks, setClicks] = useState(0)

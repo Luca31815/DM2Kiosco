@@ -37,7 +37,7 @@
         "reanimatedVersion": null,
         "isPreES2023Target": false,
         "isStaticExport": false,
-        "sourceFileCount": 83
+        "sourceFileCount": 82
       },
       "diagnostics": [
         {
@@ -55,6 +55,48 @@
           "normalizedFilePath": "dist/assets/vendor-supabase-BZ0N5lZN.js",
           "tags": [
             "security-scan"
+          ]
+        },
+        {
+          "filePath": "src/views/LoginView.jsx",
+          "plugin": "react-doctor",
+          "rule": "label-has-associated-control",
+          "severity": "warning",
+          "title": "Label missing associated control",
+          "message": "Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it.",
+          "help": "Tie every label to a control with `htmlFor`, or by nesting the input.",
+          "line": 75,
+          "column": 33,
+          "offset": 3765,
+          "length": 88,
+          "endLine": 75,
+          "category": "Accessibility",
+          "matchByOccurrence": true,
+          "id": "src/views/LoginView.jsx::75:33::react-doctor/label-has-associated-control::bd02bb7d17131af17130278c262805df4e8f9fc17abee3065e11951a48a41bdc",
+          "normalizedFilePath": "src/views/LoginView.jsx",
+          "tags": [
+            "react-jsx-only"
+          ]
+        },
+        {
+          "filePath": "src/views/LoginView.jsx",
+          "plugin": "react-doctor",
+          "rule": "label-has-associated-control",
+          "severity": "warning",
+          "title": "Label missing associated control",
+          "message": "Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it.",
+          "help": "Tie every label to a control with `htmlFor`, or by nesting the input.",
+          "line": 94,
+          "column": 33,
+          "offset": 5068,
+          "length": 88,
+          "endLine": 94,
+          "category": "Accessibility",
+          "matchByOccurrence": true,
+          "id": "src/views/LoginView.jsx::94:33::react-doctor/label-has-associated-control::bd02bb7d17131af17130278c262805df4e8f9fc17abee3065e11951a48a41bdc",
+          "normalizedFilePath": "src/views/LoginView.jsx",
+          "tags": [
+            "react-jsx-only"
           ]
         },
         {
@@ -98,15 +140,13 @@
         "eslint.config.js",
         "postcss.config.js",
         "src/App.jsx",
+        "src/components/AuthGuard.jsx",
         "src/components/ClientAutocomplete.jsx",
-        "src/components/CommandPalette.jsx",
-        "src/components/Dashboard.jsx",
         "src/components/DataTable.jsx",
         "src/components/HeatmapMode.jsx",
         "src/components/Layout.jsx",
         "src/components/ProductAutocomplete.jsx",
         "src/components/ProductDetailExpansion.jsx",
-        "src/components/SalesTable.jsx",
         "src/components/Sidebar.jsx",
         "src/components/SynonymManagerModal.jsx",
         "src/components/SynonymTable.jsx",
@@ -136,6 +176,7 @@
         "src/views/DuplicadosView.jsx",
         "src/views/HistorialView.jsx",
         "src/views/HomeView.jsx",
+        "src/views/LoginView.jsx",
         "src/views/ProductosView.jsx",
         "src/views/ProveedoresView.jsx",
         "src/views/RentabilidadProductosView.jsx",
@@ -179,10 +220,10 @@
         "tailwind.config.js",
         "vite.config.js"
       ],
-      "analyzedFileCount": 83,
+      "analyzedFileCount": 82,
       "complete": true,
-      "scannedFileCount": 83,
-      "elapsedMilliseconds": 8254.2899
+      "scannedFileCount": 82,
+      "elapsedMilliseconds": 20098.217300000004
     }
   ],
   "diagnostics": [
@@ -201,6 +242,48 @@
       "normalizedFilePath": "dist/assets/vendor-supabase-BZ0N5lZN.js",
       "tags": [
         "security-scan"
+      ]
+    },
+    {
+      "filePath": "src/views/LoginView.jsx",
+      "plugin": "react-doctor",
+      "rule": "label-has-associated-control",
+      "severity": "warning",
+      "title": "Label missing associated control",
+      "message": "Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it.",
+      "help": "Tie every label to a control with `htmlFor`, or by nesting the input.",
+      "line": 75,
+      "column": 33,
+      "offset": 3765,
+      "length": 88,
+      "endLine": 75,
+      "category": "Accessibility",
+      "matchByOccurrence": true,
+      "id": "src/views/LoginView.jsx::75:33::react-doctor/label-has-associated-control::bd02bb7d17131af17130278c262805df4e8f9fc17abee3065e11951a48a41bdc",
+      "normalizedFilePath": "src/views/LoginView.jsx",
+      "tags": [
+        "react-jsx-only"
+      ]
+    },
+    {
+      "filePath": "src/views/LoginView.jsx",
+      "plugin": "react-doctor",
+      "rule": "label-has-associated-control",
+      "severity": "warning",
+      "title": "Label missing associated control",
+      "message": "Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it.",
+      "help": "Tie every label to a control with `htmlFor`, or by nesting the input.",
+      "line": 94,
+      "column": 33,
+      "offset": 5068,
+      "length": 88,
+      "endLine": 94,
+      "category": "Accessibility",
+      "matchByOccurrence": true,
+      "id": "src/views/LoginView.jsx::94:33::react-doctor/label-has-associated-control::bd02bb7d17131af17130278c262805df4e8f9fc17abee3065e11951a48a41bdc",
+      "normalizedFilePath": "src/views/LoginView.jsx",
+      "tags": [
+        "react-jsx-only"
       ]
     },
     {
@@ -240,12 +323,12 @@
   ],
   "summary": {
     "errorCount": 2,
-    "warningCount": 1,
-    "affectedFileCount": 2,
-    "totalDiagnosticCount": 3,
+    "warningCount": 3,
+    "affectedFileCount": 3,
+    "totalDiagnosticCount": 5,
     "score": null,
     "scoreLabel": null
   },
-  "elapsedMilliseconds": 8272.935300000001,
+  "elapsedMilliseconds": 20127.1072,
   "error": null
 }
