@@ -5,6 +5,8 @@ import * as api from '../../services/api'
 import { useSWRConfig } from 'swr'
 import ProductAutocomplete from '../ProductAutocomplete'
 import { toast } from 'react-hot-toast'
+import { ReservaPaymentSection } from './ReservaPaymentSection'
+import { ReservaStockSection } from './ReservaStockSection'
 
 export const ReservasExpandedRow = ({ row }) => {
     const { data: details, loading: loadingDetails } = useReservasDetalles(row.reserva_id)
@@ -248,109 +250,17 @@ export const ReservasExpandedRow = ({ row }) => {
                 </div>
 
                 <div className="w-full lg:w-96 space-y-6">
-                    <div className="space-y-3">
-                        <div className="flex items-center gap-2 text-slate-400">
-                            <CreditCard className="h-4 w-4" />
-                            <h4 className="text-xs font-black uppercase tracking-widest text-slate-500">Pagos / Señas</h4>
-                        </div>
-                        <div className="bg-slate-950/20 rounded-xl border border-white/5 p-4 divide-y divide-white/5">
-                            {dinero.length === 0 ? (
-                                <p className="text-xs text-slate-600 text-center py-2 italic font-medium">Sin movimientos de dinero</p>
-                            ) : dinero.map((m) => (
-                                <div key={m.movimiento_id}>
-                                    {editingPaymentId === m.movimiento_id ? (
-                                        <div className="flex flex-col gap-2 py-2.5">
-                                            <div className="flex gap-2">
-                                                <select
-                                                    value={editPaymentForm.metodo}
-                                                    aria-label="Método de pago"
-                                                    onChange={e => setEditPaymentForm({ ...editPaymentForm, metodo: e.target.value })}
-                                                    className="bg-slate-900 border-none rounded-lg text-xs px-2 py-1 text-slate-200 outline-none focus:ring-1 focus:ring-blue-500 w-1/2"
-                                                >
-                                                    <option value="Efectivo">Efectivo</option>
-                                                    <option value="Tarjeta">Tarjeta</option>
-                                                    <option value="Transferencia">Transferencia</option>
-                                                </select>
-                                                <div className="flex items-center bg-slate-900 rounded-lg px-2 py-1 w-1/2">
-                                                    <span className="text-xs text-slate-500 mr-1">$</span>
-                                                    <input
-                                                        type="number"
-                                                        aria-label="Monto"
-                                                        value={editPaymentForm.monto}
-                                                        onChange={e => setEditPaymentForm({ ...editPaymentForm, monto: e.target.value })}
-                                                        className="bg-transparent border-none text-xs text-right text-slate-200 outline-none w-full tabular-nums"
-                                                    />
-                                                </div>
-                                            </div>
-                                            <div className="flex justify-end gap-1">
-                                                <button type="button"
-                                                    onClick={() => handleSavePayment(m)}
-                                                    className="p-1 bg-green-500/20 text-green-400 rounded hover:bg-green-500/30 transition-all"
-                                                    title="Guardar"
-                                                    aria-label="Guardar pago"
-                                                >
-                                                    <Check size={12} />
-                                                </button>
-                                                <button type="button"
-                                                    onClick={() => handleDeletePayment(m)}
-                                                    className="p-1 bg-red-500/20 text-red-400 rounded hover:bg-red-500/30 transition-all"
-                                                    title="Eliminar"
-                                                    aria-label="Eliminar pago"
-                                                >
-                                                    <Trash2 size={12} />
-                                                </button>
-                                                <button type="button"
-                                                    onClick={() => setEditingPaymentId(null)}
-                                                    className="p-1 bg-slate-800 text-slate-400 rounded hover:bg-slate-700 transition-all"
-                                                    title="Cancelar"
-                                                    aria-label="Cancelar edición"
-                                                >
-                                                    <X size={12} />
-                                                </button>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <div className="flex justify-between items-center py-2.5 group/pay">
-                                            <div className="flex flex-col">
-                                                <span className="text-xs font-bold text-slate-300 uppercase tracking-tighter">{m.metodo}</span>
-                                                <span className="text-[10px] text-slate-600">{new Date(m.fecha).toLocaleDateString()}</span>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-sm font-black text-emerald-400 tabular-nums">${m.monto}</span>
-                                                <button type="button"
-                                                    onClick={() => {
-                                                        setEditingPaymentId(m.movimiento_id)
-                                                        setEditPaymentForm({ metodo: m.metodo, monto: m.monto })
-                                                    }}
-                                                    aria-label="Editar pago"
-                                                    className="p-1 text-slate-600 hover:text-white hover:bg-white/5 rounded transition-all opacity-0 group-hover/pay:opacity-100"
-                                                >
-                                                    <Edit2 size={12} />
-                                                </button>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-                    </div>
+                    <ReservaPaymentSection
+                        dinero={dinero}
+                        editingPaymentId={editingPaymentId}
+                        setEditingPaymentId={setEditingPaymentId}
+                        editPaymentForm={editPaymentForm}
+                        setEditPaymentForm={setEditPaymentForm}
+                        handleSavePayment={handleSavePayment}
+                        handleDeletePayment={handleDeletePayment}
+                    />
 
-                    <div className="space-y-3">
-                        <div className="flex items-center gap-2 text-slate-400">
-                            <ChevronRight className="h-4 w-4" />
-                            <h4 className="text-xs font-black uppercase tracking-widest text-slate-500">Entregas de Stock</h4>
-                        </div>
-                        <div className="bg-slate-950/20 rounded-xl border border-white/5 p-4 divide-y divide-white/5">
-                            {stock.length === 0 ? (
-                                <p className="text-xs text-slate-600 text-center py-2 italic font-medium">Sin movimientos de stock</p>
-                            ) : stock.map((s) => (
-                                <div key={s.movimiento_id} className="flex justify-between items-center py-2.5 first:pt-0 last:pb-0">
-                                    <span className="text-xs font-bold text-slate-400 truncate max-w-[180px]">{s.producto}</span>
-                                    <span className="text-sm font-black text-orange-400 tabular-nums">-{s.cantidad}</span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
+                    <ReservaStockSection stock={stock} />
                 </div>
             </div>
         </div>

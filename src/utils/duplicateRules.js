@@ -80,10 +80,16 @@ export const getQuantity = (words) => {
 
 const findAllAttrs = (nameNormalized, words, list) => {
     const wordsSet = new Set(words);
-    return list.filter(attr => {
-        if (attr.includes(' ')) return nameNormalized.includes(attr);
-        return wordsSet.has(attr);
-    });
+    const result = [];
+    for (let i = 0; i < list.length; i++) {
+        const attr = list[i];
+        if (attr.split(' ').length > 1) {
+            if (nameNormalized.split(attr).length > 1) result.push(attr);
+        } else if (wordsSet.has(attr)) {
+            result.push(attr);
+        }
+    }
+    return result;
 };
 
 const getContradiction = (attrs1, attrs2) => {

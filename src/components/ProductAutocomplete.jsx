@@ -104,24 +104,26 @@ const ProductAutocomplete = ({ value, onChange, placeholder = 'Buscar producto..
             }}
         >
             {suggestions.map((product) => (
-                <li
-                    key={product.producto_id || product.id || product.codigo || product.nombre}
-                    className="px-4 py-2 hover:bg-white/5 cursor-pointer text-gray-300 transition-colors"
-                    onMouseDown={(e) => handleSelect(e, product.nombre)}
-                >
-                    <div className="flex flex-col">
-                        <div className="flex justify-between items-center">
-                            <span className="font-medium text-white">{product.nombre}</span>
-                            {product.similitud && (
-                                <span className="text-[9px] bg-blue-900/40 text-blue-300 px-1 rounded">
-                                    {Math.round(product.similitud * 100)}% Match
-                                </span>
-                            )}
+                <li key={product.producto_id || product.id || product.codigo || product.nombre}>
+                    <button
+                        type="button"
+                        className="w-full text-left px-4 py-2 hover:bg-white/5 cursor-pointer text-gray-300 transition-colors"
+                        onMouseDown={(e) => handleSelect(e, product.nombre)}
+                    >
+                        <div className="flex flex-col">
+                            <div className="flex justify-between items-center">
+                                <span className="font-medium text-white">{product.nombre}</span>
+                                {product.similitud && (
+                                    <span className="text-[9px] bg-blue-900/40 text-blue-300 px-1 rounded">
+                                        {Math.round(product.similitud * 100)}% Match
+                                    </span>
+                                )}
+                            </div>
+                            <span className="text-[10px] text-gray-500 uppercase">
+                                Precio: ${product.precio || product.ultimo_precio_venta || '-'}
+                            </span>
                         </div>
-                        <span className="text-[10px] text-gray-500 uppercase">
-                            Precio: ${product.precio || product.ultimo_precio_venta || '-'}
-                        </span>
-                    </div>
+                    </button>
                 </li>
             ))}
         </ul>

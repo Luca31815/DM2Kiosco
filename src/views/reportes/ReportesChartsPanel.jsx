@@ -1,9 +1,13 @@
 import React from 'react'
-import {
-    AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
-    ResponsiveContainer, BarChart, Bar, Cell, LabelList
-} from 'recharts'
 import { Target, Activity } from 'lucide-react'
+
+function useRecharts() {
+    const [Recharts, setRecharts] = React.useState(null)
+    React.useEffect(() => {
+        import('recharts').then(setRecharts)
+    }, [])
+    return Recharts
+}
 
 const CustomTooltip = ({ active, payload, label }) => {
     if (!active || !payload?.length) return null
@@ -11,7 +15,7 @@ const CustomTooltip = ({ active, payload, label }) => {
         <div className="bg-slate-900 border border-white/10 rounded-2xl p-4 shadow-2xl min-w-[180px]">
             <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-3">{label}</p>
             {payload.map((p) => (
-                <div key={p.dataKey || p.name} className="flex justify-between items-center gap-4 text-xs font-bold mb-1">
+                <div key={p.dataKey || p.name || p.color} className="flex justify-between items-center gap-4 text-xs font-bold mb-1">
                     <span style={{ color: p.color }}>{p.name === 'ingresos' ? 'Ingresos' : p.name === 'egresos' ? 'Egresos' : 'Saldo'}</span>
                     <span className="text-white tabular-nums">${Math.floor(p.value).toLocaleString()}</span>
                 </div>
@@ -21,6 +25,10 @@ const CustomTooltip = ({ active, payload, label }) => {
 }
 
 export function ReportesEvolucionChart({ chartData, reportType }) {
+    const Recharts = useRecharts()
+    if (!Recharts) return <div className="h-full w-full animate-pulse bg-white/5 rounded-xl" />
+    const { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } = Recharts
+
     return (
         <ResponsiveContainer width="100%" height="100%" debounce={50}>
             <AreaChart data={chartData} margin={{ left: -15, right: 10, top: 10, bottom: 0 }}>
@@ -52,12 +60,15 @@ export function ReportesEvolucionChart({ chartData, reportType }) {
 }
 
 export function ReportesTopProductsChart({ aggregatedTopData, loadingTop }) {
-    if (loadingTop) {
+    const Recharts = useRecharts()
+    if (loadingTop || !Recharts) {
         return <div className="space-y-3 mt-4">{[1, 2, 3, 4, 5].map(i => <div key={i} className="h-8 bg-white/5 rounded-xl animate-pulse" />)}</div>
     }
     if (aggregatedTopData.length === 0) {
         return <div className="flex items-center justify-center h-full text-slate-600 text-sm italic">Sin datos disponibles</div>
     }
+
+    const { ResponsiveContainer, BarChart, Bar, Cell, LabelList, XAxis, YAxis, Tooltip } = Recharts
 
     return (
         <ResponsiveContainer width="100%" height="100%" debounce={50}>
@@ -77,7 +88,7 @@ export function ReportesTopProductsChart({ aggregatedTopData, loadingTop }) {
                 }} />
                 <Bar dataKey="ganancia_total" radius={[0, 6, 6, 0]} barSize={18}>
                     {aggregatedTopData.map((entry, index) => (
-                        <Cell key={entry.producto || `cell-${entry.ganancia_total}-${index}`} fill={index === 0 ? '#10b981' : `rgba(16,185,129,${0.6 - index * 0.1})`} />
+                        <Cell key={entry.producto || entry.ganancia_total} fill={index === 0 ? '#10b981' : `rgba(16,185,129,${0.6 - index * 0.1})`} />
                     ))}
                     <LabelList dataKey="ganancia_total" position="right" fill="#64748b" fontSize={10} fontWeight="bold" formatter={(val) => `$${Math.floor(val / 1000)}k`} />
                 </Bar>

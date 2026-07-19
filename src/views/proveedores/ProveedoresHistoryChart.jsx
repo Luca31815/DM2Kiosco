@@ -1,7 +1,16 @@
-import React from 'react'
-import { ResponsiveContainer, AreaChart, CartesianGrid, XAxis, YAxis, Tooltip, Area } from 'recharts'
+import React, { useState, useEffect } from 'react'
 
 export default function ProveedoresHistoryChart({ chartData }) {
+    const [Recharts, setRecharts] = useState(null)
+
+    useEffect(() => {
+        import('recharts').then(setRecharts)
+    }, [])
+
+    if (!Recharts) return <div className="h-full w-full animate-pulse bg-white/5 rounded-xl" />
+
+    const { ResponsiveContainer, AreaChart, CartesianGrid, XAxis, YAxis, Tooltip, Area } = Recharts
+
     return (
         <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={chartData}>

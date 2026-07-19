@@ -3,6 +3,7 @@ import { X, Search, AlertTriangle, CheckCircle2, Trash2, Loader2, Info, Filter, 
 import * as api from '../services/api'
 import { LazyMotion, domAnimation, m, AnimatePresence } from 'framer-motion'
 import { toast } from 'react-hot-toast'
+import { SynonymModalTable } from './synonyms/SynonymModalTable'
 
 const SynonymManagerModal = ({ isOpen, onClose }) => {
     const [synonyms, setSynonyms] = useState([])
@@ -95,12 +96,30 @@ const SynonymManagerModal = ({ isOpen, onClose }) => {
     }
 
     const filtered = useMemo(() => {
-        const source = (view === 'all' ? synonyms : conflicts)
-        return source.filter(s => 
-            s.alias.toLowerCase().includes(filter.toLowerCase()) || 
-            s.nombre_oficial.toLowerCase().includes(filter.toLowerCase())
-        )
-    }, [view, synonyms, conflicts, filter])
+        return synonyms.filter(s => {
+            const matchesSearch = s.alias.toLowerCase().includes(filter.toLowerCase()) || 
+                                  s.nombre_oficial.toLowerCase().includes(filter.toLowerCase())
+            const isConflict = conflicts.some(c => c.alias === s.alias)
+            if (view === 'conflicts') return matchesSearch && isConflict
+            return matchesSearch
+        })
+    }, [synonyms, filter, conflicts, view])
+
+    const groupedConflicts = useMemo(() => {
+        const map = {}
+        for (let i = 0; i < conflicts.length; i++) {
+            const c = conflicts[i]
+            if (!map[c.nombre_oficial]) map[c.nombre_oficial] = []
+            map[c.nombre_oficial].push(c)
+        }
+        const result = []
+        for (const dest in map) {
+            if (map[dest].length > 1) {
+                result.push([dest, map[dest]])
+            }
+        }
+        return result
+    }, [conflicts])
 
     if (!isOpen) return null
 
@@ -174,13 +193,7 @@ const SynonymManagerModal = ({ isOpen, onClose }) => {
                 {/* Bulk Actions Bar */}
                 {view === 'conflicts' && !loading && (
                     <AnimatePresence>
-                        {Object.entries(
-                            conflicts.reduce((acc, c) => {
-                                acc[c.nombre_oficial] = acc[c.nombre_oficial] || [];
-                                acc[c.nombre_oficial].push(c);
-                                return acc;
-                            }, {})
-                        ).filter(([_, group]) => group.length > 1).map(([dest, group]) => (
+                        {groupedConflicts.map(([dest, group]) => (
                             <m.div 
                                 key={`bulk-${dest}`}
                                 initial={{ scaleY: 0, opacity: 0 }}
@@ -199,12 +212,10 @@ const SynonymManagerModal = ({ isOpen, onClose }) => {
                                 </div>
                                 <button type="button" 
                                     onClick={async () => {
-                                        if (confirm(`¿Resolver los ${group.length} conflictos de "${dest}" en lote sin confirmaciones individuales?`)) {
-                                            for (const c of group) {
-                                                await handleResolve(c, true);
-                                            }
-                                            loadData();
-                                        }
+                                         if (confirm(`¿Resolver los ${group.length} conflictos de "${dest}" en lote sin confirmaciones individuales?`)) {
+                                             await Promise.all(group.map(c => handleResolve(c, true)));
+                                             loadData();
+                                         }
                                     }}
                                     className="px-4 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-900 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-amber-500/20 flex items-center gap-2 active:scale-95"
                                 >
@@ -217,100 +228,14 @@ const SynonymManagerModal = ({ isOpen, onClose }) => {
                 )}
 
                 {/* Table Content */}
-                <div className="flex-1 overflow-auto custom-scrollbar">
-                    {loading ? (
-                        <div className="flex flex-col items-center justify-center py-20 gap-4">
-                            <Loader2 className="h-8 w-8 text-blue-500 animate-spin" />
-                            <span className="text-slate-500 font-bold tracking-widest text-[10px] uppercase">Ejecutando auditoría recursiva...</span>
-                        </div>
-                    ) : filtered.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-20 text-slate-600 opacity-50">
-                            <Info className="h-10 w-10 mb-2" />
-                            <span className="text-sm italic">No se encontraron incidencias en el catálogo.</span>
-                        </div>
-                    ) : (
-                        <table className="w-full text-left text-sm border-collapse" style={{ minWidth: '700px' }}>
-                            <thead className="bg-white/[0.01] sticky top-0 backdrop-blur-md border-b border-white/5">
-                                <tr className="text-[10px] font-black uppercase tracking-widest text-slate-500">
-                                    <th className="px-6 py-4">Variante (Alias)</th>
-                                    <th className="px-6 py-4">Destino (Nombre Oficial)</th>
-                                    <th className="px-6 py-4">Estado / Conflicto</th>
-                                    <th className="px-6 py-4 text-right">Resolución</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-white/5">
-                                {filtered.map((s, idx) => {
-                                    const conflict = conflicts.find(c => c.alias === s.alias)
-                                    return (
-                                        <m.tr 
-                                            key={s.alias}
-                                            initial={{ opacity: 0, y: 5 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            transition={{ delay: idx * 0.005 }}
-                                            className="group hover:bg-white/[0.02] transition-colors"
-                                        >
-                                            <td className="px-6 py-4 font-black text-slate-200 uppercase tracking-tight">{s.alias}</td>
-                                            <td className="px-6 py-4">
-                                                <div className="flex flex-col">
-                                                    <span className="text-slate-400 font-medium">{s.nombre_oficial}</span>
-                                                    {conflict?.flatten_target && (
-                                                        <span className="text-[10px] text-blue-400 font-bold flex items-center gap-1 mt-0.5">
-                                                            <RefreshCcw size={10} className="animate-spin-slow" />
-                                                            Sugerencia: Re-vincular a {conflict.flatten_target}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                {conflict ? (
-                                                    <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider ${
-                                                        conflict.tipo_conflicto === 'COLISION' ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20 shadow-[0_0_10px_rgba(245,158,11,0.1)]' :
-                                                        conflict.tipo_conflicto === 'HUERFANO' ? 'bg-rose-500/10 text-rose-500 border border-rose-500/20 shadow-[0_0_10px_rgba(244,63,94,0.1)]' :
-                                                        'bg-slate-500/10 text-slate-500 border border-white/10'
-                                                    }`}>
-                                                        <AlertTriangle className="h-2.5 w-2.5" />
-                                                        {conflict.tipo_conflicto}
-                                                    </div>
-                                                ) : (
-                                                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 text-[9px] font-black uppercase tracking-wider shadow-[0_0_10px_rgba(16,185,129,0.1)]">
-                                                        <CheckCircle2 className="h-2.5 w-2.5" />
-                                                        ESTABLE
-                                                    </div>
-                                                )}
-                                            </td>
-                                            <td className="px-6 py-4 text-right">
-                                                <div className="flex items-center justify-end gap-2">
-                                                    {conflict && (
-                                                        <button type="button" 
-                                                            disabled={resolvingId === conflict.alias}
-                                                            onClick={() => handleResolve(conflict)}
-                                                            className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95 flex items-center gap-2 ${
-                                                                conflict.tipo_conflicto === 'COLISION' ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/20' :
-                                                                (conflict.tipo_conflicto === 'HUERFANO' && conflict.flatten_target) ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' :
-                                                                'bg-slate-800 text-slate-400 hover:text-white'
-                                                            }`}
-                                                        >
-                                                            {resolvingId === conflict.alias ? <Loader2 size={12} className="animate-spin" /> : <RefreshCcw size={12} />}
-                                                            {conflict.tipo_conflicto === 'COLISION' ? 'Fusionar' : 
-                                                             (conflict.flatten_target ? 'Aplanar' : 'Corregir')}
-                                                        </button>
-                                                    )}
-                                                    <button type="button" 
-                                                        onClick={() => handleDelete(s.alias)}
-                                                        title="Eliminar de forma permanente"
-                                                        className="p-2 text-slate-600 hover:text-rose-400 hover:bg-rose-400/10 rounded-xl transition-all opacity-0 group-hover:opacity-100"
-                                                    >
-                                                        <Trash2 size={16} />
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </m.tr>
-                                    )
-                                })}
-                            </tbody>
-                        </table>
-                    )}
-                </div>
+                <SynonymModalTable
+                    loading={loading}
+                    filtered={filtered}
+                    conflicts={conflicts}
+                    resolvingId={resolvingId}
+                    handleResolve={handleResolve}
+                    handleDelete={handleDelete}
+                />
 
                 {/* Footer Info */}
                 <div className="p-4 bg-white/[0.02] border-t border-white/5 flex items-start gap-4">

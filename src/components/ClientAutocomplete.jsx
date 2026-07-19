@@ -89,12 +89,14 @@ const ClientAutocomplete = ({ value, onChange, placeholder = 'Buscar cliente...'
             }}
         >
             {suggestions.map((client) => (
-                <li
-                    key={client.id || client.cliente_id || client.nombre}
-                    className="px-4 py-2 hover:bg-white/5 cursor-pointer text-gray-300 transition-colors"
-                    onMouseDown={(e) => handleSelect(e, client.nombre)}
-                >
-                    <span className="font-medium text-white">{client.nombre}</span>
+                <li key={client.id || client.cliente_id || client.nombre}>
+                    <button
+                        type="button"
+                        className="w-full text-left px-4 py-2 hover:bg-white/5 cursor-pointer text-gray-300 transition-colors"
+                        onMouseDown={(e) => handleSelect(e, client.nombre)}
+                    >
+                        <span className="font-medium text-white">{client.nombre}</span>
+                    </button>
                 </li>
             ))}
         </ul>

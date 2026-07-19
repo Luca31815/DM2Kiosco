@@ -121,14 +121,14 @@ export function useProductosDuplicadosTrigram() {
 
     const [ignoredPairs, setIgnoredPairs] = useState(() => {
         try {
-            const saved = localStorage.getItem('ignoredDuplicatesTrigram');
+            const saved = localStorage.getItem('ignoredDuplicatesTrigram:v1');
             return saved ? JSON.parse(saved) : [];
         } catch { return []; }
     });
 
     useEffect(() => {
         try {
-            localStorage.setItem('ignoredDuplicatesTrigram', JSON.stringify(ignoredPairs));
+            localStorage.setItem('ignoredDuplicatesTrigram:v1', JSON.stringify(ignoredPairs));
         } catch { /* storage unavailable */ }
     }, [ignoredPairs]);
 

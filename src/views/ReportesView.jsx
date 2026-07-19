@@ -14,6 +14,8 @@ import { LazyMotion, domAnimation, m } from 'framer-motion'
 import { KPICard } from './reportes/ReportesKPI'
 import ExpandedPeriodPanel from './reportes/ExpandedPeriodPanel'
 import { MES_NAMES } from './reportes/reportesHelpers'
+import { ReportesFloatingBar } from './reportes/ReportesFloatingBar'
+import { useReportesColumns } from './reportes/useReportesColumns'
 
 // ── Custom Tooltip for Chart ──────────────────────────────────────────────────
 const CustomTooltip = ({ active, payload, label }) => {
@@ -21,8 +23,8 @@ const CustomTooltip = ({ active, payload, label }) => {
     return (
         <div className="bg-slate-900 border border-white/10 rounded-2xl p-4 shadow-2xl min-w-[180px]">
             <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-3">{label}</p>
-            {payload.map((p, i) => (
-                <div key={p.dataKey || p.name || i} className="flex justify-between items-center gap-4 text-xs font-bold mb-1">
+            {payload.map((p) => (
+                <div key={p.dataKey || p.name || p.color} className="flex justify-between items-center gap-4 text-xs font-bold mb-1">
                     <span style={{ color: p.color }}>{p.name === 'ingresos' ? 'Ingresos' : p.name === 'egresos' ? 'Egresos' : 'Saldo'}</span>
                     <span className="text-white tabular-nums">${Math.floor(p.value).toLocaleString()}</span>
                 </div>
@@ -97,73 +99,7 @@ const ReportesView = () => {
     }
 
     // Columnas de la tabla según el tipo de periodo
-    const columns = useMemo(() => {
-        const common = [
-            { key: 'cant_ventas', label: 'Ventas', render: (val) => (
-                <div className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                    <span className="font-bold text-slate-300 tabular-nums">{val}</span>
-                </div>
-            )},
-            { key: 'cant_compras', label: 'Compras', render: (val) => (
-                <div className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-rose-500" />
-                    <span className="font-bold text-slate-400 tabular-nums">{val}</span>
-                </div>
-            )},
-            { key: 'ingresos', label: 'Ingresos', render: (val) => <span className="font-black text-emerald-400 tabular-nums">${Math.floor(val).toLocaleString()}</span> },
-            { key: 'egresos', label: 'Egresos', render: (val) => <span className="font-black text-rose-400 tabular-nums">${Math.floor(val).toLocaleString()}</span> },
-            { key: 'saldo', label: 'Balance', render: (val) => (
-                <div className="flex items-center gap-1.5">
-                    {val >= 0 ? <ArrowUpRight className="h-3.5 w-3.5 text-blue-400" /> : <ArrowDownRight className="h-3.5 w-3.5 text-rose-500" />}
-                    <span className={`font-black tabular-nums ${val >= 0 ? 'text-blue-400' : 'text-rose-500'}`}>${Math.floor(val).toLocaleString()}</span>
-                </div>
-            )},
-        ]
-
-        if (reportType === 'diario') {
-            return [{ key: 'fecha', label: 'Fecha', render: (val) => {
-                if (!val) return ''
-                const [y, m, d] = val.split('-')
-                const date = new Date(Number(y), Number(m) - 1, Number(d))
-                const dayName = date.toLocaleDateString('es-ES', { weekday: 'short' })
-                return (
-                    <div className="flex items-center gap-2">
-                        <span className="text-[10px] uppercase tracking-widest text-slate-600 font-black w-8">{dayName}</span>
-                        <span className="font-bold text-slate-200">{d}/{m}/{y}</span>
-                    </div>
-                )
-            }}, ...common]
-        }
-
-        if (reportType === 'semanal') {
-            return [{ key: 'semana_del', label: 'Semana del', render: (val) => {
-                if (!val) return ''
-                const [y, m, d] = val.split('-')
-                const start = new Date(Number(y), Number(m) - 1, Number(d))
-                const end = new Date(start)
-                end.setDate(start.getDate() + 6)
-                const endStr = `${String(end.getDate()).padStart(2, '0')}/${String(end.getMonth() + 1).padStart(2, '0')}`
-                return (
-                    <div className="flex items-center gap-2">
-                        <span className="font-bold text-slate-200">{d}/{m}/{y}</span>
-                        <ArrowRight className="h-3 w-3 text-slate-600" />
-                        <span className="font-bold text-slate-400">{endStr}</span>
-                    </div>
-                )
-            }}, ...common]
-        }
-
-        if (reportType === 'mensual') {
-            return [{ key: 'mes', label: 'Mes', render: (val, row) => (
-                <div className="flex items-center gap-2">
-                    <span className="text-[10px] text-slate-600 font-black tabular-nums">{row.anio}</span>
-                    <span className="font-bold text-slate-200">{MES_NAMES[Number(val)] || val}</span>
-                </div>
-            )}, ...common]
-        }
-        return common
-    }, [reportType])
+    const columns = useReportesColumns(reportType)
 
     // Totales acumulados del periodo visible
     const totals = useMemo(() => data.reduce((acc, curr) => ({
@@ -362,41 +298,11 @@ const ReportesView = () => {
             </div>
 
             {/* ── Barra flotante inferior ───────────────────────────────────── */}
-            <div className="fixed bottom-0 left-0 right-0 z-50 pointer-events-none px-2 pb-2 sm:pb-6 sm:px-4">
-                <m.div
-                    initial={{ y: 20, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ delay: 0.5 }}
-                    className="bg-slate-950/90 backdrop-blur-xl border border-white/8 shadow-[0_20px_60px_rgba(0,0,0,0.6)] rounded-2xl p-3 md:px-8 md:py-3.5 grid grid-cols-3 md:flex md:flex-row items-center justify-between w-full max-w-4xl mx-auto pointer-events-auto gap-2 md:gap-10"
-                >
-                    <div className="flex flex-col items-center md:items-start">
-                        <span className="text-[9px] font-black uppercase tracking-widest text-emerald-500 mb-0.5">Ingresos</span>
-                        <span className="text-base md:text-lg font-black text-white tabular-nums">${Math.floor(totals.ingresos).toLocaleString()}</span>
-                    </div>
-                    <div className="flex flex-col items-center md:items-start">
-                        <span className="text-[9px] font-black uppercase tracking-widest text-rose-500 mb-0.5">Egresos</span>
-                        <span className="text-base md:text-lg font-black text-white tabular-nums">${Math.floor(totals.egresos).toLocaleString()}</span>
-                    </div>
-                    <div className="flex flex-col items-center md:items-start">
-                        <span className="text-[9px] font-black uppercase tracking-widest text-blue-500 mb-0.5">Balance</span>
-                        <span className={`text-base md:text-lg font-black tabular-nums ${totals.balance >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>${Math.floor(totals.balance).toLocaleString()}</span>
-                    </div>
-                    <div className="hidden md:flex items-center gap-8 border-l border-white/8 pl-10">
-                        <div className="flex flex-col items-end">
-                            <span className="text-[9px] font-black uppercase tracking-widest text-slate-600 mb-0.5">Ticket Prom.</span>
-                            <span className="text-base font-black text-slate-300 tabular-nums">${Math.floor(ticketPromedio).toLocaleString()}</span>
-                        </div>
-                        <div className="flex flex-col items-end">
-                            <span className="text-[9px] font-black uppercase tracking-widest text-slate-600 mb-0.5">Operaciones</span>
-                            <span className="text-base font-black text-slate-300 tabular-nums">{(totals.ventas + totals.compras).toLocaleString()}</span>
-                        </div>
-                        <div className="flex flex-col items-end">
-                            <span className="text-[9px] font-black uppercase tracking-widest text-slate-600 mb-0.5">Margen</span>
-                            <span className={`text-base font-black tabular-nums ${margenNetoTotal >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>{margenNetoTotal.toFixed(1)}%</span>
-                        </div>
-                    </div>
-                </m.div>
-            </div>
+            <ReportesFloatingBar
+                totals={totals}
+                ticketPromedio={ticketPromedio}
+                margenNetoTotal={margenNetoTotal}
+            />
         </div>
     )
 }

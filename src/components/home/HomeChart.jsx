@@ -1,30 +1,22 @@
-import React from 'react'
-import {
-    XAxis,
-    YAxis,
-    CartesianGrid,
-    Tooltip,
-    ResponsiveContainer,
-    ComposedChart,
-    Area,
-    Bar,
-    ReferenceLine,
-} from 'recharts'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useIsMobile } from '../../hooks/useIsMobile'
 
 // ── Period Selector ──────────────────────────────────────────────────────────
-export const PeriodButton = React.memo(({ label, active, onClick }) => (
-    <button type="button"
-        onClick={onClick}
-        className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all ${
-            active
-                ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30'
-                : 'text-slate-400 hover:text-white hover:bg-white/5'
-        }`}
-    >
-        {label}
-    </button>
-))
+export const PeriodButton = React.memo(({ label, active, period, onClick }) => {
+    const handleClick = useCallback(() => onClick(period), [onClick, period])
+    return (
+        <button type="button"
+            onClick={handleClick}
+            className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all ${
+                active
+                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30'
+                    : 'text-slate-400 hover:text-white hover:bg-white/5'
+            }`}
+        >
+            {label}
+        </button>
+    )
+})
 PeriodButton.displayName = 'PeriodButton'
 
 // ── Custom Tooltip for Chart ──────────────────────────────────────────────────
@@ -51,6 +43,19 @@ const CustomTooltip = ({ active, payload, label }) => {
 // ── Evolution Chart Card ──────────────────────────────────────────────────────
 export const HomeChart = React.memo(({ chartData, chartPeriod, setChartPeriod }) => {
     const isMobile = useIsMobile()
+    const [Recharts, setRecharts] = useState(null)
+
+    const handlePeriodChange = useCallback((p) => setChartPeriod(p), [setChartPeriod])
+
+    useEffect(() => {
+        import('recharts').then(setRecharts)
+    }, [])
+
+    if (!Recharts) return (
+        <div className="bg-slate-900 p-6 rounded-2xl border border-white/5 shadow-xl animate-pulse h-[360px]" />
+    )
+
+    const { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ComposedChart, Area, Bar, ReferenceLine } = Recharts
 
     return (
         <div className="bg-slate-900 p-6 rounded-2xl border border-white/5 shadow-xl animate-fade-in-up animation-delay-200">
@@ -61,7 +66,7 @@ export const HomeChart = React.memo(({ chartData, chartPeriod, setChartPeriod })
                 </div>
                 <div className="flex items-center gap-1 bg-slate-800/50 rounded-lg p-1 border border-white/5">
                     {[7, 14, 30].map(p => (
-                        <PeriodButton key={p} label={`${p}d`} active={chartPeriod === p} onClick={() => setChartPeriod(p)} />
+                        <PeriodButton key={p} period={p} label={`${p}d`} active={chartPeriod === p} onClick={handlePeriodChange} />
                     ))}
                 </div>
             </div>

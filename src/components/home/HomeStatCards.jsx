@@ -14,7 +14,7 @@ import {
 import { colorMap } from './colorMap'
 
 // ── Animated Number Counter ──────────────────────────────────────────────────
-export const AnimatedNumber = ({ value, prefix = '', suffix = '', duration = 800 }) => {
+const AnimatedNumber = ({ value, prefix = '', suffix = '', duration = 800 }) => {
     const [display, setDisplay] = useState(value)
     const prevRef = useRef(value)
     const rafRef = useRef(null)

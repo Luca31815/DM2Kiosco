@@ -3,15 +3,13 @@ import { Package, Loader2, DollarSign, FileText, PackagePlus, Trash2, Bookmark }
 
 export const ProductosHeaderBar = ({
     handleSyncPrecios,
-    isSyncingPrecios,
     handleExportPDF,
-    isExporting,
     handleSyncFaltantes,
-    isSyncing,
     handleCleanup,
-    isCleaning,
-    setIsSynonymModalOpen
+    setIsSynonymModalOpen,
+    loadingStates
 }) => {
+    const { isSyncingPrecios = false, isExporting = false, isSyncing = false, isCleaning = false } = loadingStates ?? {}
     return (
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>

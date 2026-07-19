@@ -25,6 +25,7 @@ import * as api from '../services/api'
 import { mutate } from 'swr'
 import { toast } from 'react-hot-toast'
 import { ProveedoresMergeModal } from './proveedores/ProveedoresMergeModal'
+import { ProveedorProductDrawer } from './proveedores/ProveedorProductDrawer'
 const ProveedoresHistoryChart = React.lazy(() => import('./proveedores/ProveedoresHistoryChart'))
 import { AnimatePresence } from 'framer-motion'
 
@@ -92,13 +93,13 @@ const ProveedoresView = () => {
                 groups[key].ultimaFecha = h.fecha
             }
         })
-        return Object.values(groups).sort((a, b) => a.ultimoCosto - b.ultimoCosto)
+        return Object.values(groups).toSorted((a, b) => a.ultimoCosto - b.ultimoCosto)
     }, [comparativaPrecios])
 
     const chartData = useMemo(() => {
         if (!comparativaPrecios) return []
-        return [...comparativaPrecios]
-            .sort((a, b) => new Date(a.fecha) - new Date(b.fecha))
+        return comparativaPrecios
+            .toSorted((a, b) => new Date(a.fecha) - new Date(b.fecha))
             .map(c => ({
                 fecha: new Date(c.fecha).toLocaleDateString(undefined, { day: '2-digit', month: '2-digit' }),
                 costo: c.costo,
@@ -287,50 +288,12 @@ const ProveedoresView = () => {
                 )}
             </div>
 
-            <AnimatePresence>
-                {selectedProduct && (
-                    <>
-                        <div 
-                            onClick={() => setSelectedProduct(null)} 
-                            role="button"
-                            tabIndex={0}
-                            aria-label="Cerrar análisis"
-                            onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && setSelectedProduct(null)}
-                            className="fixed inset-0 bg-slate-950/80 z-[60]" 
-                        />
-                        <div className="fixed top-0 right-0 h-full w-full sm:max-w-xl bg-slate-900 border-l border-white/10 z-[70] shadow-2xl flex flex-col">
-                            <div className="p-5 sm:p-8 border-b border-white/5 flex justify-between items-start bg-slate-950/40">
-                                <div>
-                                    <span className="text-[10px] font-black uppercase text-blue-400 tracking-widest">Análisis</span>
-                                    <h2 className="text-2xl font-black text-white">{selectedProduct}</h2>
-                                </div>
-                                <button type="button" onClick={() => setSelectedProduct(null)} aria-label="Cerrar" className="p-3 hover:bg-white/5 rounded-2xl text-slate-500"><X size={24} /></button>
-                            </div>
-                            <div className="flex-1 overflow-y-auto p-5 sm:p-8 space-y-8 sm:space-y-10 custom-scrollbar">
-                                <section className="h-64 bg-slate-800/50 p-4 rounded-3xl border border-white/5">
-                                    <React.Suspense fallback={<div className="w-full h-full bg-slate-800/50 rounded-2xl animate-pulse" />}>
-                                        <ProveedoresHistoryChart chartData={chartData} />
-                                    </React.Suspense>
-                                </section>
-                                <section className="space-y-4">
-                                    <h3 className="text-xs font-black uppercase text-slate-500">Historial Comparativo</h3>
-                                    <div className="space-y-3">
-                                        {comparativaAgrupada.map((g) => (
-                                            <div key={g.proveedor || `prov-${g.ultimoCosto}-${g.ultimaFecha}`} className="p-5 bg-white/5 rounded-2xl border border-white/5 flex justify-between items-center">
-                                                <div>
-                                                    <h4 className="font-black text-white uppercase">{g.proveedor}</h4>
-                                                    <p className="text-[10px] text-slate-500">{new Date(g.ultimaFecha).toLocaleDateString()}</p>
-                                                </div>
-                                                <div className="text-2xl font-black text-purple-400">${g.ultimoCosto}</div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </section>
-                            </div>
-                        </div>
-                    </>
-                )}
-            </AnimatePresence>
+            <ProveedorProductDrawer
+                selectedProduct={selectedProduct}
+                setSelectedProduct={setSelectedProduct}
+                chartData={chartData}
+                comparativaAgrupada={comparativaAgrupada}
+            />
 
             <ProveedoresMergeModal
                 isMergeModalOpen={isMergeModalOpen}

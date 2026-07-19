@@ -120,6 +120,7 @@ const SynonymTable = ({ product, initialSinonimos = [], onUpdate }) => {
                     <button type="button" 
                         onClick={handleAdd}
                         disabled={loading !== null || !newAlias.trim()}
+                        aria-label="Agregar sinónimo"
                         className="px-3 py-2 bg-blue-500 hover:bg-blue-400 disabled:bg-slate-800 disabled:text-slate-600 text-white rounded-xl transition-all shadow-lg shadow-blue-500/10 flex items-center justify-center min-w-[40px]"
                     >
                         {loading === 'adding' ? (

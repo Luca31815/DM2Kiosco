@@ -1,0 +1,64 @@
+# Archivos y carpetas excluidos del índice del grafo de conocimiento
+# (codebase-memory-mcp no lee .gitignore, usa este archivo)
+
+# Build outputs — JS minificado/bundleado, el parser crashea en ellos
+dist/
+dist-ssr/
+build/
+
+# Dependencias — nunca indexar
+node_modules/
+
+# Reportes de React Doctor — JSONs gigantes (500+ KB)
+reporte-doctor*.json
+reporte-doctor-v2.json
+test-scan.json
+
+# Logs de build
+build.log
+build_error.log
+*.log
+
+# Archivos de configuración de agentes externos (carpetas ocultas)
+.adal/
+.agent/
+.agents/
+.aider-desk/
+.augment/
+.bob/
+.claude/
+.codeartsdoer/
+.codebuddy/
+.codemaker/
+.codestudio/
+.commandcode/
+.continue/
+.cortex/
+.factory/
+.forge/
+.iflow/
+.junie/
+.kilocode/
+.kiro/
+.kode/
+.mcpjam/
+.mux/
+.neovate/
+.openhands/
+.pochi/
+.qoder/
+.qwen/
+.roo/
+.rovodev/
+.tabnine/
+.trae/
+.vibe/
+.windsurf/
+.zencoder/
+
+# Archivos de entorno con secrets
+.env
+.env.local
+
+# Assets estáticos
+public/

@@ -5,7 +5,9 @@ import { toast } from 'react-hot-toast'
 import * as api from '../services/api'
 import { useProductosDuplicadosTrigram, useProductos, useProductosSinonimos } from '../hooks/useData'
 import { checkDuplicateStatus, FLAVORS, BRANDS, FORMATS } from '../utils/duplicateRules'
+import { DuplicadosHeaderBar } from './duplicados/DuplicadosHeaderBar'
 import { DuplicateCard, ConflictCard } from './duplicados/DuplicadosCards'
+import { performAiScan } from './duplicados/aiScanService'
 
 const itemVariants = {
     hidden: { opacity: 0, y: 20 },
@@ -39,7 +41,7 @@ const DuplicadosView = () => {
             const status = checkDuplicateStatus(d.p1, d.p2, ignoredPairs, learnedSynonyms);
             if (status.isDuplicate) {
                 valid.push(d);
-            } else if (status.reason && !status.reason.includes("Ignorado") && !status.reason.includes("incompletos")) {
+            } else if (status.reason && !/Ignorado|incompletos/.test(status.reason)) {
                 rejected.push({ ...d, conflictReason: status.reason });
             }
         });
@@ -51,120 +53,7 @@ const DuplicadosView = () => {
         return { duplicados: valid, conflictos: uniqueConflicts };
     }, [duplicadosSQL, aiDuplicates, ignoredPairs, learnedSynonyms]);
 
-    const handleAiScan = async () => {
-        if (!allProducts || allProducts.length === 0) return toast.error('El catálogo aún no cargó');
-        
-        setIsAiScanning(true);
-        const loadingToast = toast.loading('Analizando el catálogo completo con la Inteligencia Artificial (Groq Llama-3.3)...');
-        
-        try {
-            // --- CAPA 1: PRE-FILTRADO LOCAL (Filtro Anti-Mareo) ---
-            // Agrupamos productos por las primeras 2 palabras para reducir ruido
-            const groups = {};
-            allProducts.forEach(p => {
-                const words = p.nombre?.trim().split(/\s+/) || [];
-                const key = words.slice(0, 2).join(' ').toUpperCase();
-                if (!groups[key]) groups[key] = [];
-                groups[key].push(p);
-            });
-
-            // Solo enviamos grupos que tengan más de un producto (sospechosos)
-            const suspiciousGroups = Object.entries(groups).reduce((acc, [name, list]) => {
-                if (list.length > 1) {
-                    const itemsText = list.map(p => `  ID: ${p.producto_id || p.id} | ${p.nombre} (Venta: $${p.ultimo_precio_venta || p.precio_venta || 0} | Costo: $${p.ultimo_costo_compra || 0})`).join('\n');
-                    acc.push(`### GRUPO SOSPECHOSO: ${name}\n${itemsText}`);
-                }
-                return acc;
-            }, []).join('\n\n');
-
-            if (!suspiciousGroups) {
-                toast.success('No se detectaron grupos sospechosos para auditar.', { id: loadingToast });
-                setIsAiScanning(false);
-                return;
-            }
-
-            const prompt = `Actúa como un Auditor de Inventario Senior para Kioscos Argentinos.
-Analiza los siguientes GRUPOS SOSPECHOSOS de productos duplicados.
-
-REGLAS DE NEGOCIO ESTRICTAS (DICCIONARIO):
-- SABORES/VARIEDADES PERMITIDAS: ${FLAVORS.slice(0, 40).join(', ')}... y similares.
-- MARCAS DE REFERENCIA: ${BRANDS.join(', ')}.
-- FORMATOS: ${FORMATS.join(', ')}.
-
-PROHIBICIONES ABSOLUTAS:
-1. CONTRADICCIÓN DE CATEGORÍA: Si comparten un grupo (ej: Alfajor) pero difieren en un atributo específico del diccionario (ej: Blanco vs Negro, Rojo vs Azul), son PRODUCTOS DISTINTOS. No los marques como duplicados.
-2. SINÓNIMOS ACEPTADOS: "NEGRO" = "CHOCOLATE", "MENTOLADO" = "CONVERTIBLE".
-3. REGLA DE MAGNITUDES: Diferencias numéricas (12u vs 20u, 500ml vs 1L) definen productos distintos. Ignorar diferencias menores a 2 unidades solo en cigarrillos.
-4. PRECIOS: Si el costo difiere por más del 10%, probablemente no sean el mismo producto aunque el nombre sea similar.
-
-Tu misión es encontrar duplicados reales. 
-FORMATO DE SALIDA (JSON ESTRICTO):
-{
-  "duplicates": [
-    { 
-      "idKeep": "ID_DEL_NOMBRE_MAS_COMPLETO", 
-      "idDelete": "ID_DEL_DUPLICADO", 
-      "reason": "Explicación breve",
-      "validation": "Criterio de coincidencia"
-    }
-  ]
-}
-
-GRUPOS A AUDITAR:
-${suspiciousGroups}`;
-
-            const GROQ_KEY = import.meta.env.VITE_GROQ_API_KEY;
-            
-            if (!GROQ_KEY) {
-                throw new Error("No se encontró la API Key de Groq (VITE_GROQ_API_KEY) en las variables de entorno.");
-            }
-
-            const response = await fetch(`https://api.groq.com/openai/v1/chat/completions`, {
-                method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${GROQ_KEY}`
-                },
-                body: JSON.stringify({
-                    model: 'llama-3.3-70b-versatile',
-                    messages: [{ role: 'user', content: prompt }],
-                    temperature: 0.1,
-                    response_format: { type: "json_object" }
-                })
-            });
-
-            const jsonResponse = await response.json();
-            if (jsonResponse.error) throw new Error(jsonResponse.error.message);
-
-            const textResult = jsonResponse.choices[0].message.content;
-            let aiParsed = JSON.parse(textResult);
-
-            if (aiParsed.duplicates) aiParsed = aiParsed.duplicates;
-            if (!Array.isArray(aiParsed)) aiParsed = [];
-
-            const mappedAiResults = aiParsed.flatMap(res => {
-                const p1 = allProducts.find(p => (p.producto_id || p.id) == res.idKeep)
-                const p2 = allProducts.find(p => (p.producto_id || p.id) == res.idDelete)
-                if (!p1 || !p2) return [];
-                return [{ p1, p2, reason: `[Auditoría IA] ${res.reason || 'Detección Semántica'}` }]
-            });
-
-            // El filtrado por ignoredPairs y por isLikelyDuplicate se hace ahora en el useMemo global
-            setAiDuplicates(mappedAiResults);
-            
-            if (mappedAiResults.length > 0) {
-                toast.success(`La IA encontró ${mappedAiResults.length} duplicados ocultos usando contexto semántico.`, { id: loadingToast, duration: 6000 });
-            } else {
-                toast.success('La IA determinó que tu inventario está impecable. No hay más duplicados.', { id: loadingToast, duration: 5000 });
-            }
-
-        } catch (error) {
-            console.error("Detalle completo del error IA:", error);
-            toast.error(`Fallo IA: ${error.message}`, { id: loadingToast, duration: 8000 });
-        } finally {
-            setIsAiScanning(false);
-        }
-    }
+    const handleAiScan = () => performAiScan(allProducts, setAiDuplicates, setIsAiScanning);
 
     const handleMergeSelection = async (d) => {
         const id1 = String(d.p1.producto_id || d.p1.id || '');
@@ -295,46 +184,14 @@ Producto 2: [${d.p2.producto_id || d.p2.id}] ${d.p2.nombre} ($${d.p2.ultimo_prec
 
     return (
         <div className="space-y-8">
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-                <div>
-                    <h2 className="text-2xl md:text-4xl font-black text-white tracking-tight flex items-center gap-3">
-                        <AlertCircle className="h-8 w-8 md:h-10 md:w-10 text-red-500" />
-                        Incidencias de Catálogo
-                    </h2>
-                    <p className="text-slate-400 font-medium mt-1 text-sm">Análisis de posibles productos duplicados o redundantes.</p>
-                </div>
-                {/* Contadores y Botón IA */}
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
-                    <button type="button" 
-                        onClick={handleAiScan}
-                        disabled={isAiScanning}
-                        className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white rounded-xl font-bold transition-all shadow-[0_0_20px_rgba(99,102,241,0.3)] hover:shadow-[0_0_25px_rgba(99,102,241,0.5)] active:scale-95 disabled:opacity-50 min-h-[44px]"
-                    >
-                        {isAiScanning ? <Loader2 className="h-5 w-5 animate-spin" /> : <Sparkles className="h-5 w-5" />}
-                        <span>Auditoría IA</span>
-                    </button>
-                    {aiDuplicates.length > 0 && (
-                        <button type="button" 
-                            onClick={handleCopyAiReport}
-                            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-800 border border-slate-700 hover:bg-slate-700 text-slate-300 rounded-xl font-bold transition-all active:scale-95 min-h-[44px]"
-                            title="Copiar reporte técnico para soporte"
-                        >
-                            <Copy className="h-5 w-5" />
-                        </button>
-                    )}
-                    <button type="button" 
-                        onClick={handleCleanup}
-                        className="flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-800 border border-slate-700 hover:bg-slate-700 text-red-400 rounded-xl font-bold transition-all active:scale-95 min-h-[44px]"
-                        title="Eliminar productos que no tienen ventas, compras ni reservas"
-                    >
-                        <Trash2 className="h-5 w-5" />
-                        <span>Limpiar Huérfanos</span>
-                    </button>
-                    <div className="flex items-center gap-2 px-4 py-3 md:py-2 bg-red-500/10 border border-red-500/20 rounded-xl justify-center min-h-[44px]">
-                        <span className="text-xs font-black text-red-400 uppercase tracking-widest">{duplicados.length} Alertas</span>
-                    </div>
-                </div>
-            </div>
+            <DuplicadosHeaderBar
+                handleAiScan={handleAiScan}
+                isAiScanning={isAiScanning}
+                aiDuplicatesLength={aiDuplicates.length}
+                handleCopyAiReport={handleCopyAiReport}
+                handleCleanup={handleCleanup}
+                duplicadosCount={duplicados.length}
+            />
 
             {/* Tabs de Selección */}
             <div className="flex items-center gap-2 p-1 bg-slate-900 border border-slate-800 rounded-2xl w-full sm:w-fit">

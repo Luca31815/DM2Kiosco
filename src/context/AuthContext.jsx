@@ -14,8 +14,10 @@ export const AuthProvider = ({ children }) => {
         return false;
     });
 
+    const contextValue = React.useMemo(() => ({ isDemoMode }), [isDemoMode]);
+
     return (
-        <AuthContext.Provider value={{ isDemoMode }}>
+        <AuthContext.Provider value={contextValue}>
             {children}
         </AuthContext.Provider>
     );

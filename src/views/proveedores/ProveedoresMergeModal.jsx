@@ -15,13 +15,11 @@ export const ProveedoresMergeModal = ({
         <AnimatePresence>
             {isMergeModalOpen && (
                 <>
-                    <div 
+                    <button 
+                        type="button"
                         onClick={() => !isMergingProgress && setIsMergeModalOpen(false)} 
-                        role="button"
-                        tabIndex={0}
                         aria-label="Cerrar modal de fusión"
-                        onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && !isMergingProgress && setIsMergeModalOpen(false)}
-                        className="fixed inset-0 bg-slate-950/80 z-[100]" 
+                        className="fixed inset-0 bg-slate-950/80 z-[100] w-full border-none p-0 cursor-default" 
                     />
                     <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-slate-900 rounded-3xl border border-white/10 z-[110] shadow-2xl p-8 space-y-6">
                         <h3 className="text-xl font-black text-white">Fusionar Proveedor</h3>
