@@ -1,6 +1,7 @@
 import React, { Suspense, lazy } from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { SpeedInsights } from "@vercel/speed-insights/react"
+import { Analytics } from '@vercel/analytics/react'
 import { MotionConfig, useReducedMotion } from 'framer-motion'
 import Layout from './components/Layout'
 import { Loader2 } from 'lucide-react'
@@ -57,6 +58,7 @@ function App() {
         </Suspense>
       </Layout>
       <SpeedInsights />
+      <Analytics />
     </Router>
     </MotionConfig>
   )
