@@ -44,7 +44,7 @@ const Layout = ({ children }) => {
                 {/* Enhanced Top Bar */}
                 <TopBar onMenuClick={() => setIsSidebarOpen(true)} />
 
-                <div className="p-4 md:p-8 pt-[80px] overflow-y-auto overflow-x-hidden custom-scrollbar">
+                <div className="p-4 md:p-8 pt-24 md:pt-28 overflow-y-auto overflow-x-hidden custom-scrollbar">
                     <div className="max-w-7xl mx-auto pb-24 md:pb-16">
                         {children}
                     </div>
@@ -96,13 +96,13 @@ const TopBar = React.memo(({ onMenuClick }) => {
     }, [])
 
     return (
-        <div className="fixed top-0 left-0 right-0 z-30 h-16">
+        <div className="fixed top-0 left-0 right-0 z-30 h-16 shrink-0 select-none">
             {/* Glass background */}
             <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-xl border-b border-white/5" />
 
             <div className="relative flex items-center justify-between h-full px-4 md:px-6">
                 {/* Left: Menu + Logo */}
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 shrink-0">
                     <button type="button"
                         id="sidebar-toggle"
                         onClick={onMenuClick}
@@ -115,7 +115,7 @@ const TopBar = React.memo(({ onMenuClick }) => {
                 </div>
 
                 {/* Right: Time + Status + Refresh + Auth Button */}
-                <div className="flex items-center gap-2 md:gap-4">
+                <div className="flex items-center gap-2 md:gap-4 shrink-0">
                     {/* Live clock — only this component ticks on desktop */}
                     {!isMobile && <LiveClock />}
 
