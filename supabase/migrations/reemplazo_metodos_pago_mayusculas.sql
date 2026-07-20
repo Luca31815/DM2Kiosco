@@ -7,9 +7,8 @@ CREATE TABLE IF NOT EXISTS public.reemplazos_metodos_pago (
 
 -- RLS: access to this table is controlled exclusively through SECURITY DEFINER
 -- functions (fn_crear_reemplazo_y_actualizar_movimientos, fn_cron_revisar_reemplazos_metodo_pago).
--- Direct REST/anon access is intentionally blocked by the RLS-disabled state plus no
--- public grants. If direct row access is ever needed, add a policy here first.
-ALTER TABLE public.reemplazos_metodos_pago DISABLE ROW LEVEL SECURITY;
+-- Direct REST/anon access is blocked by RLS enabled with no public policies.
+ALTER TABLE public.reemplazos_metodos_pago ENABLE ROW LEVEL SECURITY;
 
 -- 2. Crear vista de cartera actual (saldos agrupados y netos)
 CREATE OR REPLACE VIEW public.v_cartera_actual AS

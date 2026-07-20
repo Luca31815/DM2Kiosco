@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import Sidebar from './Sidebar'
-import { Menu, RefreshCw, Clock, LogOut } from 'lucide-react'
+import { Menu, RefreshCw, Clock, LogOut, LogIn, Eye } from 'lucide-react'
 import { Toaster } from 'react-hot-toast'
 import { useAuth } from '../context/AuthContext'
 import { useIsMobile } from '../hooks/useIsMobile'
@@ -85,7 +85,7 @@ LiveClock.displayName = 'LiveClock'
 const TopBar = React.memo(({ onMenuClick }) => {
     const [refreshing, setRefreshing] = useState(false)
     const isMobile = useIsMobile()
-    const { session, signOut } = useAuth()
+    const { session, openLoginModal, signOut } = useAuth()
 
     const handleRefresh = useCallback(() => {
         setRefreshing(true)
@@ -114,17 +114,23 @@ const TopBar = React.memo(({ onMenuClick }) => {
                     <LogoTrigger />
                 </div>
 
-                {/* Right: Time + Status + Refresh + Logout */}
+                {/* Right: Time + Status + Refresh + Auth Button */}
                 <div className="flex items-center gap-2 md:gap-4">
                     {/* Live clock — only this component ticks on desktop */}
                     {!isMobile && <LiveClock />}
 
-                    {/* Sync status */}
-                    <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-500/8 border border-emerald-500/15">
-                        <div className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_6px_rgba(52,211,153,0.8)]" />
-                        <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest hidden lg:block">Live</span>
-                        <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest lg:hidden">Live</span>
-                    </div>
+                    {/* Mode status badge */}
+                    {session ? (
+                        <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-500/8 border border-emerald-500/15">
+                            <div className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_6px_rgba(52,211,153,0.8)]" />
+                            <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">En Vivo</span>
+                        </div>
+                    ) : (
+                        <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-500/8 border border-amber-500/15">
+                            <Eye className="h-3 w-3 text-amber-400" />
+                            <span className="text-[10px] font-black text-amber-400 uppercase tracking-widest">Vista Previa</span>
+                        </div>
+                    )}
 
                     {/* Refresh button */}
                     <button type="button"
@@ -136,8 +142,8 @@ const TopBar = React.memo(({ onMenuClick }) => {
                         <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
                     </button>
 
-                    {/* Logout button */}
-                    {session && (
+                    {/* Auth Action button: Login / Logout */}
+                    {session ? (
                         <button type="button"
                             id="logout-btn"
                             onClick={signOut}
@@ -145,6 +151,16 @@ const TopBar = React.memo(({ onMenuClick }) => {
                             className="p-2 rounded-xl text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 transition-all active:scale-95"
                         >
                             <LogOut className="h-4 w-4" />
+                        </button>
+                    ) : (
+                        <button type="button"
+                            id="login-btn"
+                            onClick={openLoginModal}
+                            title="Iniciar Sesión"
+                            className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs shadow-md shadow-blue-500/20 transition-all active:scale-95 cursor-pointer"
+                        >
+                            <LogIn className="h-3.5 w-3.5" />
+                            <span className="hidden sm:inline">Iniciar Sesión</span>
                         </button>
                     )}
                 </div>
@@ -206,7 +222,7 @@ const handleLock = () => {
 
 // ── AuthBadge — useEffect siempre se llama (hooks rule fix) ──────────────────
 const AuthBadge = () => {
-    const { isDemoMode } = useAuth()
+    const { isDemoMode, openLoginModal } = useAuth()
 
     // Always call the effect — conditionally execute its body
     useEffect(() => {
@@ -218,7 +234,25 @@ const AuthBadge = () => {
         }
     }, [isDemoMode])
 
-    if (isDemoMode) return null
+    if (isDemoMode) {
+        return (
+            <div
+                onClick={openLoginModal}
+                role="button"
+                tabIndex={0}
+                aria-label="Iniciar sesión para acceder al sistema real"
+                onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && openLoginModal()}
+                className="fixed bottom-20 sm:bottom-4 right-4 z-40 px-3.5 py-2 rounded-2xl border border-amber-500/20 text-xs font-bold transition-all active:scale-95 shadow-xl backdrop-blur-xl bg-slate-900/90 text-amber-300 hover:bg-slate-900 hover:border-amber-500/40 group flex items-center gap-2.5 cursor-pointer"
+            >
+                <div className="h-2 w-2 rounded-full animate-pulse bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.8)]" />
+                <span className="hidden sm:inline">Vista Previa (Datos Ficticios)</span>
+                <span className="sm:hidden">Vista Previa</span>
+                <span className="px-2 py-0.5 rounded-lg bg-blue-600/30 border border-blue-500/30 text-blue-300 text-[10px] font-extrabold uppercase ml-1 group-hover:bg-blue-600 group-hover:text-white transition-all">
+                    Iniciar Sesión
+                </span>
+            </div>
+        )
+    }
 
     return (
         <div
@@ -239,3 +273,4 @@ const AuthBadge = () => {
 }
 
 export default Layout
+

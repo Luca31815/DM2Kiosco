@@ -9,15 +9,13 @@ export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    const [isDemoMode] = useState(() => {
-        if (typeof document === 'undefined') return false;
-        if (import.meta.env.DEV) return false;
+    const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
-        const value = `; ${document.cookie}`;
-        const parts = value.split(`; dashboard_mode=`);
-        if (parts.length === 2) return parts.pop().split(';').shift() === 'demo';
-        return false;
-    });
+    // Modo demo activo automáticamente cuando no existe sesión autenticada
+    const isDemoMode = !session;
+
+    const openLoginModal = React.useCallback(() => setIsLoginModalOpen(true), []);
+    const closeLoginModal = React.useCallback(() => setIsLoginModalOpen(false), []);
 
     useEffect(() => {
         supabase.auth.getSession().then(({ data: { session } }) => {
@@ -33,6 +31,9 @@ export const AuthProvider = ({ children }) => {
             setSession(session);
             setUser(session?.user ?? null);
             setLoading(false);
+            if (session) {
+                setIsLoginModalOpen(false);
+            }
         });
 
         return () => {
@@ -48,6 +49,7 @@ export const AuthProvider = ({ children }) => {
                 password
             });
             if (error) throw error;
+            setIsLoginModalOpen(false);
             return data;
         } finally {
             setLoading(false);
@@ -70,10 +72,13 @@ export const AuthProvider = ({ children }) => {
             user,
             loading,
             isDemoMode,
+            isLoginModalOpen,
+            openLoginModal,
+            closeLoginModal,
             signInWithPassword,
             signOut
         }),
-        [session, user, loading, isDemoMode]
+        [session, user, loading, isDemoMode, isLoginModalOpen, openLoginModal, closeLoginModal]
     );
 
     return (

@@ -1,6 +1,6 @@
 import React from 'react'
 import { useAuth } from '../context/AuthContext'
-import LoginView from '../views/LoginView'
+import LoginModal from './LoginModal'
 import { Loader2 } from 'lucide-react'
 
 const LoadingScreen = () => (
@@ -13,17 +13,19 @@ const LoadingScreen = () => (
 )
 
 const AuthGuard = ({ children }) => {
-    const { session, loading, isDemoMode } = useAuth()
+    const { loading } = useAuth()
 
     if (loading) {
         return <LoadingScreen />
     }
 
-    if (!session && !isDemoMode) {
-        return <LoginView />
-    }
-
-    return children
+    return (
+        <>
+            {children}
+            <LoginModal />
+        </>
+    )
 }
 
 export default AuthGuard
+

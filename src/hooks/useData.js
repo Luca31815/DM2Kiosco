@@ -251,7 +251,7 @@ export function useRentabilidadProductos(options = {}) {
         SWR_OPTIONS
     )
 
-    if (isDemoMode) return { data: [], count: 0, loading: false }
+    if (isDemoMode) return { data: mock.MOCK_RENTABILIDAD, count: mock.MOCK_RENTABILIDAD.length, loading: false }
 
     return {
         data: data?.data || [],
@@ -309,7 +309,7 @@ export function useAnalisisHorarios(type = 'diario', options = {}) {
         SWR_OPTIONS
     )
 
-    if (isDemoMode) return { data: [], count: 0, loading: false }
+    if (isDemoMode) return { data: mock.MOCK_ANALISIS_HORARIOS, count: mock.MOCK_ANALISIS_HORARIOS.length, loading: false }
 
     return {
         data: data?.data || [],
@@ -451,7 +451,7 @@ export const useRetiros = (options = {}) => {
         SWR_OPTIONS
     )
 
-    if (isDemoMode) return { data: [], count: 0, loading: false }
+    if (isDemoMode) return { data: mock.MOCK_RETIROS, count: mock.MOCK_RETIROS.length, loading: false }
 
     return {
         data: data?.data || [],
@@ -570,7 +570,7 @@ export function useDescalcesPagos(options = {}) {
         SWR_OPTIONS
     )
 
-    if (isDemoMode) return { data: [], count: 0, loading: false, mutate }
+    if (isDemoMode) return { data: mock.MOCK_DESCALCES, count: mock.MOCK_DESCALCES.length, loading: false, mutate }
 
     return {
         data: data?.data || [],
@@ -580,3 +580,4 @@ export function useDescalcesPagos(options = {}) {
         mutate
     }
 }
+

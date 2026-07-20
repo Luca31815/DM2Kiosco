@@ -19,9 +19,13 @@ import {
     CandlestickChart,
     ScanSearch,
     Scale,
-    Zap
+    Zap,
+    LogIn,
+    LogOut,
+    Eye
 } from 'lucide-react'
 import { LazyMotion, domAnimation, m, AnimatePresence } from 'framer-motion'
+import { useAuth } from '../context/AuthContext'
 
 const navGroups = [
     {
@@ -69,6 +73,7 @@ const navGroups = [
 
 const Sidebar = memo(({ isOpen, onClose }) => {
     const location = useLocation()
+    const { session, openLoginModal, signOut } = useAuth()
 
     return (
         <LazyMotion features={domAnimation}>
@@ -175,11 +180,32 @@ const Sidebar = memo(({ isOpen, onClose }) => {
                         </nav>
 
                         {/* Footer */}
-                        <div className="relative z-10 p-4 border-t border-white/5">
-                            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/3">
-                                <div className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_6px_rgba(52,211,153,0.6)]" />
-                                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Sistema Activo</span>
-                            </div>
+                        <div className="relative z-10 p-4 border-t border-white/5 space-y-2">
+                            {session ? (
+                                <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-white/3">
+                                    <div className="flex items-center gap-2">
+                                        <div className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_6px_rgba(52,211,153,0.6)]" />
+                                        <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Operador Activo</span>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => { signOut(); onClose(); }}
+                                        title="Cerrar Sesión"
+                                        className="text-slate-400 hover:text-rose-400 p-1 transition-colors"
+                                    >
+                                        <LogOut className="h-4 w-4" />
+                                    </button>
+                                </div>
+                            ) : (
+                                <button
+                                    type="button"
+                                    onClick={() => { openLoginModal(); onClose(); }}
+                                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs shadow-lg shadow-blue-600/20 transition-all active:scale-95 cursor-pointer"
+                                >
+                                    <LogIn className="h-4 w-4" />
+                                    <span>Iniciar Sesión</span>
+                                </button>
+                            )}
                         </div>
                     </m.div>
                 )}
