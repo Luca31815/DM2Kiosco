@@ -3,6 +3,7 @@ import useSWR from 'swr'
 import * as api from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import * as mock from '../services/mockData'
+import { aggregateBySections } from '../utils/categoryCategorizer'
 
 // Global SWR config helper for better performance on mobile and slow networks
 const getSWROptions = () => {
@@ -580,4 +581,88 @@ export function useDescalcesPagos(options = {}) {
         mutate
     }
 }
+
+export function useReporteSecciones(options = {}) {
+    const { isDemoMode } = useAuth()
+    const { periodDays = 30, targetCoverageDays = 7, customRules } = options
+
+    const { data: rentabilidadRes, isLoading: loadingRent } = useSWR(
+        !isDemoMode ? 'rentabilidad_productos_full' : null,
+        () => api.getRentabilidadProductos({ pageSize: 2000 }),
+        SWR_OPTIONS
+    )
+
+    const { data: productosRes, isLoading: loadingProd } = useSWR(
+        !isDemoMode ? 'productos_full_catalog' : null,
+        () => api.getProductos({ pageSize: 2000 }),
+        SWR_OPTIONS
+    )
+
+    const sections = useMemo(() => {
+        let rawList = []
+        if (isDemoMode) {
+            rawList = mock.MOCK_RENTABILIDAD.map(r => ({
+                producto: r.producto,
+                ingresos_totales: r.ingreso_total,
+                costo_mercaderia_vendida: r.costo_total,
+                ganancia_neta: r.ganancia,
+                unidades_vendidas: r.unidades_vendidas,
+                stock_actual: 15,
+                ultimo_costo_compra: r.costo_total / (r.unidades_vendidas || 1)
+            }))
+        } else {
+            const rentList = rentabilidadRes?.data || []
+            const prodList = productosRes?.data || []
+
+            const prodMap = new Map()
+            prodList.forEach(p => {
+                const normName = (p.nombre || '').toLowerCase().trim()
+                prodMap.set(normName, p)
+            })
+
+            rawList = rentList.map(r => {
+                const normName = (r.producto || '').toLowerCase().trim()
+                const prodInfo = prodMap.get(normName) || {}
+                return {
+                    ...r,
+                    stock_actual: prodInfo.stock_actual !== undefined ? prodInfo.stock_actual : 0,
+                    ultimo_costo_compra: prodInfo.ultimo_costo_compra || r.ppp_costo_unitario || 0,
+                    ultimo_precio_venta: prodInfo.ultimo_precio_venta || 0
+                }
+            })
+        }
+
+        return aggregateBySections(rawList, { periodDays, targetCoverageDays, customRules })
+    }, [isDemoMode, rentabilidadRes, productosRes, periodDays, targetCoverageDays, customRules])
+
+    const totals = useMemo(() => {
+        return sections.reduce((acc, sec) => {
+            acc.totalIngresos += sec.ingresosTotales
+            acc.totalGanancia += sec.gananciaNeta
+            acc.totalCMV += sec.costoMercaderiaVendida
+            acc.totalUnidadesVendidas += sec.unidadesVendidas
+            acc.totalStockActual += sec.stockActualTotal
+            acc.totalUnidadesAReponer += sec.unidadesAReponer
+            acc.totalPresupuestoReposicion += sec.presupuestoReposicion
+            acc.totalProductosCriticos += sec.productosCriticosCount
+            return acc
+        }, {
+            totalIngresos: 0,
+            totalGanancia: 0,
+            totalCMV: 0,
+            totalUnidadesVendidas: 0,
+            totalStockActual: 0,
+            totalUnidadesAReponer: 0,
+            totalPresupuestoReposicion: 0,
+            totalProductosCriticos: 0
+        })
+    }, [sections])
+
+    return {
+        sections,
+        totals,
+        loading: loadingRent || loadingProd
+    }
+}
+
 

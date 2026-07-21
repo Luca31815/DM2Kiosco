@@ -25,6 +25,7 @@ const AnalisisHorariosView = lazy(() => import('./views/AnalisisHorariosView'))
 const DuplicadosView = lazy(() => import('./views/DuplicadosView'))
 const DescalcesView = lazy(() => import('./views/DescalcesView'))
 const CarteraView = lazy(() => import('./views/CarteraView'))
+const ReporteSeccionesView = lazy(() => import('./views/ReporteSeccionesView'))
 
 const LoadingScreen = () => (
   <div className="flex-1 flex items-center justify-center p-20">
@@ -58,6 +59,7 @@ function App() {
                   <Route path="/duplicados" element={<DuplicadosView />} />
                   <Route path="/descalces" element={<DescalcesView />} />
                   <Route path="/cartera" element={<CarteraView />} />
+                  <Route path="/secciones" element={<ReporteSeccionesView />} />
                 </Routes>
               </Suspense>
             </Layout>

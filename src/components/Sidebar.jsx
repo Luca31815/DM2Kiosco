@@ -22,7 +22,8 @@ import {
     Zap,
     LogIn,
     LogOut,
-    Eye
+    Eye,
+    Layers
 } from 'lucide-react'
 import { LazyMotion, domAnimation, m, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
@@ -56,6 +57,7 @@ const navGroups = [
         label: 'Análisis & Reportes',
         items: [
             { to: '/reportes', label: 'Reportes', icon: FileBarChart },
+            { to: '/secciones', label: 'Análisis por Secciones', icon: Layers },
             { to: '/reporte-productos', label: 'Ventas por Producto', icon: BarChart3 },
             { to: '/analisis-horarios', label: 'Análisis Horarios', icon: Clock },
             { to: '/historial', label: 'Historial', icon: History },
