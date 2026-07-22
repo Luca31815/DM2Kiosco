@@ -6,10 +6,19 @@ const DataTableRow = memo(({ row, rowIndex, columns, compact, renderExpandedRow,
     return (
         <React.Fragment>
             <tr
-                onClick={() => toggleRow(row[rowKey] !== undefined ? row[rowKey] : rowIndex)}
+                onClick={(e) => {
+                    if (!renderExpandedRow) return;
+                    if (e.target.closest('button, input, textarea, select, label, [role="button"]:not(tr)')) {
+                        return;
+                    }
+                    toggleRow(row[rowKey] !== undefined ? row[rowKey] : rowIndex);
+                }}
                 role={renderExpandedRow ? "button" : undefined}
                 tabIndex={renderExpandedRow ? 0 : undefined}
                 onKeyDown={(e) => {
+                    if (['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON', 'LABEL'].includes(e.target.tagName)) {
+                        return;
+                    }
                     if (renderExpandedRow && (e.key === 'Enter' || e.key === ' ')) {
                         e.preventDefault();
                         toggleRow(row[rowKey] !== undefined ? row[rowKey] : rowIndex);

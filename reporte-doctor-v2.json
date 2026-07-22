@@ -361,7 +361,7 @@
       "analyzedFileCount": 85,
       "complete": true,
       "scannedFileCount": 85,
-      "elapsedMilliseconds": 28666.888800000004
+      "elapsedMilliseconds": 22974.654300000002
     }
   ],
   "diagnostics": [
@@ -602,6 +602,6 @@
     "score": null,
     "scoreLabel": null
   },
-  "elapsedMilliseconds": 28680.972199999997,
+  "elapsedMilliseconds": 23023.408199999998,
   "error": null
 }

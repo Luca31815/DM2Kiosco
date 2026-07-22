@@ -118,7 +118,31 @@ export const getReservas = (options) => fetchTableData('vista_reservas_search', 
 export const getReservasAbiertas = (options) => fetchTableData('vista_reservas_abiertas', options)
 export const getReservasDetalles = (id) => fetchDetails('reservas_detalles', 'reserva_id', id)
 
-export const getProductos = (options) => fetchTableData('productos', options)
+export const getProductos = async (options = {}) => {
+    if (isDemo()) return { data: [], count: 0 }
+
+    const { filterValue, page = 1, pageSize = 20 } = options
+
+    if (filterValue && filterValue.trim().length > 0) {
+        const { data, error } = await supabase.rpc('fn_buscar_productos_catalogo', {
+            p_search: filterValue.trim()
+        })
+
+        if (error) {
+            console.error('Error calling fn_buscar_productos_catalogo:', error)
+            return fetchTableData('productos', options)
+        }
+
+        const list = data || []
+        const total = list.length
+        const from = (page - 1) * pageSize
+        const paginatedData = list.slice(from, from + pageSize)
+
+        return { data: paginatedData, count: total }
+    }
+
+    return fetchTableData('productos', options)
+}
 
 /** Fetch only the specific products by their IDs — used by duplicate detection to avoid full catalog download */
 export const getProductosPorIds = async (ids) => {

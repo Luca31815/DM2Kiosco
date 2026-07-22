@@ -77,6 +77,7 @@ export const useProductosColumns = ({
                 <input
                     type="number"
                     aria-label="Stock actual"
+                    onClick={(e) => e.stopPropagation()}
                     className="bg-slate-800 border-none rounded-lg px-2 py-1 w-20 text-right text-white focus:ring-1 focus:ring-blue-500 outline-none font-bold"
                     value={editForm.stock_actual}
                     onChange={e => setEditForm({ ...editForm, stock_actual: e.target.value })}
@@ -137,7 +138,7 @@ export const useProductosColumns = ({
                     {editingId === row.producto_id ? (
                         <>
                             <button type="button"
-                                onClick={handleSave}
+                                onClick={(e) => { e.stopPropagation(); handleSave(); }}
                                 disabled={isSaving}
                                 className="p-2 bg-emerald-500/20 text-emerald-400 rounded-xl hover:bg-emerald-500/30 transition-all active:scale-95"
                                 title="Guardar cambios"
@@ -145,7 +146,7 @@ export const useProductosColumns = ({
                                 {isSaving ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
                             </button>
                             <button type="button"
-                                onClick={() => setEditingId(null)}
+                                onClick={(e) => { e.stopPropagation(); setEditingId(null); }}
                                 disabled={isSaving}
                                 className="p-2 bg-rose-500/20 text-rose-400 rounded-xl hover:bg-rose-500/30 transition-all active:scale-95"
                                 title="Cancelar"
@@ -155,7 +156,7 @@ export const useProductosColumns = ({
                         </>
                     ) : (
                         <button type="button"
-                            onClick={() => handleEditStart(row)}
+                            onClick={(e) => { e.stopPropagation(); handleEditStart(row); }}
                             className="p-2 text-slate-500 hover:text-white hover:bg-white/5 rounded-xl transition-all"
                             title="Editar / Unificar"
                         >
