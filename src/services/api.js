@@ -582,3 +582,44 @@ export const ejecutarCronReemplazosManual = async () => {
     return data;
 };
 
+export const getConteoComprasProductos = async (days = 30) => {
+    if (isDemo()) return {};
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+
+    const { data: comprasData, error: comprasErr } = await supabase
+        .from('compras')
+        .select('compra_id')
+        .gte('Fecha', startDate.toISOString());
+
+    if (comprasErr || !comprasData || comprasData.length === 0) {
+        return {};
+    }
+
+    const compraIds = comprasData.map(c => c.compra_id).filter(Boolean);
+    if (compraIds.length === 0) return {};
+
+    const { data: detallesData, error: detallesErr } = await supabase
+        .from('compras_detalles')
+        .select('producto, compra_id')
+        .in('compra_id', compraIds);
+
+    if (detallesErr || !detallesData) {
+        return {};
+    }
+
+    const counts = {};
+    detallesData.forEach(row => {
+        const normName = (row.producto || '').toLowerCase().trim();
+        if (!counts[normName]) counts[normName] = new Set();
+        counts[normName].add(row.compra_id);
+    });
+
+    const result = {};
+    Object.keys(counts).forEach(normName => {
+        result[normName] = counts[normName].size;
+    });
+
+    return result;
+};
+

@@ -42,6 +42,7 @@ const ICON_MAP = {
 export default function ReporteSeccionesView() {
   const [periodDays, setPeriodDays] = useState(30)
   const [targetCoverageDays, setTargetCoverageDays] = useState(7)
+  const [minComprasMes, setMinComprasMes] = useState(3)
   const [searchTerm, setSearchTerm] = useState('')
   const [expandedSection, setExpandedSection] = useState(null)
   const [customRules, setCustomRules] = useState(DEFAULT_SECTION_RULES)
@@ -54,6 +55,7 @@ export default function ReporteSeccionesView() {
   const { sections, totals, loading } = useReporteSecciones({
     periodDays,
     targetCoverageDays,
+    minComprasMes,
     customRules
   })
 
@@ -111,6 +113,28 @@ export default function ReporteSeccionesView() {
 
         {/* Selector de Controles */}
         <div className="flex flex-wrap items-center gap-3">
+          {/* Filtro por compras en los últimos 30 días */}
+          <div className="flex items-center gap-2 bg-slate-800/90 p-1.5 rounded-xl border border-slate-700">
+            <span className="text-xs text-slate-400 pl-2 font-medium">Filtrar compras:</span>
+            {[
+              { label: '> 3 Compras (30 días)', min: 3 },
+              { label: '> 1 Compra', min: 1 },
+              { label: 'Todos', min: 0 }
+            ].map(item => (
+              <button
+                key={item.min}
+                onClick={() => setMinComprasMes(item.min)}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+                  minComprasMes === item.min
+                    ? 'bg-amber-600 text-white shadow-md shadow-amber-600/30'
+                    : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
+                }`}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+
           <div className="flex items-center gap-2 bg-slate-800/90 p-1.5 rounded-xl border border-slate-700">
             <span className="text-xs text-slate-400 pl-2 font-medium">Período:</span>
             {[

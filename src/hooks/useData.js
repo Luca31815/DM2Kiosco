@@ -584,7 +584,7 @@ export function useDescalcesPagos(options = {}) {
 
 export function useReporteSecciones(options = {}) {
     const { isDemoMode } = useAuth()
-    const { periodDays = 30, targetCoverageDays = 7, customRules } = options
+    const { periodDays = 30, targetCoverageDays = 7, minComprasMes = 3, customRules } = options
 
     const { data: rentabilidadRes, isLoading: loadingRent } = useSWR(
         !isDemoMode ? 'rentabilidad_productos_full' : null,
@@ -595,6 +595,12 @@ export function useReporteSecciones(options = {}) {
     const { data: productosRes, isLoading: loadingProd } = useSWR(
         !isDemoMode ? 'productos_full_catalog' : null,
         () => api.getProductos({ pageSize: 2000 }),
+        SWR_OPTIONS
+    )
+
+    const { data: comprasCountsRes, isLoading: loadingCompras } = useSWR(
+        !isDemoMode ? ['conteo_compras_productos', periodDays] : null,
+        () => api.getConteoComprasProductos(periodDays),
         SWR_OPTIONS
     )
 
@@ -623,8 +629,10 @@ export function useReporteSecciones(options = {}) {
             rawList = rentList.map(r => {
                 const normName = (r.producto || '').toLowerCase().trim()
                 const prodInfo = prodMap.get(normName) || {}
+                const comprasCount = comprasCountsRes?.[normName] || 0
                 return {
                     ...r,
+                    compras_count: comprasCount,
                     stock_actual: prodInfo.stock_actual !== undefined ? prodInfo.stock_actual : 0,
                     ultimo_costo_compra: prodInfo.ultimo_costo_compra || r.ppp_costo_unitario || 0,
                     ultimo_precio_venta: prodInfo.ultimo_precio_venta || 0
@@ -632,8 +640,13 @@ export function useReporteSecciones(options = {}) {
             })
         }
 
-        return aggregateBySections(rawList, { periodDays, targetCoverageDays, customRules })
-    }, [isDemoMode, rentabilidadRes, productosRes, periodDays, targetCoverageDays, customRules])
+        let filteredList = rawList
+        if (minComprasMes > 0 && !isDemoMode) {
+            filteredList = rawList.filter(r => (r.compras_count || 0) >= minComprasMes)
+        }
+
+        return aggregateBySections(filteredList, { periodDays, targetCoverageDays, customRules })
+    }, [isDemoMode, rentabilidadRes, productosRes, comprasCountsRes, periodDays, targetCoverageDays, minComprasMes, customRules])
 
     const totals = useMemo(() => {
         return sections.reduce((acc, sec) => {
@@ -661,7 +674,7 @@ export function useReporteSecciones(options = {}) {
     return {
         sections,
         totals,
-        loading: loadingRent || loadingProd
+        loading: loadingRent || loadingProd || loadingCompras
     }
 }
 
