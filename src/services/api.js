@@ -662,4 +662,45 @@ export const getVentasProductosPeriodo = async (days = 30) => {
     return result;
 };
 
+export const getLotesComprasProductos = async () => {
+    if (isDemo()) return {};
+
+    const { data, error } = await supabase
+        .from('compras_detalles')
+        .select('producto, cantidad');
+
+    if (error || !data) {
+        return {};
+    }
+
+    const countsMap = {};
+    data.forEach(row => {
+        const normName = (row.producto || '').toLowerCase().trim();
+        const cant = Math.round(Number(row.cantidad || 0));
+        if (cant > 0) {
+            if (!countsMap[normName]) countsMap[normName] = [];
+            countsMap[normName].push(cant);
+        }
+    });
+
+    const result = {};
+    Object.keys(countsMap).forEach(normName => {
+        const arr = countsMap[normName];
+        const freq = {};
+        let maxFreq = 0;
+        let modeVal = arr[0];
+        arr.forEach(val => {
+            freq[val] = (freq[val] || 0) + 1;
+            if (freq[val] > maxFreq) {
+                maxFreq = freq[val];
+                modeVal = val;
+            }
+        });
+        result[normName] = modeVal || 1;
+    });
+
+    return result;
+};
+
+
 

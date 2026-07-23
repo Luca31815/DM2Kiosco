@@ -409,9 +409,16 @@ export default function ReporteSeccionesView() {
                               </td>
                               <td className="py-2.5 px-3 text-right font-bold">
                                 {p.unidadesAComprar > 0 ? (
-                                  <span className="text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-md border border-indigo-500/20">
-                                    + {p.unidadesAComprar} u.
-                                  </span>
+                                  <div className="flex flex-col items-end">
+                                    <span className="text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-md border border-indigo-500/20">
+                                      + {p.unidadesAComprar} u.
+                                    </span>
+                                    {p.loteHabitual > 1 && (
+                                      <span className="text-[10px] text-slate-400 font-normal mt-0.5">
+                                        (Lote {p.loteHabitual} u.)
+                                      </span>
+                                    )}
+                                  </div>
                                 ) : (
                                   <span className="text-slate-500">Suficiente</span>
                                 )}

@@ -102,7 +102,8 @@ export function aggregateBySections(products = [], options = {}) {
   const {
     periodDays = 30,
     targetCoverageDays = 7,
-    customRules = DEFAULT_SECTION_RULES
+    customRules = DEFAULT_SECTION_RULES,
+    lotesMap = {}
   } = options
 
   const sectionMap = {}
@@ -139,6 +140,10 @@ export function aggregateBySections(products = [], options = {}) {
     const section = categorizeProduct(rawNombre, customRules)
     const secObj = sectionMap[section.id] || sectionMap['otros']
 
+    const normNombre = rawNombre.toLowerCase().trim()
+    const isCigarrillo = section.id === 'cigarrillos' || normNombre.includes('cigarrillo')
+    const loteHabitual = lotesMap[normNombre] || (isCigarrillo ? 5 : 1)
+
     const unidadesVendidas = Number(p.unidades_vendidas || p.unidadesVendidas || 0)
     const ingresosTotales = Number(p.ingresos_totales || p.ingreso_total || p.recaudacion_total || (unidadesVendidas * (p.ultimo_precio_venta || p.precio_venta || 0)) || 0)
     const costoMercaderiaVendida = Number(p.costo_mercaderia_vendida || p.costo_total || 0)
@@ -151,11 +156,23 @@ export function aggregateBySections(products = [], options = {}) {
     const ventasDiarias = periodDays > 0 ? (unidadesVendidas / periodDays) : 0
     const stockDeseado = Math.ceil(ventasDiarias * targetCoverageDays)
     
-    let unidadesAComprar = 0
+    let rawNeeded = 0
     if (stockActual < stockDeseado) {
-      unidadesAComprar = stockDeseado - Math.max(0, stockActual)
+      rawNeeded = stockDeseado - Math.max(0, stockActual)
     } else if (stockActual <= 0 && unidadesVendidas > 0) {
-      unidadesAComprar = Math.max(5, Math.ceil(ventasDiarias * targetCoverageDays))
+      rawNeeded = Math.max(5, Math.ceil(ventasDiarias * targetCoverageDays))
+    }
+
+    let unidadesAComprar = rawNeeded
+    if (rawNeeded > 0) {
+      if (isCigarrillo) {
+        const step = loteHabitual >= 10 ? 10 : 5
+        unidadesAComprar = Math.ceil(rawNeeded / step) * step
+      } else if (loteHabitual > 1) {
+        unidadesAComprar = Math.ceil(rawNeeded / loteHabitual) * loteHabitual
+      } else {
+        unidadesAComprar = Math.ceil(rawNeeded)
+      }
     }
 
     const presupuestoItem = unidadesAComprar * (costoUnitario || (precioVentaUnitario * 0.7))
@@ -184,6 +201,7 @@ export function aggregateBySections(products = [], options = {}) {
       ventasDiarias,
       stockDeseado,
       unidadesAComprar,
+      loteHabitual,
       presupuestoItem,
       esCritico
     })

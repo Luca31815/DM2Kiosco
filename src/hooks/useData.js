@@ -610,6 +610,12 @@ export function useReporteSecciones(options = {}) {
         SWR_OPTIONS
     )
 
+    const { data: lotesRes } = useSWR(
+        !isDemoMode ? 'lotes_compras_productos' : null,
+        () => api.getLotesComprasProductos(),
+        SWR_OPTIONS
+    )
+
     const sections = useMemo(() => {
         let rawList = []
         if (isDemoMode) {
@@ -662,8 +668,8 @@ export function useReporteSecciones(options = {}) {
             filteredList = rawList.filter(r => (r.compras_count || 0) >= minComprasMes)
         }
 
-        return aggregateBySections(filteredList, { periodDays, targetCoverageDays, customRules })
-    }, [isDemoMode, rentabilidadRes, productosRes, comprasCountsRes, ventasPeriodoRes, periodDays, targetCoverageDays, minComprasMes, customRules])
+        return aggregateBySections(filteredList, { periodDays, targetCoverageDays, customRules, lotesMap: lotesRes || {} })
+    }, [isDemoMode, rentabilidadRes, productosRes, comprasCountsRes, ventasPeriodoRes, lotesRes, periodDays, targetCoverageDays, minComprasMes, customRules])
 
     const totals = useMemo(() => {
         return sections.reduce((acc, sec) => {
