@@ -599,8 +599,8 @@ export function useReporteSecciones(options = {}) {
     )
 
     const { data: comprasCountsRes, isLoading: loadingCompras } = useSWR(
-        !isDemoMode ? ['conteo_compras_productos', periodDays] : null,
-        () => api.getConteoComprasProductos(periodDays),
+        !isDemoMode ? ['conteo_compras_productos_30d'] : null,
+        () => api.getConteoComprasProductos(30),
         SWR_OPTIONS
     )
 
