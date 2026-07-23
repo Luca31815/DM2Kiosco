@@ -283,23 +283,44 @@ const ReportesView = () => {
         let ponderadoFinal = 0
         let modoTag = ''
 
-        if (diasMesActual > 10) {
-            // El mes actual tiene > 10 días: 65% peso mes actual, 35% resto atenuado por antigüedad
-            let sumaPesosResto = 0
-            let sumaPonderadaResto = 0
+        if (diasMesActual >= 10) {
+            // Regla >= 10 días: 75% mes actual, 15% mes -1, 5% mes -2, 5% resto anterior
+            const pMesActual = promMesActual
+            
+            // Mes -1
+            let pMesPrevio1 = pMesActual
+            if (mesesOrdenados.length > 1) {
+                const mKey = mesesOrdenados[1]
+                const d = porMes[mKey].diasSet.size
+                if (d > 0) pMesPrevio1 = porMes[mKey].total / d
+            }
 
-            mesesOrdenados.slice(1).forEach((mKey, idx) => {
-                const dias = porMes[mKey].diasSet.size
-                if (dias === 0) return
-                const prom = porMes[mKey].total / dias
-                const peso = Math.pow(0.6, idx + 1)
-                sumaPonderadaResto += prom * peso
-                sumaPesosResto += peso
-            })
+            // Mes -2
+            let pMesPrevio2 = pMesPrevio1
+            if (mesesOrdenados.length > 2) {
+                const mKey = mesesOrdenados[2]
+                const d = porMes[mKey].diasSet.size
+                if (d > 0) pMesPrevio2 = porMes[mKey].total / d
+            }
 
-            const promResto = sumaPesosResto > 0 ? sumaPonderadaResto / sumaPesosResto : promMesActual
-            ponderadoFinal = (promMesActual * 0.65) + (promResto * 0.35)
-            modoTag = `Mes act. (${diasMesActual}d > 10)`
+            // Mes -3 y anteriores (distribuido / promedio de los restantes)
+            let pRestoAnteriores = pMesPrevio2
+            if (mesesOrdenados.length > 3) {
+                let sumaProm = 0
+                let cantMeses = 0
+                for (let i = 3; i < mesesOrdenados.length; i++) {
+                    const mKey = mesesOrdenados[i]
+                    const d = porMes[mKey].diasSet.size
+                    if (d > 0) {
+                        sumaProm += porMes[mKey].total / d
+                        cantMeses++
+                    }
+                }
+                if (cantMeses > 0) pRestoAnteriores = sumaProm / cantMeses
+            }
+
+            ponderadoFinal = (pMesActual * 0.75) + (pMesPrevio1 * 0.15) + (pMesPrevio2 * 0.05) + (pRestoAnteriores * 0.05)
+            modoTag = `Mes act. (${diasMesActual}d ≥ 10)`
         } else {
             // Mes actual <= 10 días: se apoya en el resto de meses ponderados por recencia
             let sumaPesos = 0
