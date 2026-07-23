@@ -145,6 +145,7 @@ export function aggregateBySections(products = [], options = {}) {
     const loteHabitual = lotesMap[normNombre] || (isCigarrillo ? 5 : 1)
 
     const unidadesVendidas = Number(p.unidades_vendidas || p.unidadesVendidas || 0)
+    const unidadesVendidas30d = Number(p.unidades_vendidas_30d || unidadesVendidas)
     const ingresosTotales = Number(p.ingresos_totales || p.ingreso_total || p.recaudacion_total || (unidadesVendidas * (p.ultimo_precio_venta || p.precio_venta || 0)) || 0)
     const costoMercaderiaVendida = Number(p.costo_mercaderia_vendida || p.costo_total || 0)
     const gananciaNeta = Number(p.ganancia_neta || p.ganancia || (ingresosTotales - costoMercaderiaVendida))
@@ -153,7 +154,17 @@ export function aggregateBySections(products = [], options = {}) {
     const costoUnitario = Number(p.ultimo_costo_compra || p.costo_actual || p.ppp_costo_unitario || 0)
     const precioVentaUnitario = Number(p.ultimo_precio_venta || p.precio_venta || 0)
 
-    const ventasDiarias = periodDays > 0 ? (unidadesVendidas / periodDays) : 0
+    // 1. Suavizado Exponencial (60% 7d, 40% 30d)
+    const v7d = (periodDays === 7 ? unidadesVendidas : (p.unidades_vendidas_7d || 0)) / 7
+    const v30d = unidadesVendidas30d / 30
+    let ventasDiarias = (v7d > 0 && v30d > 0) ? (0.6 * v7d + 0.4 * v30d) : (periodDays > 0 ? (unidadesVendidas / periodDays) : 0)
+
+    // 2. Factor Fin de Semana (+20%) para rubros de alta rotación fin de semana
+    const isWeekendCategory = ['cervezas', 'bebidas', 'cigarrillos', 'snacks', 'alfajores'].includes(section.id)
+    if (isWeekendCategory && ventasDiarias > 0) {
+      ventasDiarias *= 1.20
+    }
+
     const stockDeseado = Math.ceil(ventasDiarias * targetCoverageDays)
     
     let rawNeeded = 0
@@ -163,6 +174,13 @@ export function aggregateBySections(products = [], options = {}) {
       rawNeeded = Math.max(5, Math.ceil(ventasDiarias * targetCoverageDays))
     }
 
+    // 3. Safety Stock (+1 lote) para productos de alta rotación (>= 3 compras en el mes)
+    const isAltaRotacion = (p.compras_count || 0) >= 3
+    if (isAltaRotacion && rawNeeded > 0 && loteHabitual > 1) {
+      rawNeeded += loteHabitual
+    }
+
+    // 4. Redondeo a Lote Habitual de Compra
     let unidadesAComprar = rawNeeded
     if (rawNeeded > 0) {
       if (isCigarrillo) {

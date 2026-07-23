@@ -610,6 +610,18 @@ export function useReporteSecciones(options = {}) {
         SWR_OPTIONS
     )
 
+    const { data: ventas7dRes } = useSWR(
+        !isDemoMode ? 'ventas_productos_periodo_7d' : null,
+        () => api.getVentasProductosPeriodo(7),
+        SWR_OPTIONS
+    )
+
+    const { data: ventas30dRes } = useSWR(
+        !isDemoMode ? 'ventas_productos_periodo_30d' : null,
+        () => api.getVentasProductosPeriodo(30),
+        SWR_OPTIONS
+    )
+
     const { data: lotesRes } = useSWR(
         !isDemoMode ? 'lotes_compras_productos' : null,
         () => api.getLotesComprasProductos(),
@@ -643,6 +655,9 @@ export function useReporteSecciones(options = {}) {
                 const prodInfo = prodMap.get(normName) || {}
                 const comprasCount = comprasCountsRes?.[normName] || 0
                 const periodSales = ventasPeriodoRes?.[normName] || { unidades: 0, ingresos: 0 }
+                const sales7d = ventas7dRes?.[normName] || { unidades: 0 }
+                const sales30d = ventas30dRes?.[normName] || { unidades: 0 }
+
                 const costoUnitario = prodInfo.ultimo_costo_compra || r.ppp_costo_unitario || 0
                 const unidadesVendidasPeriodo = periodSales.unidades
                 const ingresosTotalesPeriodo = periodSales.ingresos
@@ -652,6 +667,8 @@ export function useReporteSecciones(options = {}) {
                 return {
                     ...r,
                     unidades_vendidas: unidadesVendidasPeriodo,
+                    unidades_vendidas_7d: sales7d.unidades,
+                    unidades_vendidas_30d: sales30d.unidades,
                     ingresos_totales: ingresosTotalesPeriodo,
                     costo_mercaderia_vendida: cmvPeriodo,
                     ganancia_neta: gananciaNetaPeriodo,
@@ -669,7 +686,7 @@ export function useReporteSecciones(options = {}) {
         }
 
         return aggregateBySections(filteredList, { periodDays, targetCoverageDays, customRules, lotesMap: lotesRes || {} })
-    }, [isDemoMode, rentabilidadRes, productosRes, comprasCountsRes, ventasPeriodoRes, lotesRes, periodDays, targetCoverageDays, minComprasMes, customRules])
+    }, [isDemoMode, rentabilidadRes, productosRes, comprasCountsRes, ventasPeriodoRes, ventas7dRes, ventas30dRes, lotesRes, periodDays, targetCoverageDays, minComprasMes, customRules])
 
     const totals = useMemo(() => {
         return sections.reduce((acc, sec) => {
