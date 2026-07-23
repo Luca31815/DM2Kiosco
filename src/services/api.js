@@ -623,3 +623,43 @@ export const getConteoComprasProductos = async (days = 30) => {
     return result;
 };
 
+export const getVentasProductosPeriodo = async (days = 30) => {
+    if (isDemo()) return {};
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+
+    const { data: ventasData, error: ventasErr } = await supabase
+        .from('ventas')
+        .select('venta_id')
+        .gte('fecha', startDate.toISOString());
+
+    if (ventasErr || !ventasData || ventasData.length === 0) {
+        return {};
+    }
+
+    const ventaIds = ventasData.map(v => v.venta_id).filter(Boolean);
+    if (ventaIds.length === 0) return {};
+
+    const { data: detallesData, error: detallesErr } = await supabase
+        .from('ventas_detalles')
+        .select('producto, cantidad, subtotal')
+        .in('venta_id', ventaIds);
+
+    if (detallesErr || !detallesData) {
+        return {};
+    }
+
+    const result = {};
+    detallesData.forEach(row => {
+        const normName = (row.producto || '').toLowerCase().trim();
+        if (!result[normName]) {
+            result[normName] = { unidades: 0, ingresos: 0 };
+        }
+        result[normName].unidades += Number(row.cantidad || 0);
+        result[normName].ingresos += Number(row.subtotal || 0);
+    });
+
+    return result;
+};
+
+

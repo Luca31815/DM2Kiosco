@@ -604,6 +604,12 @@ export function useReporteSecciones(options = {}) {
         SWR_OPTIONS
     )
 
+    const { data: ventasPeriodoRes, isLoading: loadingVentasPeriodo } = useSWR(
+        !isDemoMode ? ['ventas_productos_periodo', periodDays] : null,
+        () => api.getVentasProductosPeriodo(periodDays),
+        SWR_OPTIONS
+    )
+
     const sections = useMemo(() => {
         let rawList = []
         if (isDemoMode) {
@@ -630,11 +636,22 @@ export function useReporteSecciones(options = {}) {
                 const normName = (r.producto || '').toLowerCase().trim()
                 const prodInfo = prodMap.get(normName) || {}
                 const comprasCount = comprasCountsRes?.[normName] || 0
+                const periodSales = ventasPeriodoRes?.[normName] || { unidades: 0, ingresos: 0 }
+                const costoUnitario = prodInfo.ultimo_costo_compra || r.ppp_costo_unitario || 0
+                const unidadesVendidasPeriodo = periodSales.unidades
+                const ingresosTotalesPeriodo = periodSales.ingresos
+                const cmvPeriodo = unidadesVendidasPeriodo * costoUnitario
+                const gananciaNetaPeriodo = ingresosTotalesPeriodo - cmvPeriodo
+
                 return {
                     ...r,
+                    unidades_vendidas: unidadesVendidasPeriodo,
+                    ingresos_totales: ingresosTotalesPeriodo,
+                    costo_mercaderia_vendida: cmvPeriodo,
+                    ganancia_neta: gananciaNetaPeriodo,
                     compras_count: comprasCount,
                     stock_actual: prodInfo.stock_actual !== undefined ? prodInfo.stock_actual : 0,
-                    ultimo_costo_compra: prodInfo.ultimo_costo_compra || r.ppp_costo_unitario || 0,
+                    ultimo_costo_compra: costoUnitario,
                     ultimo_precio_venta: prodInfo.ultimo_precio_venta || 0
                 }
             })
@@ -646,7 +663,7 @@ export function useReporteSecciones(options = {}) {
         }
 
         return aggregateBySections(filteredList, { periodDays, targetCoverageDays, customRules })
-    }, [isDemoMode, rentabilidadRes, productosRes, comprasCountsRes, periodDays, targetCoverageDays, minComprasMes, customRules])
+    }, [isDemoMode, rentabilidadRes, productosRes, comprasCountsRes, ventasPeriodoRes, periodDays, targetCoverageDays, minComprasMes, customRules])
 
     const totals = useMemo(() => {
         return sections.reduce((acc, sec) => {
@@ -674,7 +691,7 @@ export function useReporteSecciones(options = {}) {
     return {
         sections,
         totals,
-        loading: loadingRent || loadingProd || loadingCompras
+        loading: loadingRent || loadingProd || loadingCompras || loadingVentasPeriodo
     }
 }
 
