@@ -23,18 +23,18 @@ export const DEFAULT_SECTION_RULES = [
     iconName: 'CupSoda'
   },
   {
+    id: 'galletitas',
+    name: 'Galletitas y Bakery',
+    keywords: ['GALLETITA', 'GALLETITAS', 'BIZCOCHO', 'BIZCOCHOS', 'DON SATUR', 'OREO', 'CHOCLINA', 'TRAVIATA', 'CREMONA', 'FACTURA', 'PAN', 'TOSTADA', 'TOSTADAS', 'PEPA', 'PEPAS', 'MAGDALENA', 'SONRISAS', 'OPERAS', 'RUMBA', 'CHOCOLINAS', 'CEREAL', 'BARRA', 'BUDIN', 'BUDINES'],
+    color: '#8b5cf6',
+    iconName: 'Cookie'
+  },
+  {
     id: 'alfajores',
     name: 'Alfajores y Chocolates',
     keywords: ['ALFAJOR', 'ALFAJORES', 'CHOCOLATE', 'CHOCOLATES', 'BOMBON', 'BOMBONES', 'GOMITA', 'GOMITAS', 'CHICLE', 'CARAMELO', 'CARAMELOS', 'TURRON', 'TURRONES', 'OBLITA', 'VILLARS', 'GUAYMALLEN', 'CAPITAN', 'JORGITO', 'SUCHARD', 'BLOCK', 'SHOT', 'COFLER', 'TITA', 'RHODESIA', 'FLYNN', 'HALLS', 'MENTHO', 'KINDER', 'FERRERO', 'NUTELLA'],
     color: '#ec4899',
     iconName: 'Candy'
-  },
-  {
-    id: 'galletitas',
-    name: 'Galletitas y Bakery',
-    keywords: ['GALLETITA', 'GALLETITAS', 'BIZCOCHO', 'BIZCOCHOS', 'DON SATUR', 'OREO', 'CHOCLINA', 'TRAVIATA', 'CREMONA', 'FACTURA', 'PAN', 'TOSTADA', 'TOSTADAS', 'PEPA', 'PEPAS', 'MAGDALENA', 'SONRISAS', 'OPERAS', 'RUMBA', 'CHOCOLINAS', 'CEREAL', 'BARRA'],
-    color: '#8b5cf6',
-    iconName: 'Cookie'
   },
   {
     id: 'snacks',
