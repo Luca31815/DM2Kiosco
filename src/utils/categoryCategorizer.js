@@ -9,18 +9,18 @@ export const DEFAULT_SECTION_RULES = [
     iconName: 'Cigarette'
   },
   {
-    id: 'bebidas',
-    name: 'Bebidas y Gaseosas',
-    keywords: ['BEBIDA', 'BEBIDAS', 'COCA', 'FANTA', 'SPRITE', 'PEPSI', 'MANAO', 'AGUA', 'JUGO', 'SER', 'LEVIANTE', 'TERMA', 'POWERADE', 'GATORADE', 'AQUARIUS', 'PRAP', 'SIFÓN', 'SIFON', 'SODA', 'SPEED', 'MONSTER', 'RED BULL'],
-    color: '#06b6d4',
-    iconName: 'CupSoda'
-  },
-  {
     id: 'cervezas',
     name: 'Cervezas y Alcohol',
-    keywords: ['CERVEZA', 'CERVEZAS', 'FERNET', 'VINO', 'APERITIVO', 'SCHNEIDER', 'BRAHMA', 'QUILMES', 'HEINEKEN', 'CORONA', 'STELLA', 'ANDES', 'IMPERIAL', 'GIN', 'RON', 'VODKA', 'GANCIA', 'BRANCA', 'CAMPARI', 'CHAMPAGNE', 'BODEGA'],
+    keywords: ['CERVEZA', 'CERVEZAS', 'FERNET', 'VINO', 'APERITIVO', 'SCHNEIDER', 'BRAHMA', 'QUILMES', 'HEINEKEN', 'CORONA', 'STELLA', 'ANDES', 'IMPERIAL', 'GIN', 'RON', 'VODKA', 'GANCIA', 'BRANCA', 'CAMPARI', 'CHAMPAGNE', 'BODEGA', 'ALCOHOLICA', 'ALCOHOL', 'PETACA', 'WHISKY', 'LICOR'],
     color: '#f59e0b',
     iconName: 'Beer'
+  },
+  {
+    id: 'bebidas',
+    name: 'Bebidas y Gaseosas',
+    keywords: ['GASEOSA', 'GASEOSAS', 'COCA', 'FANTA', 'SPRITE', 'PEPSI', 'MANAO', 'AGUA', 'JUGO', 'JUGOS', 'SER', 'LEVIANTE', 'TERMA', 'POWERADE', 'GATORADE', 'AQUARIUS', 'PRAP', 'SIFÓN', 'SIFON', 'SODA', 'SPEED', 'MONSTER', 'RED BULL', 'BEBIDA', 'BEBIDAS'],
+    color: '#06b6d4',
+    iconName: 'CupSoda'
   },
   {
     id: 'alfajores',
@@ -79,8 +79,8 @@ export function categorizeProduct(productName, customRules = DEFAULT_SECTION_RUL
   for (const rule of customRules) {
     for (const kw of rule.keywords) {
       const normKw = normalizeText(kw)
-      const regex = new RegExp(`\\b${normKw}\\b`, 'i')
-      if (regex.test(normName) || normName.includes(normKw)) {
+      const regex = new RegExp(`(?:^|\\s|\\b)${normKw}(?:$|\\s|\\b)`, 'i')
+      if (regex.test(normName)) {
         return rule
       }
     }
