@@ -150,7 +150,7 @@ export const getProductosPorIds = async (ids) => {
     if (isDemo()) return []
     const { data, error } = await supabase
         .from('productos')
-        .select('producto_id, nombre, stock_actual, ultimo_precio_venta, ultimo_costo_compra')
+        .select('producto_id, nombre, categoria, subcategoria, stock_actual, ultimo_precio_venta, ultimo_costo_compra')
         .in('producto_id', ids)
     if (error) {
         console.error('Error fetching productos por IDs:', error)

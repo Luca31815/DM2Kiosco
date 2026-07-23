@@ -71,11 +71,32 @@ function normalizeText(text) {
 }
 
 /**
- * Clasifica un producto según la lista de reglas de palabras clave
+ * Clasifica un producto según la lista de reglas de palabras clave o categoría de base de datos
  */
-export function categorizeProduct(productName, customRules = DEFAULT_SECTION_RULES) {
-  const normName = normalizeText(productName)
+export function categorizeProduct(productInput, customRules = DEFAULT_SECTION_RULES) {
+  let catStr = ''
+  let productName = ''
 
+  if (typeof productInput === 'object' && productInput !== null) {
+    catStr = productInput.categoria || ''
+    productName = productInput.nombre || productInput.producto || ''
+  } else {
+    productName = String(productInput || '')
+  }
+
+  // 1. Si el producto ya tiene categoría asignada en la DB, matchear directamente
+  if (catStr && catStr !== 'SIN_CATEGORIA') {
+    const normCat = normalizeText(catStr)
+    const match = customRules.find(r => 
+      normalizeText(r.id) === normCat || 
+      normalizeText(r.name).includes(normCat) ||
+      normCat.includes(normalizeText(r.id))
+    )
+    if (match) return match
+  }
+
+  // 2. Fallback a búsqueda de palabras clave en el nombre
+  const normName = normalizeText(productName)
   for (const rule of customRules) {
     for (const kw of rule.keywords) {
       const normKw = normalizeText(kw)
@@ -131,14 +152,27 @@ export function aggregateBySections(products = [], options = {}) {
       unidadesAReponer: 0,
       presupuestoReposicion: 0,
       productosCriticosCount: 0,
+      subcategoriasMap: {},
       productos: []
     }
   })
 
   products.forEach(p => {
     const rawNombre = p.producto || p.nombre || 'Producto sin nombre'
-    const section = categorizeProduct(rawNombre, customRules)
+    const section = categorizeProduct(p, customRules)
     const secObj = sectionMap[section.id] || sectionMap['otros']
+
+    const subcatKey = (p.subcategoria && p.subcategoria !== 'GENERAL') ? p.subcategoria : 'General'
+    if (!secObj.subcategoriasMap[subcatKey]) {
+      secObj.subcategoriasMap[subcatKey] = {
+        name: subcatKey,
+        unidadesVendidas: 0,
+        ingresosTotales: 0,
+        stockActualTotal: 0,
+        productosCount: 0
+      }
+    }
+    const subObj = secObj.subcategoriasMap[subcatKey]
 
     const normNombre = rawNombre.toLowerCase().trim()
     const isCigarrillo = section.id === 'cigarrillos' || normNombre.includes('cigarrillo')
@@ -206,9 +240,16 @@ export function aggregateBySections(products = [], options = {}) {
     secObj.presupuestoReposicion += presupuestoItem
     if (esCritico) secObj.productosCriticosCount += 1
 
+    subObj.unidadesVendidas += unidadesVendidas
+    subObj.ingresosTotales += ingresosTotales
+    subObj.stockActualTotal += Math.max(0, stockActual)
+    subObj.productosCount += 1
+
     secObj.productos.push({
       id: p.producto_id || p.id,
       nombre: rawNombre,
+      categoria: p.categoria || 'SIN_CATEGORIA',
+      subcategoria: p.subcategoria || 'GENERAL',
       unidadesVendidas,
       ingresosTotales,
       costoMercaderiaVendida,
@@ -223,6 +264,11 @@ export function aggregateBySections(products = [], options = {}) {
       presupuestoItem,
       esCritico
     })
+  })
+
+  // Convertir subcategoriasMap a array en cada sección
+  Object.values(sectionMap).forEach(sec => {
+    sec.subcategorias = Object.values(sec.subcategoriasMap || {}).sort((a, b) => b.ingresosTotales - a.ingresosTotales)
   })
 
   const sectionsList = Object.values(sectionMap)

@@ -323,6 +323,15 @@ export default function ReporteSeccionesView() {
                       <p className="text-xs text-slate-400 mt-1">
                         Stock total: <span className="font-semibold text-slate-200">{sec.stockActualTotal} u.</span> | Vendidas: <span className="font-semibold text-slate-200">{sec.unidadesVendidas} u.</span>
                       </p>
+                      {sec.subcategorias && sec.subcategorias.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mt-2">
+                          {sec.subcategorias.map(sub => (
+                            <span key={sub.name} className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-800/80 text-slate-300 border border-white/5">
+                              {sub.name}: <span className="text-amber-400">{sub.productosCount}</span> prod ({sub.unidadesVendidas} u.)
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
 

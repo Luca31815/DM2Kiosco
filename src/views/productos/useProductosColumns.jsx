@@ -15,7 +15,7 @@ export const useProductosColumns = ({
             key: 'nombre',
             label: 'Producto',
             wrap: true,
-            width: 'w-[45%]',
+            width: 'w-[35%]',
             render: (val, row) => (
                 <div className="flex flex-col">
                     {editingId === row.producto_id ? (
@@ -43,6 +43,19 @@ export const useProductosColumns = ({
                         </div>
                     ) : (
                         <span className="font-bold text-slate-200">{val}</span>
+                    )}
+                </div>
+            )
+        },
+        {
+            key: 'categoria',
+            label: 'Categoría',
+            width: 'w-32',
+            render: (val, row) => (
+                <div className="flex flex-col text-xs font-semibold">
+                    <span className="text-slate-300">{row.categoria || 'SIN_CATEGORIA'}</span>
+                    {row.subcategoria && row.subcategoria !== 'GENERAL' && (
+                        <span className="text-[10px] text-slate-500">{row.subcategoria}</span>
                     )}
                 </div>
             )

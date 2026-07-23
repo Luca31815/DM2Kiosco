@@ -32,6 +32,8 @@ const ProductosView = () => {
     const [isExporting, setIsExporting] = useState(false)
     const [isSynonymModalOpen, setIsSynonymModalOpen] = useState(false)
 
+    const [selectedCategoria, setSelectedCategoria] = useState('')
+    const [selectedSubcategoria, setSelectedSubcategoria] = useState('')
 
     const options = React.useMemo(() => ({
         sortColumn,
@@ -48,7 +50,7 @@ const ProductosView = () => {
     
     const productsWithPrediction = React.useMemo(() => {
         if (!rawData) return []
-        return rawData.map(p => {
+        let list = rawData.map(p => {
             const prediction = predictionData?.find(pred => pred.nombre === p.nombre)
             return {
                 ...p,
@@ -56,7 +58,14 @@ const ProductosView = () => {
                 ventas_diarias_promedio: prediction ? prediction.ventas_diarias_promedio : 0
             }
         })
-    }, [rawData, predictionData])
+        if (selectedCategoria) {
+            list = list.filter(p => (p.categoria || 'SIN_CATEGORIA') === selectedCategoria)
+        }
+        if (selectedSubcategoria) {
+            list = list.filter(p => (p.subcategoria || 'GENERAL') === selectedSubcategoria)
+        }
+        return list
+    }, [rawData, predictionData, selectedCategoria, selectedSubcategoria])
 
     const handleEditStart = (product) => {
         setEditingId(product.producto_id)
@@ -235,6 +244,10 @@ const ProductosView = () => {
                 handleCleanup={handleCleanup}
                 setIsSynonymModalOpen={setIsSynonymModalOpen}
                 loadingStates={{ isSyncingPrecios, isExporting, isSyncing, isCleaning }}
+                selectedCategoria={selectedCategoria}
+                setSelectedCategoria={setSelectedCategoria}
+                selectedSubcategoria={selectedSubcategoria}
+                setSelectedSubcategoria={setSelectedSubcategoria}
             />
 
             <DataTable
