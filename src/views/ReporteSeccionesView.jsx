@@ -160,6 +160,7 @@ export default function ReporteSeccionesView() {
           <div className="flex items-center gap-2 bg-slate-800/90 p-1.5 rounded-xl border border-slate-700">
             <span className="text-xs text-slate-400 pl-2 font-medium">Cobertura deseada:</span>
             {[
+              { label: '3 días stock', days: 3 },
               { label: '7 días stock', days: 7 },
               { label: '14 días stock', days: 14 },
               { label: '30 días stock', days: 30 }
