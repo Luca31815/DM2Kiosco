@@ -386,29 +386,11 @@ const ReportesView = () => {
             </div>
 
             {/* KPI Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
                 <KPICard title="Ingresos Totales" value={`$${Math.floor(totals.ingresos).toLocaleString()}`} subValue={`${totals.ventas} tickets generados`} trend={trends.ingresos} icon={ShoppingCart} colorClass="text-brand-jade" accentBg="bg-brand-jade" />
                 <KPICard title="Egresos / Gastos" value={`$${Math.floor(totals.egresos).toLocaleString()}`} subValue={`${totals.compras} compras cargadas`} trend={trends.egresos} icon={Package} colorClass="text-brand-ruby" accentBg="bg-brand-ruby" />
                 <KPICard title="Ticket Promedio" value={`$${Math.floor(ticketPromedio).toLocaleString()}`} subValue="Ingreso medio por venta" trend={trends.ticket} icon={CreditCard} colorClass="text-slate-200" accentBg="bg-slate-200" />
                 <KPICard title="Balance Neto" value={`$${Math.floor(totals.balance).toLocaleString()}`} subValue={`Margen: ${margenNetoTotal.toFixed(1)}%`} trend={trends.balance} icon={totals.balance >= 0 ? TrendingUp : TrendingDown} colorClass={totals.balance >= 0 ? 'text-brand-jade' : 'text-brand-ruby'} accentBg={totals.balance >= 0 ? 'bg-brand-jade' : 'bg-brand-ruby'} />
-
-                {/* Ganancia Real */}
-                <div className="relative overflow-hidden p-6 rounded-3xl border border-brand-amber/15 bg-slate-900/40 shadow-xl hover:border-brand-amber/20 transition-all duration-300 group">
-                    <div className="absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl opacity-10 bg-brand-amber" />
-                    <div className="relative z-10">
-                        <div className="flex justify-between items-start mb-5">
-                            <div className="p-3 rounded-2xl bg-white/[0.02] border border-white/5 text-brand-amber"><Sparkles className="h-5 w-5" /></div>
-                            {loadingTop ? <div className="w-12 h-5 bg-white/5 rounded-lg animate-pulse" /> : (
-                                <div className="flex items-center gap-1 text-[9px] font-black px-2.5 py-1 rounded-xl bg-brand-amber/10 text-brand-amber border border-brand-amber/15">{gananciaReal.productos} prods</div>
-                            )}
-                        </div>
-                        <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-505 mb-2">Ganancia Real</h4>
-                        <div className="flex flex-col gap-1">
-                            {loadingTop ? <div className="w-28 h-8 bg-white/5 rounded-xl animate-pulse" /> : <span className="text-3xl font-black text-brand-amber tracking-tight tabular-nums font-outfit">${Math.floor(gananciaReal.total).toLocaleString()}</span>}
-                            <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">Solo prods. con costo registrado</span>
-                        </div>
-                    </div>
-                </div>
 
                 {/* Ganancia Real Promedio Día */}
                 <div className="relative overflow-hidden p-6 rounded-3xl border border-brand-indigo/15 bg-slate-900/40 shadow-xl hover:border-brand-indigo/20 transition-all duration-300 group">
