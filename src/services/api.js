@@ -35,7 +35,13 @@ export const fetchTableData = async (tableName, options = {}) => {
         query = query.lte(dateColumn, endValue)
     }
 
-    if (sortColumn && sortOrder) {
+    if ((tableName === 'productos' || tableName === 'productos_base') && (!sortColumn || sortColumn === 'categoria')) {
+        const isAsc = sortOrder ? sortOrder === 'asc' : true
+        query = query
+            .order('categoria', { ascending: isAsc, nullsFirst: false })
+            .order('subcategoria', { ascending: isAsc, nullsFirst: false })
+            .order('nombre', { ascending: isAsc })
+    } else if (sortColumn && sortOrder) {
         query = query.order(sortColumn, { ascending: sortOrder === 'asc' })
     }
 

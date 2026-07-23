@@ -16,7 +16,7 @@ import { useProductosColumns } from './productos/useProductosColumns'
 
 const ProductosView = () => {
     const isMobile = useIsMobile()
-    const [sortColumn, setSortColumn] = useState('nombre')
+    const [sortColumn, setSortColumn] = useState('categoria')
     const [sortOrder, setSortOrder] = useState('asc')
     const [filterValue, setFilterValue] = useState('')
     const [page, setPage] = useState(1)
@@ -64,8 +64,24 @@ const ProductosView = () => {
         if (selectedSubcategoria) {
             list = list.filter(p => (p.subcategoria || 'GENERAL') === selectedSubcategoria)
         }
+        if (sortColumn === 'categoria') {
+            const dir = sortOrder === 'asc' ? 1 : -1
+            list.sort((a, b) => {
+                const catA = (a.categoria || 'SIN_CATEGORIA').toUpperCase()
+                const catB = (b.categoria || 'SIN_CATEGORIA').toUpperCase()
+                if (catA !== catB) return catA.localeCompare(catB) * dir
+
+                const subA = (a.subcategoria || 'GENERAL').toUpperCase()
+                const subB = (b.subcategoria || 'GENERAL').toUpperCase()
+                if (subA !== subB) return subA.localeCompare(subB) * dir
+
+                const nomA = (a.nombre || '').toUpperCase()
+                const nomB = (b.nombre || '').toUpperCase()
+                return nomA.localeCompare(nomB) * dir
+            })
+        }
         return list
-    }, [rawData, predictionData, selectedCategoria, selectedSubcategoria])
+    }, [rawData, predictionData, selectedCategoria, selectedSubcategoria, sortColumn, sortOrder])
 
     const handleEditStart = (product) => {
         setEditingId(product.producto_id)
