@@ -138,6 +138,7 @@ export default function ReporteSeccionesView() {
           <div className="flex items-center gap-2 bg-slate-800/90 p-1.5 rounded-xl border border-slate-700">
             <span className="text-xs text-slate-400 pl-2 font-medium">Período:</span>
             {[
+              { label: '3 Días', days: 3 },
               { label: '7 Días', days: 7 },
               { label: '30 Días', days: 30 },
               { label: '90 Días', days: 90 }
