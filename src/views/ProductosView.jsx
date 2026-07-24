@@ -226,18 +226,7 @@ const ProductosView = () => {
             })
 
             if (result.data && result.data.length > 0) {
-                // Etiqueta descriptiva para el encabezado del PDF
-                const catSub = [selectedCategoria, selectedSubcategoria].filter(Boolean).join(' > ')
-                let label = ''
-                if (catSub && filterValue) {
-                    label = `${catSub} (Búsqueda: "${filterValue}")`
-                } else if (catSub) {
-                    label = catSub
-                } else if (filterValue) {
-                    label = filterValue
-                }
-
-                generateProductsPDF(result.data, label)
+                generateProductsPDF(result.data)
                 toast.success('PDF generado correctamente', { id: loadingToast })
             } else {
                 toast.error('No hay productos para exportar con los filtros seleccionados', { id: loadingToast })
