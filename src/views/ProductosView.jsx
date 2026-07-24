@@ -35,14 +35,27 @@ const ProductosView = () => {
     const [selectedCategoria, setSelectedCategoria] = useState('')
     const [selectedSubcategoria, setSelectedSubcategoria] = useState('')
 
+    const handleCategoriaChange = (cat) => {
+        setSelectedCategoria(cat)
+        setSelectedSubcategoria('')
+        setPage(1)
+    }
+
+    const handleSubcategoriaChange = (sub) => {
+        setSelectedSubcategoria(sub)
+        setPage(1)
+    }
+
     const options = React.useMemo(() => ({
         sortColumn,
         sortOrder,
         filterColumn: 'nombre',
         filterValue,
+        filterCategoria: selectedCategoria,
+        filterSubcategoria: selectedSubcategoria,
         page,
         pageSize
-    }), [sortColumn, sortOrder, filterValue, page, pageSize])
+    }), [sortColumn, sortOrder, filterValue, selectedCategoria, selectedSubcategoria, page, pageSize])
 
     const { data: rawData, count, loading } = useProductos(options)
     
@@ -261,9 +274,9 @@ const ProductosView = () => {
                 setIsSynonymModalOpen={setIsSynonymModalOpen}
                 loadingStates={{ isSyncingPrecios, isExporting, isSyncing, isCleaning }}
                 selectedCategoria={selectedCategoria}
-                setSelectedCategoria={setSelectedCategoria}
+                setSelectedCategoria={handleCategoriaChange}
                 selectedSubcategoria={selectedSubcategoria}
-                setSelectedSubcategoria={setSelectedSubcategoria}
+                setSelectedSubcategoria={handleSubcategoriaChange}
             />
 
             <DataTable

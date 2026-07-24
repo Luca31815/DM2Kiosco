@@ -12,9 +12,17 @@ const isDemo = () => {
 export const fetchTableData = async (tableName, options = {}) => {
     if (isDemo()) return { data: [], count: 0 }; // Failsafe
 
-    const { sortColumn, sortOrder, filterColumn, filterValue, page, pageSize = 20, dateRange, dateColumn, select = '*' } = options
+    const { sortColumn, sortOrder, filterColumn, filterValue, filterCategoria, filterSubcategoria, page, pageSize = 20, dateRange, dateColumn, select = '*' } = options
 
     let query = supabase.from(tableName).select(select, { count: 'exact' })
+
+    if (filterCategoria) {
+        query = query.eq('categoria', filterCategoria)
+    }
+
+    if (filterSubcategoria) {
+        query = query.eq('subcategoria', filterSubcategoria)
+    }
 
     if (filterColumn && filterValue) {
         // If searching a numeric column with ilike (like IDs), cast to text
@@ -139,7 +147,13 @@ export const getProductos = async (options = {}) => {
             return fetchTableData('productos', options)
         }
 
-        const list = data || []
+        let list = data || []
+        if (options.filterCategoria) {
+            list = list.filter(p => (p.categoria || 'SIN_CATEGORIA') === options.filterCategoria)
+        }
+        if (options.filterSubcategoria) {
+            list = list.filter(p => (p.subcategoria || 'GENERAL') === options.filterSubcategoria)
+        }
         const total = list.length
         const from = (page - 1) * pageSize
         const paginatedData = list.slice(from, from + pageSize)
