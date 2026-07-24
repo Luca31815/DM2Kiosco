@@ -2,58 +2,58 @@
 
 export const DEFAULT_SECTION_RULES = [
   {
-    id: 'cigarrillos',
-    name: 'Cigarrillos y Afines',
-    keywords: ['CIGARRILLO', 'CIGARRILLOS', 'MARLBORO', 'CHESTERFIELD', 'PHILIP', 'LUCKY', 'CAMEL', 'ROTHMANS', 'RED POINT', 'MASTER', 'MELBOURNE', 'TABACO', 'ENCENDEDOR', 'TABACOS', 'LIGGETT', 'PARLIAMENT', 'VAPE', 'VAPER', 'FUEGO', 'PAPELILLO'],
-    color: '#ef4444',
-    iconName: 'Cigarette'
-  },
-  {
-    id: 'cervezas',
-    name: 'Cervezas y Alcohol',
-    keywords: ['CERVEZA', 'CERVEZAS', 'FERNET', 'VINO', 'APERITIVO', 'SCHNEIDER', 'BRAHMA', 'QUILMES', 'HEINEKEN', 'CORONA', 'STELLA', 'ANDES', 'IMPERIAL', 'GIN', 'RON', 'VODKA', 'GANCIA', 'BRANCA', 'CAMPARI', 'CHAMPAGNE', 'BODEGA', 'ALCOHOLICA', 'ALCOHOL', 'PETACA', 'WHISKY', 'LICOR'],
-    color: '#f59e0b',
-    iconName: 'Beer'
-  },
-  {
-    id: 'bebidas',
-    name: 'Bebidas y Gaseosas',
-    keywords: ['GASEOSA', 'GASEOSAS', 'COCA', 'FANTA', 'SPRITE', 'PEPSI', 'MANAO', 'AGUA', 'JUGO', 'JUGOS', 'SER', 'LEVIANTE', 'TERMA', 'POWERADE', 'GATORADE', 'AQUARIUS', 'PRAP', 'SIFÓN', 'SIFON', 'SODA', 'SPEED', 'MONSTER', 'RED BULL', 'BEBIDA', 'BEBIDAS'],
-    color: '#06b6d4',
-    iconName: 'CupSoda'
-  },
-  {
-    id: 'galletitas',
-    name: 'Galletitas y Bakery',
-    keywords: ['GALLETITA', 'GALLETITAS', 'BIZCOCHO', 'BIZCOCHOS', 'DON SATUR', 'OREO', 'CHOCLINA', 'TRAVIATA', 'CREMONA', 'FACTURA', 'PAN', 'TOSTADA', 'TOSTADAS', 'PEPA', 'PEPAS', 'MAGDALENA', 'SONRISAS', 'OPERAS', 'RUMBA', 'CHOCOLINAS', 'CEREAL', 'BARRA', 'BUDIN', 'BUDINES'],
-    color: '#8b5cf6',
-    iconName: 'Cookie'
-  },
-  {
-    id: 'alfajores',
-    name: 'Alfajores y Chocolates',
-    keywords: ['ALFAJOR', 'ALFAJORES', 'CHOCOLATE', 'CHOCOLATES', 'BOMBON', 'BOMBONES', 'GOMITA', 'GOMITAS', 'CHICLE', 'CARAMELO', 'CARAMELOS', 'TURRON', 'TURRONES', 'OBLITA', 'VILLARS', 'GUAYMALLEN', 'CAPITAN', 'JORGITO', 'SUCHARD', 'BLOCK', 'SHOT', 'COFLER', 'TITA', 'RHODESIA', 'FLYNN', 'HALLS', 'MENTHO', 'KINDER', 'FERRERO', 'NUTELLA'],
+    id: 'GOLOSINAS',
+    name: 'Golosinas, Alfajores y Chocolates',
+    keywords: ['GOLOSINAS', 'ALFAJOR', 'ALFAJORES', 'CHOCOLATE', 'CHOCOLATES', 'BOMBON', 'CARAMELO', 'CHICLE', 'TURRON', 'BLOCK', 'MARROC', 'GUAYMALLEN', 'JORGITO', 'RASTA', 'MILKA', 'COFLER'],
     color: '#ec4899',
     iconName: 'Candy'
   },
   {
-    id: 'snacks',
+    id: 'BEBIDAS',
+    name: 'Bebidas, Gaseosas y Cervezas',
+    keywords: ['BEBIDAS', 'GASEOSA', 'GASEOSAS', 'COCA', 'FANTA', 'SPRITE', 'PEPSI', 'MANAO', 'CERVEZA', 'FERNET', 'VINO', 'AGUA', 'JUGO', 'SPEED', 'MONSTER', 'QUILMES', 'BRAHMA', 'HEINEKEN', 'BRANCA'],
+    color: '#06b6d4',
+    iconName: 'CupSoda'
+  },
+  {
+    id: 'CIGARRILLOS',
+    name: 'Cigarrillos y Afines',
+    keywords: ['CIGARRILLO', 'CIGARRILLOS', 'MARLBORO', 'CHESTERFIELD', 'PHILIP', 'LUCKY', 'CAMEL', 'ROTHMANS', 'RED POINT', 'MASTER', 'MELBOURNE', 'TABACO', 'ENCENDEDOR', 'VAPE'],
+    color: '#ef4444',
+    iconName: 'Cigarette'
+  },
+  {
+    id: 'FARMACIA',
+    name: 'Farmacia y Cuidado Personal',
+    keywords: ['FARMACIA', 'AFEITADORA', 'GILLETTE', 'ALCOHOL', 'ALGODON', 'CURITAS', 'DESODORANTE', 'JABON', 'PAPEL', 'PRESERVATIVO', 'TOALLITA', 'MEDICAMENTO', 'ACTRON', 'IBU', 'TAFIROL', 'PARACETAMOL', 'ALIKAL', 'IBUPROFENO'],
+    color: '#14b8a6',
+    iconName: 'HeartPulse'
+  },
+  {
+    id: 'GALLETITAS',
+    name: 'Galletitas y Bakery',
+    keywords: ['GALLETITA', 'GALLETITAS', 'BIZCOCHO', 'BIZCOCHOS', 'DON SATUR', 'OREO', 'CHOCLINA', 'TRAVIATA', 'CREMONA', 'FACTURA', 'PAN', 'TOSTADA', 'PEPA', 'PEPAS', 'MAGDALENA', 'SONRISAS', 'OPERAS', 'RUMBA', 'CHOCOLINAS', 'BUDIN', 'CRIOLLITAS', 'PITUSAS'],
+    color: '#8b5cf6',
+    iconName: 'Cookie'
+  },
+  {
+    id: 'SNACKS',
     name: 'Snacks y Copetín',
-    keywords: ['SNACK', 'SNACKS', 'PAPAS', 'PAPA', 'CHIZITO', 'CHIZITOS', 'MANI', 'KRACHITOS', 'LAYS', 'DORITOS', 'CHEETOS', 'PALITOS', 'CHICHARRON', 'SALADIX', 'ACEITUNAS', 'NACHOS', 'ALMENDRAS', 'NUECES'],
+    keywords: ['SNACK', 'SNACKS', 'PAPAS', 'PAPA', 'CHIZITO', 'CHIZITOS', 'MANI', 'KRACHITOS', 'LAYS', 'DORITOS', 'CHEETOS', 'PALITOS', 'SALADIX', 'ACEITUNAS', 'NACHOS', 'PIPAS'],
     color: '#10b981',
     iconName: 'Popcorn'
   },
   {
-    id: 'lacteos',
-    name: 'Lácteos y Fríos',
-    keywords: ['LECHE', 'YOGUR', 'QUESO', 'FIAMBRE', 'JAMON', 'PALETA', 'SALAME', 'MANTECA', 'CREMA', 'SERENISIMA', 'ILOLAY', 'VERONICA', 'SANGUCHE', 'SANGUCHES', 'EMPANADA', 'TARTA'],
+    id: 'LACTEOS',
+    name: 'Lácteos, Fríos y Sánguches',
+    keywords: ['LECHE', 'YOGUR', 'QUESO', 'FIAMBRE', 'JAMON', 'PALETA', 'SALAME', 'MANTECA', 'CREMA', 'SERENISIMA', 'ILOLAY', 'SANGUCHE', 'SANGUCHES', 'EMPANADA', 'TARTA', 'PEBETE', 'DULCE DE LECHE', 'HELADO'],
     color: '#3b82f6',
     iconName: 'Milk'
   },
   {
-    id: 'almacen',
-    name: 'Almacén e Higiene',
-    keywords: ['ACEITE', 'HARINA', 'FIDEOS', 'ARROZ', 'AZUCAR', 'YERBA', 'SAL', 'SHAMPOO', 'JABON', 'AFEITADORA', 'GILLETTE', 'PAPEL', 'ROLLO', 'DESODORANTE', 'PRESERVATIVO', 'PRESERVATIVOS', 'TOALLITA', 'TOALLITAS', 'DESINFECTANTE', 'LAVANDINA'],
+    id: 'ALMACEN',
+    name: 'Almacén General y Limpieza',
+    keywords: ['ALMACEN', 'ACEITE', 'HARINA', 'FIDEOS', 'ARROZ', 'AZUCAR', 'YERBA', 'SAL', 'CAFE', 'TE', 'MAYONESA', 'LENA', 'CARBON', 'PILA', 'PILAS', 'PEGAMENTO', 'PRECINTOS', 'DETERGENTE', 'CHIP', 'GATO', 'PERRO', 'LAMPARA'],
     color: '#64748b',
     iconName: 'ShoppingBag'
   }

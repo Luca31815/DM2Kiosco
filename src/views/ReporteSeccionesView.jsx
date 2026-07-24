@@ -11,6 +11,7 @@ import {
   Cookie, 
   Popcorn, 
   Milk, 
+  HeartPulse,
   HelpCircle, 
   TrendingUp, 
   AlertTriangle, 
@@ -35,6 +36,7 @@ const ICON_MAP = {
   Cookie: Cookie,
   Popcorn: Popcorn,
   Milk: Milk,
+  HeartPulse: HeartPulse,
   ShoppingBag: ShoppingBag,
   HelpCircle: HelpCircle
 }
