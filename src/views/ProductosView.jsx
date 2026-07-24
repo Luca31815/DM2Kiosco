@@ -213,11 +213,12 @@ const ProductosView = () => {
         const loadingToast = toast.loading('Generando PDF...')
         setIsExporting(true)
         try {
-            // Obtenemos TODOS los productos que coinciden con el filtro actual
-            // Pasamos pageSize high para asegurar que traemos todo el listado filtrado
+            // Obtenemos TODOS los productos que coinciden con los filtros actuales (búsqueda, categoría y subcategoría)
             const result = await api.getProductos({
                 filterColumn: 'nombre',
                 filterValue: filterValue,
+                filterCategoria: selectedCategoria,
+                filterSubcategoria: selectedSubcategoria,
                 sortColumn: sortColumn,
                 sortOrder: sortOrder,
                 page: 1,      // Página explícita
@@ -225,10 +226,21 @@ const ProductosView = () => {
             })
 
             if (result.data && result.data.length > 0) {
-                generateProductsPDF(result.data, filterValue)
+                // Etiqueta descriptiva para el encabezado del PDF
+                const catSub = [selectedCategoria, selectedSubcategoria].filter(Boolean).join(' > ')
+                let label = ''
+                if (catSub && filterValue) {
+                    label = `${catSub} (Búsqueda: "${filterValue}")`
+                } else if (catSub) {
+                    label = catSub
+                } else if (filterValue) {
+                    label = filterValue
+                }
+
+                generateProductsPDF(result.data, label)
                 toast.success('PDF generado correctamente', { id: loadingToast })
             } else {
-                toast.error('No hay productos para exportar', { id: loadingToast })
+                toast.error('No hay productos para exportar con los filtros seleccionados', { id: loadingToast })
             }
         } catch (error) {
             console.error('Error exporting PDF:', error)

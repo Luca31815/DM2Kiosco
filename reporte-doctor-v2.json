@@ -132,6 +132,27 @@
           "tags": []
         },
         {
+          "filePath": "src/views/ProductosView.jsx",
+          "plugin": "react-doctor",
+          "rule": "no-giant-component",
+          "severity": "warning",
+          "title": "Large component is hard to read and change",
+          "message": "Component \"ProductosView\" is over 300 lines long, which is hard to read & change. Split it into a few smaller components.",
+          "help": "Pull each section into its own component so the parent is easier to read, test, and change.",
+          "line": 17,
+          "column": 7,
+          "offset": 941,
+          "length": 13,
+          "endLine": 17,
+          "category": "Maintainability",
+          "id": "src/views/ProductosView.jsx::17:7::react-doctor/no-giant-component::7bd86d5708c2ac577a5020e6f811441138b7ca3ff64e248062d94261006e18ec",
+          "normalizedFilePath": "src/views/ProductosView.jsx",
+          "tags": [
+            "react-jsx-only",
+            "test-noise"
+          ]
+        },
+        {
           "filePath": "src/views/ReporteSeccionesView.jsx",
           "plugin": "react-doctor",
           "rule": "no-giant-component",
@@ -493,7 +514,7 @@
           "help": "Give every interactive control a label screen readers can read.",
           "line": 113,
           "column": 17,
-          "offset": 6625,
+          "offset": 6636,
           "length": 481,
           "endLine": 120,
           "category": "Accessibility",
@@ -514,7 +535,7 @@
           "help": "Give every interactive control a label screen readers can read.",
           "line": 128,
           "column": 21,
-          "offset": 7413,
+          "offset": 7424,
           "length": 379,
           "endLine": 132,
           "category": "Accessibility",
@@ -660,7 +681,7 @@
       "analyzedFileCount": 85,
       "complete": true,
       "scannedFileCount": 85,
-      "elapsedMilliseconds": 32148.3369
+      "elapsedMilliseconds": 23460.8819
     }
   ],
   "diagnostics": [
@@ -754,6 +775,27 @@
       "id": "src/views/LoginView.jsx::0:0::deslop/unused-file::3747ba52094a44e8f20f5e0b58703f315410893af7fca4bb82d846b6d224371a",
       "normalizedFilePath": "src/views/LoginView.jsx",
       "tags": []
+    },
+    {
+      "filePath": "src/views/ProductosView.jsx",
+      "plugin": "react-doctor",
+      "rule": "no-giant-component",
+      "severity": "warning",
+      "title": "Large component is hard to read and change",
+      "message": "Component \"ProductosView\" is over 300 lines long, which is hard to read & change. Split it into a few smaller components.",
+      "help": "Pull each section into its own component so the parent is easier to read, test, and change.",
+      "line": 17,
+      "column": 7,
+      "offset": 941,
+      "length": 13,
+      "endLine": 17,
+      "category": "Maintainability",
+      "id": "src/views/ProductosView.jsx::17:7::react-doctor/no-giant-component::7bd86d5708c2ac577a5020e6f811441138b7ca3ff64e248062d94261006e18ec",
+      "normalizedFilePath": "src/views/ProductosView.jsx",
+      "tags": [
+        "react-jsx-only",
+        "test-noise"
+      ]
     },
     {
       "filePath": "src/views/ReporteSeccionesView.jsx",
@@ -1117,7 +1159,7 @@
       "help": "Give every interactive control a label screen readers can read.",
       "line": 113,
       "column": 17,
-      "offset": 6625,
+      "offset": 6636,
       "length": 481,
       "endLine": 120,
       "category": "Accessibility",
@@ -1138,7 +1180,7 @@
       "help": "Give every interactive control a label screen readers can read.",
       "line": 128,
       "column": 21,
-      "offset": 7413,
+      "offset": 7424,
       "length": 379,
       "endLine": 132,
       "category": "Accessibility",
@@ -1194,12 +1236,12 @@
   ],
   "summary": {
     "errorCount": 0,
-    "warningCount": 28,
-    "affectedFileCount": 10,
-    "totalDiagnosticCount": 28,
+    "warningCount": 29,
+    "affectedFileCount": 11,
+    "totalDiagnosticCount": 29,
     "score": null,
     "scoreLabel": null
   },
-  "elapsedMilliseconds": 32232.198,
+  "elapsedMilliseconds": 23500.136499999997,
   "error": null
 }
