@@ -444,7 +444,7 @@ export default function TriageProductosView() {
                         </h3>
                         <p className="text-slate-400 text-xs md:text-sm max-w-md mx-auto mt-1">
                             {activeTab === 'criticos'
-                                ? 'No hay productos pendientes de categorización o clasificados como varios.'
+                                ? 'No hay productos pendientes sin categoría. Todos los productos del catálogo están correctamente clasificados.'
                                 : 'No se encontraron productos que coincidan con los filtros aplicados.'}
                         </p>
                     </div>
@@ -497,9 +497,9 @@ export default function TriageProductosView() {
                                                             IA: {edit.regla || 'Inferido'}
                                                         </span>
                                                     )}
-                                                    {(!product.categoria || product.categoria === 'SIN_CATEGORIA' || product.categoria === 'VARIOS Y SERVICIOS') && (
+                                                    {(!product.categoria || product.categoria === 'SIN_CATEGORIA' || product.categoria.trim() === '') && (
                                                         <span className="text-[10px] font-black text-rose-400 bg-rose-500/10 border border-rose-500/20 px-2 py-0.5 rounded-md">
-                                                            Sin Clasificar
+                                                            Sin Categoría
                                                         </span>
                                                     )}
                                                 </div>

@@ -732,7 +732,7 @@ export const getTriageProducts = async (tab = 'criticos') => {
         .select('producto_id, nombre, categoria, subcategoria, ultimo_precio_venta, ultimo_costo_compra, fecha_actualizacion');
 
     if (tab === 'criticos') {
-        query = query.or('categoria.is.null,categoria.eq.SIN_CATEGORIA,categoria.eq.VARIOS Y SERVICIOS')
+        query = query.or('categoria.is.null,categoria.eq.,categoria.eq.SIN_CATEGORIA')
             .order('fecha_actualizacion', { ascending: false, nullsFirst: false });
     } else if (tab === 'recientes') {
         const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
@@ -755,7 +755,7 @@ export const getTriagePendingCount = async () => {
     const { count, error } = await supabase
         .from('productos_base')
         .select('*', { count: 'exact', head: true })
-        .or('categoria.is.null,categoria.eq.SIN_CATEGORIA,categoria.eq.VARIOS Y SERVICIOS');
+        .or('categoria.is.null,categoria.eq.,categoria.eq.SIN_CATEGORIA');
 
     if (error) {
         console.error('Error fetching triage pending count:', error);
