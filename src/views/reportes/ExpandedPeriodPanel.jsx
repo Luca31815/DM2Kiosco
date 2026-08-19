@@ -3,6 +3,7 @@ import { LazyMotion, domAnimation, m } from 'framer-motion'
 import { Calendar, Activity, CreditCard, Tag } from 'lucide-react'
 import { MiniStat } from './ReportesKPI'
 import { PeriodTopProducts, PeriodGananciaRealStat } from './PeriodProducts'
+import PeriodCategoryPerformance from './PeriodCategoryPerformance'
 import { getPeriodName, getPeriodDays } from './reportesHelpers'
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -46,7 +47,7 @@ const ExpandedPeriodPanel = ({ item, reportType }) => {
                 <div className="flex-1 h-px bg-white/5" />
             </div>
 
-            {/* Grid de paneles */}
+            {/* Grid de paneles principales */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
 
                 {/* PANEL 1: Resumen del periodo */}
@@ -134,9 +135,13 @@ const ExpandedPeriodPanel = ({ item, reportType }) => {
                     </div>
                 </div>
             </div>
+
+            {/* PANEL 4: Ganancia y Rendimiento por Categoría (Total Bruto y Neto) */}
+            <PeriodCategoryPerformance item={item} type={reportType} />
         </m.div>
     </LazyMotion>
 )
 }
 
 export default ExpandedPeriodPanel
+
