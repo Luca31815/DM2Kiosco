@@ -814,3 +814,29 @@ export const clasificarProductosBatch = async (items = []) => {
 
     return { success: true, count: items.length };
 };
+
+export const getProductBotHistory = async (productName) => {
+    if (isDemo()) return [];
+    if (!productName || !productName.trim()) return [];
+
+    const cleanName = productName.trim();
+    // Remover prefijos comunes si los tiene para mejorar la búsqueda en mensajes
+    const termWithoutPrefix = cleanName
+        .replace(/^(ALMACEN|BEBIDA GASEOSA|BEBIDA JUGO|BEBIDA AGUA|BEBIDA ALCOHOL|BEBIDA ENERGIZANTE|BEBIDAS|GOLOSINAS ALFAJOR|GOLOSINAS CHOCOLATE|GOLOSINAS|CIGARRILLOS|GALLETITAS|SNACKS|FARMACIA|LIMPIEZA|HELADOS|VARIOS)\s+/i, '')
+        .trim();
+
+    const searchTerm = termWithoutPrefix.length >= 3 ? termWithoutPrefix : cleanName;
+
+    const { data, error } = await supabase
+        .from('historial_bot')
+        .select('log_id, fecha, mensaje_inicial, mensaje_enviado, chat_id, author_id')
+        .or(`mensaje_inicial.ilike.%${searchTerm}%,mensaje_enviado.ilike.%${searchTerm}%`)
+        .order('fecha', { ascending: false })
+        .limit(25);
+
+    if (error) {
+        console.error('Error fetching getProductBotHistory:', error);
+        return [];
+    }
+    return data || [];
+};

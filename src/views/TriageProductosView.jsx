@@ -14,13 +14,15 @@ import {
     Filter,
     ArrowRight,
     Loader2,
-    CheckCircle2
+    CheckCircle2,
+    MessageSquare
 } from 'lucide-react'
 import { LazyMotion, domAnimation, m, AnimatePresence } from 'framer-motion'
 import { useSWRConfig } from 'swr'
 import { toast } from 'react-hot-toast'
 import { useTriageProducts, useTriagePendingCount } from '../hooks/useData'
 import * as api from '../services/api'
+import ProductHistoryModal from '../components/ProductHistoryModal'
 import {
     FAMILIAS_CANONICAS,
     CATEGORIAS_LIST,
@@ -33,6 +35,7 @@ export default function TriageProductosView() {
     const [activeTab, setActiveTab] = useState('criticos') // 'criticos' | 'recientes' | 'todos'
     const [searchTerm, setSearchTerm] = useState('')
     const [filterCat, setFilterCat] = useState('')
+    const [historyModalProduct, setHistoryModalProduct] = useState(null)
 
     // Form state local por producto: { [producto_id]: { categoria, subcategoria, isModified, aiSuggested, confianza, isSaving } }
     const [localEdits, setLocalEdits] = useState({})
@@ -553,8 +556,18 @@ export default function TriageProductosView() {
                                                     </div>
                                                 </div>
 
-                                                {/* Botones de Fila: Sugerir IA + Guardar */}
+                                                {/* Botones de Fila: Sugerir IA + Historial + Guardar */}
                                                 <div className="flex items-center gap-2">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setHistoryModalProduct(product)}
+                                                        className="px-3 py-2.5 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 border border-indigo-500/20 text-xs font-black transition-all flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer"
+                                                        title="Ver mensajes de WhatsApp donde apareció este producto"
+                                                    >
+                                                        <MessageSquare className="h-3.5 w-3.5" />
+                                                        <span className="hidden sm:inline">Mensajes</span>
+                                                    </button>
+
                                                     <button
                                                         type="button"
                                                         onClick={() => handleSuggestSingle(product)}
@@ -592,6 +605,13 @@ export default function TriageProductosView() {
                         </AnimatePresence>
                     </div>
                 )}
+
+                {/* Modal de Historial de Mensajes WhatsApp */}
+                <ProductHistoryModal
+                    product={historyModalProduct}
+                    isOpen={!!historyModalProduct}
+                    onClose={() => setHistoryModalProduct(null)}
+                />
             </div>
         </LazyMotion>
     )
