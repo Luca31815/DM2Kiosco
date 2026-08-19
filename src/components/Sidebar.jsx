@@ -23,10 +23,12 @@ import {
     LogIn,
     LogOut,
     Eye,
-    Layers
+    Layers,
+    Inbox
 } from 'lucide-react'
 import { LazyMotion, domAnimation, m, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
+import { useTriagePendingCount } from '../hooks/useData'
 
 const navGroups = [
     {
@@ -49,6 +51,7 @@ const navGroups = [
     {
         label: 'Inventario',
         items: [
+            { to: '/triage', label: 'Bandeja de Entrada', icon: Inbox, isTriage: true },
             { to: '/productos', label: 'Productos', icon: Package },
             { to: '/rentabilidad', label: 'Rentabilidad', icon: CandlestickChart },
         ]
@@ -76,6 +79,7 @@ const navGroups = [
 const Sidebar = memo(({ isOpen, onClose }) => {
     const location = useLocation()
     const { session, openLoginModal, signOut } = useAuth()
+    const { count: triagePendingCount } = useTriagePendingCount()
 
     return (
         <LazyMotion features={domAnimation}>
@@ -170,6 +174,11 @@ const Sidebar = memo(({ isOpen, onClose }) => {
                                                         <Icon className="h-4 w-4" />
                                                     </div>
                                                     <span className="font-semibold text-sm flex-1">{link.label}</span>
+                                                    {link.isTriage && triagePendingCount > 0 && (
+                                                        <span className="px-2 py-0.5 text-[10px] font-black rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 shadow-[0_0_8px_rgba(245,158,11,0.2)] animate-pulse">
+                                                            {triagePendingCount}
+                                                        </span>
+                                                    )}
                                                     {link.alert && (
                                                         <div className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
                                                     )}

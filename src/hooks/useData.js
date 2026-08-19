@@ -718,4 +718,42 @@ export function useReporteSecciones(options = {}) {
     }
 }
 
+export function useTriageProducts(tab = 'criticos') {
+    const { isDemoMode } = useAuth()
+    const { data, error, isLoading, mutate } = useSWR(
+        !isDemoMode ? ['triage_products', tab] : null,
+        () => api.getTriageProducts(tab),
+        {
+            ...SWR_OPTIONS,
+            revalidateOnFocus: true,
+            dedupingInterval: 5000
+        }
+    )
 
+    return {
+        data: data?.data || [],
+        count: data?.count || 0,
+        loading: isLoading,
+        error,
+        mutate
+    }
+}
+
+export function useTriagePendingCount() {
+    const { isDemoMode } = useAuth()
+    const { data, error, isLoading } = useSWR(
+        !isDemoMode ? 'triage_pending_count' : null,
+        () => api.getTriagePendingCount(),
+        {
+            ...SWR_OPTIONS,
+            refreshInterval: 60000,
+            revalidateOnFocus: true
+        }
+    )
+
+    return {
+        count: isDemoMode ? 0 : (data || 0),
+        loading: isLoading,
+        error
+    }
+}

@@ -26,6 +26,7 @@ const DuplicadosView = lazy(() => import('./views/DuplicadosView'))
 const DescalcesView = lazy(() => import('./views/DescalcesView'))
 const CarteraView = lazy(() => import('./views/CarteraView'))
 const ReporteSeccionesView = lazy(() => import('./views/ReporteSeccionesView'))
+const TriageProductosView = lazy(() => import('./views/TriageProductosView'))
 
 const LoadingScreen = () => (
   <div className="flex-1 flex items-center justify-center p-20">
@@ -47,6 +48,7 @@ function App() {
                   <Route path="/ventas" element={<VentasView />} />
                   <Route path="/compras" element={<ComprasView />} />
                   <Route path="/reservas" element={<ReservasView />} />
+                  <Route path="/triage" element={<TriageProductosView />} />
                   <Route path="/productos" element={<ProductosView />} />
                   <Route path="/rentabilidad" element={<RentabilidadProductosView />} />
                   <Route path="/reportes" element={<ReportesView />} />

@@ -722,5 +722,95 @@ export const getLotesComprasProductos = async () => {
     return result;
 };
 
+// --- BANDEJA DE ENTRADA Y TRIAGE DE PRODUCTOS ---
 
+export const getTriageProducts = async (tab = 'criticos') => {
+    if (isDemo()) return { data: [], count: 0 };
 
+    let query = supabase
+        .from('productos_base')
+        .select('producto_id, nombre, categoria, subcategoria, ultimo_precio_venta, ultimo_costo_compra, fecha_actualizacion');
+
+    if (tab === 'criticos') {
+        query = query.or('categoria.is.null,categoria.eq.SIN_CATEGORIA,categoria.eq.VARIOS Y SERVICIOS')
+            .order('fecha_actualizacion', { ascending: false, nullsFirst: false });
+    } else if (tab === 'recientes') {
+        const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+        query = query.gte('fecha_actualizacion', sevenDaysAgo)
+            .order('fecha_actualizacion', { ascending: false });
+    } else {
+        query = query.order('nombre', { ascending: true });
+    }
+
+    const { data, error, count } = await query;
+    if (error) {
+        console.error('Error fetching triage products:', error);
+        throw error;
+    }
+    return { data: data || [], count: count || (data ? data.length : 0) };
+};
+
+export const getTriagePendingCount = async () => {
+    if (isDemo()) return 0;
+    const { count, error } = await supabase
+        .from('productos_base')
+        .select('*', { count: 'exact', head: true })
+        .or('categoria.is.null,categoria.eq.SIN_CATEGORIA,categoria.eq.VARIOS Y SERVICIOS');
+
+    if (error) {
+        console.error('Error fetching triage pending count:', error);
+        return 0;
+    }
+    return count || 0;
+};
+
+export const clasificarProducto = async ({ producto_id, categoria, subcategoria, nombre }) => {
+    if (isDemo()) throw new Error('Acción deshabilitada en el modo Demo');
+    
+    const updatePayload = {
+        categoria: categoria || null,
+        subcategoria: subcategoria || null,
+        fecha_actualizacion: new Date().toISOString()
+    };
+    if (nombre) {
+        updatePayload.nombre = nombre;
+    }
+
+    const { data, error } = await supabase
+        .from('productos_base')
+        .update(updatePayload)
+        .eq('producto_id', producto_id)
+        .select();
+
+    if (error) {
+        console.error('Error al clasificar producto:', error);
+        throw error;
+    }
+    return { success: true, data: data?.[0] };
+};
+
+export const clasificarProductosBatch = async (items = []) => {
+    if (isDemo()) throw new Error('Acción deshabilitada en el modo Demo');
+    if (!items.length) return { success: true, count: 0 };
+
+    const nowIso = new Date().toISOString();
+    const promises = items.map(item =>
+        supabase
+            .from('productos_base')
+            .update({
+                categoria: item.categoria || null,
+                subcategoria: item.subcategoria || null,
+                fecha_actualizacion: nowIso
+            })
+            .eq('producto_id', item.producto_id)
+    );
+
+    const results = await Promise.all(promises);
+    const errors = results.filter(r => r.error);
+    if (errors.length > 0) {
+        console.error('Errores en clasificación por lote:', errors);
+        throw new Error(`Error en ${errors.length} productos durante la clasificación por lote`);
+    }
+
+    return { success: true, count: items.length };
+};
