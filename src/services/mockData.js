@@ -34,9 +34,11 @@ export const MOCK_REPORTE_DIARIO = [
 ];
 
 export const MOCK_HISTORIAL = [
-    { id: 1, fecha: '2026-02-23T10:05:00Z', mensaje: 'Venta registrada: Juan Pérez - $15.500', tipo: 'bot' },
-    { id: 2, fecha: '2026-02-23T09:32:00Z', mensaje: 'Venta registrada: María García - $8.200', tipo: 'bot' },
-    { id: 3, fecha: '2026-02-22T20:16:00Z', mensaje: 'Reserva creada: Roberto Gómez - $5.000', tipo: 'bot' },
+    { log_id: 101, fecha: '2026-02-23T10:05:00Z', operacion_id: 'VENTA_1788199065497', tipo_accion: 'VENTA', estado: 'ENVIADO', mensaje_inicial: 'Vendí un baggio grande', mensaje_enviado: '✅ Venta Registrada: Baggio Multifruta 1L - Total: $2.500', detalle_error: null, chat_id: '5491112345678@c.us' },
+    { log_id: 102, fecha: '2026-02-23T09:32:00Z', operacion_id: null, tipo_accion: 'IA_AGENT', estado: 'PENDIENTE', mensaje_inicial: 'Decime el reporte diario', mensaje_enviado: null, detalle_error: null, chat_id: '5491112345678@c.us' },
+    { log_id: 103, fecha: '2026-02-22T20:16:00Z', operacion_id: 'RES_2001', tipo_accion: 'RESERVA', estado: 'ENVIADO', mensaje_inicial: 'Reserva para Roberto Gómez un cartón de Lucky', mensaje_enviado: '📦 Reserva Creada: Roberto Gómez - Total: $5.000', detalle_error: null, chat_id: '5491187654321@c.us' },
+    { log_id: 104, fecha: '2026-02-22T18:40:00Z', operacion_id: null, tipo_accion: 'CONSULTA', estado: 'ERROR', mensaje_inicial: 'Cuánto stock queda de chocolates?', mensaje_enviado: null, detalle_error: 'Timeout connecting to Groq / LLM Gateway', chat_id: '5491112345678@c.us' },
+    { log_id: 105, fecha: '2026-02-22T14:10:00Z', operacion_id: 'VENTA_1788193177366', tipo_accion: 'VENTA', estado: 'CANCELADO', mensaje_inicial: 'Vendo un red on se 20', mensaje_enviado: '✅ Venta Registrada - Total: $2.700', detalle_error: 'Operación cancelada por el usuario', chat_id: '5491112345678@c.us' },
 ];
 
 export const MOCK_PROVEEDORES = [

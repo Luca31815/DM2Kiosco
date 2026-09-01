@@ -840,3 +840,66 @@ export const getProductBotHistory = async (productName) => {
     }
     return data || [];
 };
+
+/** Cancela un mensaje u operación del historial del bot de forma segura */
+export const cancelarMensajeHistorial = async ({ log_id, operacion_id }) => {
+    if (isDemo()) throw new Error('Acción deshabilitada en el modo Demo');
+
+    // Si tiene una operación asociada (VENTA, COMPRA, RESERVA, RETIRO), usamos la RPC para revertir stock y dinero
+    if (operacion_id && operacion_id.trim() !== '') {
+        const { data, error } = await supabase.rpc('cancelar_operacion_v2', { p_id: operacion_id.trim() });
+        if (error) {
+            console.error('Error al llamar cancelar_operacion_v2:', error);
+            throw error;
+        }
+        // Si además tenemos log_id y por alguna razón la RPC no lo actualizó directamente (ej. si no coincidía el operacion_id)
+        if (log_id) {
+            await supabase
+                .from('historial_bot')
+                .update({ estado: 'CANCELADO' })
+                .eq('log_id', log_id);
+        }
+        return data;
+    }
+
+    // Si no tiene operación asociada (mensaje pendiente, consulta, error, etc.)
+    if (!log_id) throw new Error('Se requiere log_id u operacion_id para cancelar');
+
+    const { data, error } = await supabase
+        .from('historial_bot')
+        .update({ estado: 'CANCELADO' })
+        .eq('log_id', log_id)
+        .select();
+
+    if (error) {
+        console.error('Error al actualizar estado en historial_bot:', error);
+        throw error;
+    }
+
+    return { success: true, data: data?.[0] };
+};
+
+/** Actualiza tipo_accion, estado o detalle_error de un registro en historial_bot */
+export const actualizarMensajeHistorial = async (log_id, updates = {}) => {
+    if (isDemo()) throw new Error('Acción deshabilitada en el modo Demo');
+    if (!log_id) throw new Error('Se requiere log_id para actualizar el mensaje');
+
+    const cleanUpdates = {};
+    if (updates.tipo_accion !== undefined) cleanUpdates.tipo_accion = updates.tipo_accion ? updates.tipo_accion.trim().toUpperCase() : null;
+    if (updates.estado !== undefined) cleanUpdates.estado = updates.estado ? updates.estado.trim().toUpperCase() : null;
+    if (updates.detalle_error !== undefined) cleanUpdates.detalle_error = updates.detalle_error;
+    if (updates.mensaje_enviado !== undefined) cleanUpdates.mensaje_enviado = updates.mensaje_enviado;
+
+    const { data, error } = await supabase
+        .from('historial_bot')
+        .update(cleanUpdates)
+        .eq('log_id', log_id)
+        .select();
+
+    if (error) {
+        console.error('Error al actualizar mensaje en historial_bot:', error);
+        throw error;
+    }
+
+    return { success: true, data: data?.[0] };
+};

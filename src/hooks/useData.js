@@ -228,19 +228,20 @@ export function useReservasDetalles(reservaId) {
 
 export function useHistorialBot(options = {}) {
     const { isDemoMode } = useAuth()
-    const { data, error, isLoading } = useSWR(
+    const { data, error, isLoading, mutate } = useSWR(
         !isDemoMode ? ['historial_bot', options] : null,
         () => api.getHistorialBot(options),
         SWR_OPTIONS
     )
 
-    if (isDemoMode) return { data: mock.MOCK_HISTORIAL, count: mock.MOCK_HISTORIAL.length, loading: false }
+    if (isDemoMode) return { data: mock.MOCK_HISTORIAL, count: mock.MOCK_HISTORIAL.length, loading: false, mutate: () => {} }
 
     return {
         data: data?.data || [],
         count: data?.count || 0,
         loading: isLoading,
-        error
+        error,
+        mutate
     }
 }
 
