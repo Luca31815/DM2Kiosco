@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react'
-import { Package, Loader2, DollarSign, FileText, PackagePlus, Trash2, Bookmark, Filter, CheckSquare, CheckCheck, X } from 'lucide-react'
+import { Package, Loader2, DollarSign, FileText, PackagePlus, Trash2, Bookmark, Filter, CheckSquare, CheckCheck, X, FolderEdit } from 'lucide-react'
 
 export const ProductosHeaderBar = ({
     handleSyncPrecios,
@@ -21,6 +21,7 @@ export const ProductosHeaderBar = ({
     handleSelectAllFiltered,
     handleDeselectAll,
     handleExportSelectedPDF,
+    onOpenBatchCategoryModal,
     filteredCount = 0
 }) => {
     const { isSyncingPrecios = false, isExporting = false, isSyncing = false, isCleaning = false } = loadingStates ?? {}
@@ -188,6 +189,17 @@ export const ProductosHeaderBar = ({
                     </div>
 
                     <div className="flex items-center gap-2">
+                        {selectedProductIds.size > 0 && onOpenBatchCategoryModal && (
+                            <button
+                                type="button"
+                                onClick={onOpenBatchCategoryModal}
+                                className="px-3 py-1.5 bg-gradient-to-r from-amber-500/20 to-amber-600/20 hover:from-amber-500/30 hover:to-amber-600/30 border border-amber-500/40 rounded-xl text-xs font-black text-amber-300 uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-sm"
+                                title="Asignar masivamente categoría a todos los productos seleccionados"
+                            >
+                                <FolderEdit className="h-3.5 w-3.5 text-amber-400" />
+                                <span>Asignar Categoría ({selectedProductIds.size})</span>
+                            </button>
+                        )}
                         {selectedProductIds.size > 0 && handleExportSelectedPDF && (
                             <button
                                 type="button"

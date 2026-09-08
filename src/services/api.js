@@ -806,6 +806,30 @@ export const actualizarProducto = async (data) => {
     return result;
 }
 
+export const actualizarCategoriaLote = async (productoIds, categoria, subcategoria) => {
+    if (!productoIds || productoIds.length === 0) {
+        return { success: false, error: 'No se indicaron productos' };
+    }
+    if (isDemo()) {
+        return { success: true, count: productoIds.length };
+    }
+    try {
+        const { data, error } = await supabase.rpc('actualizar_categoria_productos_lote', {
+            p_producto_ids: productoIds,
+            p_nueva_categoria: categoria || null,
+            p_nueva_subcategoria: subcategoria || null
+        });
+        if (error) {
+            console.error('Error en actualizar_categoria_productos_lote:', error);
+            return { success: false, error: error.message };
+        }
+        return data || { success: true, count: productoIds.length };
+    } catch (err) {
+        console.error('Excepción en actualizarCategoriaLote:', err);
+        return { success: false, error: err.message };
+    }
+};
+
 export const getCategoriasDisponibles = async () => {
     if (isDemo()) {
         return {

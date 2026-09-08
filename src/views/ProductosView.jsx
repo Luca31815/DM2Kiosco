@@ -12,6 +12,7 @@ import SynonymManagerModal from '../components/SynonymManagerModal'
 import { useIsMobile } from '../hooks/useIsMobile'
 import { ProductosHeaderBar } from './productos/ProductosHeaderBar'
 import { useProductosColumns } from './productos/useProductosColumns'
+import BatchCategoryModal from './productos/BatchCategoryModal'
 
 
 const ProductosView = () => {
@@ -36,6 +37,8 @@ const ProductosView = () => {
     // Multi-selection state (persists across search term changes)
     const [isSelectionMode, setIsSelectionMode] = useState(false)
     const [selectedProductIds, setSelectedProductIds] = useState(() => new Set())
+    const [isBatchCategoryModalOpen, setIsBatchCategoryModalOpen] = useState(false)
+    const [isBatchUpdating, setIsBatchUpdating] = useState(false)
 
     const [selectedCategoria, setSelectedCategoria] = useState('')
     const [selectedSubcategoria, setSelectedSubcategoria] = useState('')
@@ -351,6 +354,31 @@ const ProductosView = () => {
         }
     }, [selectedProductIds])
 
+    // Batch category assignment handler
+    const handleBatchCategoryConfirm = useCallback(async ({ categoria, subcategoria }) => {
+        if (selectedProductIds.size === 0) return
+        const count = selectedProductIds.size
+        const loadingToast = toast.loading(`Asignando categoría a ${count} productos...`)
+        setIsBatchUpdating(true)
+        try {
+            const ids = Array.from(selectedProductIds)
+            const res = await api.actualizarCategoriaLote(ids, categoria, subcategoria)
+            if (res.success) {
+                toast.success(`¡Listo! Se actualizó la categoría de ${res.count || count} productos.`, { id: loadingToast, duration: 4000 })
+                mutate(key => Array.isArray(key) && key[0] === 'productos')
+                mutate('categorias_disponibles')
+                setIsBatchCategoryModalOpen(false)
+            } else {
+                toast.error('Error al actualizar: ' + (res.error || 'Error desconocido'), { id: loadingToast })
+            }
+        } catch (err) {
+            console.error('Error batch updating categories:', err)
+            toast.error('Error: ' + (err.message || 'Error desconocido'), { id: loadingToast })
+        } finally {
+            setIsBatchUpdating(false)
+        }
+    }, [selectedProductIds, mutate])
+
     const columns = useProductosColumns({
         editingId,
         editForm,
@@ -405,6 +433,7 @@ const ProductosView = () => {
                 handleSelectAllFiltered={handleSelectAllFiltered}
                 handleDeselectAll={handleDeselectAll}
                 handleExportSelectedPDF={handleExportSelectedPDF}
+                onOpenBatchCategoryModal={() => setIsBatchCategoryModalOpen(true)}
                 filteredCount={count || productsWithPrediction.length}
             />
 
@@ -433,8 +462,19 @@ const ProductosView = () => {
                 isOpen={isSynonymModalOpen} 
                 onClose={() => setIsSynonymModalOpen(false)} 
             />
+
+            <BatchCategoryModal
+                isOpen={isBatchCategoryModalOpen}
+                onClose={() => setIsBatchCategoryModalOpen(false)}
+                onConfirm={handleBatchCategoryConfirm}
+                selectedCount={selectedProductIds.size}
+                categorias={categorias}
+                subcategoriasPorCategoria={subcategoriasPorCategoria}
+                isUpdating={isBatchUpdating}
+            />
         </div>
     )
 }
 
 export default ProductosView
+
