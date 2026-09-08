@@ -80,10 +80,16 @@ const ProductosView = () => {
             }
         })
         if (selectedCategoria) {
-            list = list.filter(p => (p.categoria || 'SIN_CATEGORIA') === selectedCategoria)
+            if (selectedCategoria === 'SIN_CATEGORIA') {
+                list = list.filter(p => !p.categoria || p.categoria === 'SIN_CATEGORIA' || p.categoria.trim() === '')
+            } else {
+                const targetCat = selectedCategoria.trim().toUpperCase()
+                list = list.filter(p => (p.categoria || '').trim().toUpperCase() === targetCat)
+            }
         }
         if (selectedSubcategoria) {
-            list = list.filter(p => (p.subcategoria || 'GENERAL') === selectedSubcategoria)
+            const targetSub = selectedSubcategoria.trim().toUpperCase()
+            list = list.filter(p => (p.subcategoria || '').trim().toUpperCase() === targetSub)
         }
         if (sortColumn === 'categoria') {
             const dir = sortOrder === 'asc' ? 1 : -1

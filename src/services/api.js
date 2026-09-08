@@ -141,29 +141,58 @@ export const getProductos = async (options = {}) => {
     if (isDemo()) return { data: [], count: 0 }
 
     const { filterValue, page = 1, pageSize = 20 } = options
+    const hasSearch = Boolean(filterValue && filterValue.trim().length > 0)
+    const hasCategoryFilter = Boolean(options.filterCategoria || options.filterSubcategoria)
 
-    if (filterValue && filterValue.trim().length > 0) {
-        const { data, error } = await supabase.rpc('fn_buscar_productos_catalogo', {
-            p_search: filterValue.trim()
-        })
+    if (hasSearch || hasCategoryFilter) {
+        try {
+            const { data, error } = await supabase.rpc('fn_buscar_productos_catalogo', {
+                p_search: hasSearch ? filterValue.trim() : ''
+            })
 
-        if (error) {
-            console.error('Error calling fn_buscar_productos_catalogo:', error)
-            return fetchTableData('productos', options)
+            if (!error && data) {
+                let list = data || []
+                if (options.filterCategoria) {
+                    if (options.filterCategoria === 'SIN_CATEGORIA') {
+                        list = list.filter(p => !p.categoria || p.categoria === 'SIN_CATEGORIA' || p.categoria.trim() === '')
+                    } else {
+                        const targetCat = options.filterCategoria.trim().toUpperCase()
+                        list = list.filter(p => (p.categoria || '').trim().toUpperCase() === targetCat)
+                    }
+                }
+                if (options.filterSubcategoria) {
+                    const targetSub = options.filterSubcategoria.trim().toUpperCase()
+                    list = list.filter(p => (p.subcategoria || '').trim().toUpperCase() === targetSub)
+                }
+
+                if (options.sortColumn && options.sortColumn !== 'similitud') {
+                    const isAsc = options.sortOrder ? options.sortOrder === 'asc' : true
+                    const col = options.sortColumn
+                    list.sort((a, b) => {
+                        let valA = a[col]
+                        let valB = b[col]
+                        if (valA === null || valA === undefined) valA = ''
+                        if (valB === null || valB === undefined) valB = ''
+                        if (typeof valA === 'string' && typeof valB === 'string') {
+                            return isAsc ? valA.localeCompare(valB) : valB.localeCompare(valA)
+                        }
+                        valA = Number(valA) || 0
+                        valB = Number(valB) || 0
+                        return isAsc ? valA - valB : valB - valA
+                    })
+                }
+
+                const total = list.length
+                const from = (page - 1) * pageSize
+                const paginatedData = list.slice(from, from + pageSize)
+
+                return { data: paginatedData, count: total }
+            } else if (error) {
+                console.error('Error calling fn_buscar_productos_catalogo:', error)
+            }
+        } catch (rpcErr) {
+            console.error('Exception in fn_buscar_productos_catalogo:', rpcErr)
         }
-
-        let list = data || []
-        if (options.filterCategoria) {
-            list = list.filter(p => (p.categoria || 'SIN_CATEGORIA') === options.filterCategoria)
-        }
-        if (options.filterSubcategoria) {
-            list = list.filter(p => (p.subcategoria || 'GENERAL') === options.filterSubcategoria)
-        }
-        const total = list.length
-        const from = (page - 1) * pageSize
-        const paginatedData = list.slice(from, from + pageSize)
-
-        return { data: paginatedData, count: total }
     }
 
     return fetchTableData('productos', options)
