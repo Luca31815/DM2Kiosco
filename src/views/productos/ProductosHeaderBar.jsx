@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react'
-import { Package, Loader2, DollarSign, FileText, PackagePlus, Trash2, Bookmark, Filter } from 'lucide-react'
+import { Package, Loader2, DollarSign, FileText, PackagePlus, Trash2, Bookmark, Filter, CheckSquare, CheckCheck, X } from 'lucide-react'
 
 export const ProductosHeaderBar = ({
     handleSyncPrecios,
@@ -14,7 +14,14 @@ export const ProductosHeaderBar = ({
     setSelectedSubcategoria,
     categorias = [],
     subcategoriasPorCategoria = {},
-    loadingCategorias = false
+    loadingCategorias = false,
+    isSelectionMode = false,
+    setIsSelectionMode,
+    selectedProductIds = new Set(),
+    handleSelectAllFiltered,
+    handleDeselectAll,
+    handleExportSelectedPDF,
+    filteredCount = 0
 }) => {
     const { isSyncingPrecios = false, isExporting = false, isSyncing = false, isCleaning = false } = loadingStates ?? {}
     
@@ -81,6 +88,19 @@ export const ProductosHeaderBar = ({
                         <Bookmark className="h-4 w-4 group-hover:scale-110 transition-transform" />
                         <span>Dic.</span>
                     </button>
+
+                    <button type="button"
+                        onClick={() => setIsSelectionMode && setIsSelectionMode(!isSelectionMode)}
+                        className={`flex-1 sm:flex-none px-3 sm:px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 group min-h-[44px] ${
+                            isSelectionMode 
+                                ? 'bg-amber-500 text-slate-950 font-black shadow-lg shadow-amber-500/20' 
+                                : 'bg-slate-800 text-slate-300 border border-white/10 hover:bg-slate-700'
+                        }`}
+                        title="Activar / Desactivar selección múltiple de productos"
+                    >
+                        <CheckSquare className="h-4 w-4 group-hover:scale-110 transition-transform" />
+                        <span>{isSelectionMode ? 'Modo Selección' : 'Seleccionar'}</span>
+                    </button>
                 </div>
             </div>
 
@@ -132,6 +152,64 @@ export const ProductosHeaderBar = ({
                     </button>
                 )}
             </div>
+
+            {/* Barra Contextual de Selección Múltiple */}
+            {isSelectionMode && (
+                <div className="flex flex-wrap items-center justify-between gap-3 bg-gradient-to-r from-amber-500/10 via-slate-900/80 to-slate-900/60 p-3 rounded-2xl border border-amber-500/20 animate-in fade-in slide-in-from-top-2 duration-200">
+                    <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-500/20 border border-amber-500/30 rounded-xl">
+                            <CheckSquare className="h-4 w-4 text-amber-400" />
+                            <span className="text-xs font-black text-amber-300 tabular-nums">
+                                {selectedProductIds.size} seleccionados
+                            </span>
+                        </div>
+
+                        <button
+                            type="button"
+                            onClick={handleSelectAllFiltered}
+                            className="px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 rounded-xl text-xs font-bold text-amber-300 transition-colors flex items-center gap-1.5"
+                            title="Selecciona todos los productos que coinciden con el filtro o búsqueda actual (acumulativo)"
+                        >
+                            <CheckCheck className="h-3.5 w-3.5" />
+                            <span>Seleccionar todos (filtrados {filteredCount})</span>
+                        </button>
+
+                        {selectedProductIds.size > 0 && (
+                            <button
+                                type="button"
+                                onClick={handleDeselectAll}
+                                className="px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 rounded-xl text-xs font-bold text-rose-400 transition-colors flex items-center gap-1.5"
+                                title="Limpiar todos los productos seleccionados"
+                            >
+                                <X className="h-3.5 w-3.5" />
+                                <span>Deseleccionar todo</span>
+                            </button>
+                        )}
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                        {selectedProductIds.size > 0 && handleExportSelectedPDF && (
+                            <button
+                                type="button"
+                                onClick={handleExportSelectedPDF}
+                                className="px-3 py-1.5 bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/30 rounded-xl text-xs font-black text-blue-400 uppercase tracking-wider transition-colors flex items-center gap-1.5"
+                                title="Exportar únicamente los productos seleccionados a PDF"
+                            >
+                                <FileText className="h-3.5 w-3.5" />
+                                <span>Exportar Seleccionados ({selectedProductIds.size})</span>
+                            </button>
+                        )}
+                        <button
+                            type="button"
+                            onClick={() => setIsSelectionMode && setIsSelectionMode(false)}
+                            className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-white/5 transition-colors"
+                            title="Cerrar modo selección"
+                        >
+                            <X className="h-4 w-4" />
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

@@ -10,9 +10,40 @@ export const useProductosColumns = ({
     handleSave,
     handleEditStart,
     categorias = [],
-    subcategoriasPorCategoria = {}
+    subcategoriasPorCategoria = {},
+    isSelectionMode = false,
+    selectedProductIds = new Set(),
+    toggleSelectProduct,
+    toggleSelectVisible,
+    allVisibleSelected = false
 }) => {
     return useMemo(() => [
+        ...(isSelectionMode ? [{
+            key: 'selection',
+            label: (
+                <div className="flex items-center justify-center">
+                    <input
+                        type="checkbox"
+                        aria-label="Seleccionar visibles en página"
+                        checked={allVisibleSelected}
+                        onChange={toggleSelectVisible}
+                        className="w-4 h-4 rounded bg-slate-800 border-white/20 text-amber-500 focus:ring-amber-500 focus:ring-offset-0 cursor-pointer transition-colors"
+                    />
+                </div>
+            ),
+            width: 'w-10',
+            render: (_, row) => (
+                <div className="flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+                    <input
+                        type="checkbox"
+                        aria-label={`Seleccionar producto ${row.nombre}`}
+                        checked={selectedProductIds.has(row.producto_id)}
+                        onChange={() => toggleSelectProduct && toggleSelectProduct(row.producto_id)}
+                        className="w-4 h-4 rounded bg-slate-800 border-white/20 text-amber-500 focus:ring-amber-500 focus:ring-offset-0 cursor-pointer transition-colors"
+                    />
+                </div>
+            )
+        }] : []),
         {
             key: 'nombre',
             label: 'Producto',
@@ -232,5 +263,5 @@ export const useProductosColumns = ({
                 </div>
             )
         }
-    ], [editingId, editForm, isSaving, handleSave, handleEditStart, setEditForm, categorias, subcategoriasPorCategoria])
+    ], [editingId, editForm, isSaving, handleSave, handleEditStart, setEditForm, categorias, subcategoriasPorCategoria, isSelectionMode, selectedProductIds, toggleSelectProduct, toggleSelectVisible, allVisibleSelected])
 }

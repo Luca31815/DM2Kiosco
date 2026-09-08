@@ -33,6 +33,10 @@ const ProductosView = () => {
     const [isSynonymModalOpen, setIsSynonymModalOpen] = useState(false)
     const { categorias, subcategoriasPorCategoria, loading: loadingCategorias } = useCategorias()
 
+    // Multi-selection state (persists across search term changes)
+    const [isSelectionMode, setIsSelectionMode] = useState(false)
+    const [selectedProductIds, setSelectedProductIds] = useState(() => new Set())
+
     const [selectedCategoria, setSelectedCategoria] = useState('')
     const [selectedSubcategoria, setSelectedSubcategoria] = useState('')
 
@@ -249,6 +253,104 @@ const ProductosView = () => {
     }
 
 
+    // Multi-selection handlers
+    const visibleProductIds = useMemo(() => {
+        return productsWithPrediction.map(p => p.producto_id)
+    }, [productsWithPrediction])
+
+    const allVisibleSelected = useMemo(() => {
+        if (visibleProductIds.length === 0) return false
+        return visibleProductIds.every(id => selectedProductIds.has(id))
+    }, [visibleProductIds, selectedProductIds])
+
+    const toggleSelectProduct = useCallback((id) => {
+        setSelectedProductIds(prev => {
+            const next = new Set(prev)
+            if (next.has(id)) {
+                next.delete(id)
+            } else {
+                next.add(id)
+            }
+            return next
+        })
+    }, [])
+
+    const toggleSelectVisible = useCallback(() => {
+        setSelectedProductIds(prev => {
+            const next = new Set(prev)
+            if (allVisibleSelected) {
+                visibleProductIds.forEach(id => next.delete(id))
+            } else {
+                visibleProductIds.forEach(id => next.add(id))
+            }
+            return next
+        })
+    }, [allVisibleSelected, visibleProductIds])
+
+    // Select all products matching the current search term/filter (cumulative across searches)
+    const handleSelectAllFiltered = useCallback(async () => {
+        const loadingToast = toast.loading('Seleccionando productos filtrados...')
+        try {
+            const result = await api.getProductos({
+                filterColumn: 'nombre',
+                filterValue: filterValue,
+                filterCategoria: selectedCategoria,
+                filterSubcategoria: selectedSubcategoria,
+                pageSize: 2000,
+                page: 1
+            })
+            const items = result?.data || productsWithPrediction || []
+            if (items.length === 0) {
+                toast.error('No se encontraron productos para seleccionar', { id: loadingToast })
+                return
+            }
+            setSelectedProductIds(prev => {
+                const next = new Set(prev)
+                items.forEach(p => {
+                    if (p.producto_id) next.add(p.producto_id)
+                })
+                return next
+            })
+            toast.success(`${items.length} productos agregados a la selección`, { id: loadingToast })
+        } catch (err) {
+            console.error('Error selecting all filtered:', err)
+            setSelectedProductIds(prev => {
+                const next = new Set(prev)
+                productsWithPrediction.forEach(p => {
+                    if (p.producto_id) next.add(p.producto_id)
+                })
+                return next
+            })
+            toast.success('Productos visibles agregados a la selección', { id: loadingToast })
+        }
+    }, [filterValue, selectedCategoria, selectedSubcategoria, productsWithPrediction])
+
+    const handleDeselectAll = useCallback(() => {
+        setSelectedProductIds(new Set())
+        toast.success('Selección limpiada')
+    }, [])
+
+    const handleExportSelectedPDF = useCallback(async () => {
+        if (selectedProductIds.size === 0) {
+            toast.error('No hay productos seleccionados para exportar')
+            return
+        }
+        const loadingToast = toast.loading(`Generando PDF de ${selectedProductIds.size} productos seleccionados...`)
+        try {
+            const ids = Array.from(selectedProductIds)
+            const products = await api.getProductosPorIds(ids)
+            if (products && products.length > 0) {
+                generateProductsPDF(products)
+                toast.success(`PDF generado con ${products.length} productos`, { id: loadingToast })
+            } else {
+                toast.error('No se pudieron obtener los productos seleccionados', { id: loadingToast })
+            }
+        } catch (err) {
+            console.error('Error exportando PDF seleccionados:', err)
+            toast.error('Error al generar PDF', { id: loadingToast })
+        }
+    }, [selectedProductIds])
+
     const columns = useProductosColumns({
         editingId,
         editForm,
@@ -257,7 +359,12 @@ const ProductosView = () => {
         handleSave,
         handleEditStart,
         categorias,
-        subcategoriasPorCategoria
+        subcategoriasPorCategoria,
+        isSelectionMode,
+        selectedProductIds,
+        toggleSelectProduct,
+        toggleSelectVisible,
+        allVisibleSelected
     })
 
     const handleSort = (column) => {
@@ -292,6 +399,13 @@ const ProductosView = () => {
                 categorias={categorias}
                 subcategoriasPorCategoria={subcategoriasPorCategoria}
                 loadingCategorias={loadingCategorias}
+                isSelectionMode={isSelectionMode}
+                setIsSelectionMode={setIsSelectionMode}
+                selectedProductIds={selectedProductIds}
+                handleSelectAllFiltered={handleSelectAllFiltered}
+                handleDeselectAll={handleDeselectAll}
+                handleExportSelectedPDF={handleExportSelectedPDF}
+                filteredCount={count || productsWithPrediction.length}
             />
 
             <DataTable
