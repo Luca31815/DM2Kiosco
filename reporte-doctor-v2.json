@@ -37,7 +37,7 @@
         "reanimatedVersion": null,
         "isPreES2023Target": false,
         "isStaticExport": false,
-        "sourceFileCount": 85
+        "sourceFileCount": 90
       },
       "diagnostics": [
         {
@@ -58,6 +58,47 @@
           ]
         },
         {
+          "filePath": "src/components/ProductHistoryModal.jsx",
+          "plugin": "react-doctor",
+          "rule": "prefer-module-scope-pure-function",
+          "severity": "warning",
+          "title": "Pure function rebuilt every render",
+          "message": "`detectOperationType` inside `ProductHistoryModal` uses no local state but is rebuilt on every render, so it wastes work & breaks memoized children. Move it to the top of the file, outside the component.",
+          "help": "Move the function above the component, at the top of the file. It doesn't use local state, so rebuilding it each update is wasted work.",
+          "line": 63,
+          "column": 33,
+          "offset": 1817,
+          "length": 563,
+          "endLine": 69,
+          "category": "Maintainability",
+          "id": "src/components/ProductHistoryModal.jsx::63:33::react-doctor/prefer-module-scope-pure-function::e9153edef383783886aa13624ec638ff3d10491e7107e0b94510699d394f3ca1",
+          "normalizedFilePath": "src/components/ProductHistoryModal.jsx",
+          "tags": [
+            "test-noise"
+          ]
+        },
+        {
+          "filePath": "src/components/ProductHistoryModal.jsx",
+          "plugin": "react-doctor",
+          "rule": "control-has-associated-label",
+          "severity": "warning",
+          "title": "Control missing accessible label",
+          "message": "Blind users can't tell what this control does because screen readers find no label, so add visible text, `aria-label`, or `aria-labelledby`.",
+          "help": "Give every interactive control a label screen readers can read.",
+          "line": 113,
+          "column": 29,
+          "offset": 5056,
+          "length": 346,
+          "endLine": 117,
+          "category": "Accessibility",
+          "matchByOccurrence": true,
+          "id": "src/components/ProductHistoryModal.jsx::113:29::react-doctor/control-has-associated-label::f26bf2b7b0ccaf69ae1baa84626ffc342fc5d1fe5fde5bd6792f6981921d7c55",
+          "normalizedFilePath": "src/components/ProductHistoryModal.jsx",
+          "tags": [
+            "react-jsx-only"
+          ]
+        },
+        {
           "filePath": "src/services/api.js",
           "plugin": "react-doctor",
           "rule": "js-flatmap-filter",
@@ -67,7 +108,7 @@
           "help": "Use `.flatMap(item => condition ? [value] : [])` to change and drop items in one pass, instead of building a throwaway array in between",
           "line": 619,
           "column": 23,
-          "offset": 22734,
+          "offset": 22720,
           "length": 49,
           "endLine": 619,
           "category": "Performance",
@@ -87,7 +128,7 @@
           "help": "Use `.flatMap(item => condition ? [value] : [])` to change and drop items in one pass, instead of building a throwaway array in between",
           "line": 660,
           "column": 22,
-          "offset": 23964,
+          "offset": 23909,
           "length": 47,
           "endLine": 660,
           "category": "Performance",
@@ -114,6 +155,27 @@
           "id": "src/utils/categoryCategorizer.js::274:24::react-doctor/js-combine-iterations::86f8632615fdfb3adc9efe484c1e1ab781c7771048e0b9f5c2d8b6920d63cb33",
           "normalizedFilePath": "src/utils/categoryCategorizer.js",
           "tags": [
+            "test-noise"
+          ]
+        },
+        {
+          "filePath": "src/views/HistorialView.jsx",
+          "plugin": "react-doctor",
+          "rule": "no-giant-component",
+          "severity": "warning",
+          "title": "Large component is hard to read and change",
+          "message": "Component \"HistorialView\" is over 300 lines long, which is hard to read & change. Split it into a few smaller components.",
+          "help": "Pull each section into its own component so the parent is easier to read, test, and change.",
+          "line": 127,
+          "column": 7,
+          "offset": 6058,
+          "length": 13,
+          "endLine": 127,
+          "category": "Maintainability",
+          "id": "src/views/HistorialView.jsx::127:7::react-doctor/no-giant-component::dda92af81324f67cf01cc6a63aace1b7f594d313a37ab27eeb0d5ba54855ac38",
+          "normalizedFilePath": "src/views/HistorialView.jsx",
+          "tags": [
+            "react-jsx-only",
             "test-noise"
           ]
         },
@@ -484,6 +546,236 @@
           "tags": []
         },
         {
+          "filePath": "src/views/TriageProductosView.jsx",
+          "plugin": "react-doctor",
+          "rule": "no-giant-component",
+          "severity": "warning",
+          "title": "Large component is hard to read and change",
+          "message": "Component \"TriageProductosView\" is over 300 lines long, which is hard to read & change. Split it into a few smaller components.",
+          "help": "Pull each section into its own component so the parent is easier to read, test, and change.",
+          "line": 33,
+          "column": 25,
+          "offset": 828,
+          "length": 19,
+          "endLine": 33,
+          "category": "Maintainability",
+          "id": "src/views/TriageProductosView.jsx::33:25::react-doctor/no-giant-component::301ed270b5ce04b04b0959da34b05066c5d4a0b182d542f2a87d88b4dc0f4dc4",
+          "normalizedFilePath": "src/views/TriageProductosView.jsx",
+          "tags": [
+            "react-jsx-only",
+            "test-noise"
+          ]
+        },
+        {
+          "filePath": "src/views/TriageProductosView.jsx",
+          "plugin": "react-doctor",
+          "rule": "js-combine-iterations",
+          "severity": "warning",
+          "title": "Chained array iterations",
+          "message": "This loops over your list twice because .filter().map() makes two passes, so do it in one pass with .reduce() or a for...of loop",
+          "help": "Combine `.map().filter()` style chains into one pass with `.reduce()` or a `for...of` loop, so you only loop over the list once",
+          "line": 196,
+          "column": 31,
+          "offset": 6691,
+          "length": 315,
+          "endLine": 202,
+          "category": "Performance",
+          "id": "src/views/TriageProductosView.jsx::196:31::react-doctor/js-combine-iterations::86f8632615fdfb3adc9efe484c1e1ab781c7771048e0b9f5c2d8b6920d63cb33",
+          "normalizedFilePath": "src/views/TriageProductosView.jsx",
+          "tags": [
+            "test-noise"
+          ]
+        },
+        {
+          "filePath": "src/views/TriageProductosView.jsx",
+          "plugin": "react-doctor",
+          "rule": "control-has-associated-label",
+          "severity": "warning",
+          "title": "Control missing accessible label",
+          "message": "Blind users can't tell what this control does because screen readers find no label, so add visible text, `aria-label`, or `aria-labelledby`.",
+          "help": "Give every interactive control a label screen readers can read.",
+          "line": 416,
+          "column": 29,
+          "offset": 20226,
+          "length": 393,
+          "endLine": 420,
+          "category": "Accessibility",
+          "matchByOccurrence": true,
+          "id": "src/views/TriageProductosView.jsx::416:29::react-doctor/control-has-associated-label::f26bf2b7b0ccaf69ae1baa84626ffc342fc5d1fe5fde5bd6792f6981921d7c55",
+          "normalizedFilePath": "src/views/TriageProductosView.jsx",
+          "tags": [
+            "react-jsx-only"
+          ]
+        },
+        {
+          "filePath": "src/views/TriageProductosView.jsx",
+          "plugin": "react-doctor",
+          "rule": "control-has-associated-label",
+          "severity": "warning",
+          "title": "Control missing accessible label",
+          "message": "Blind users can't tell what this control does because screen readers find no label, so add visible text, `aria-label`, or `aria-labelledby`.",
+          "help": "Give every interactive control a label screen readers can read.",
+          "line": 526,
+          "column": 53,
+          "offset": 28680,
+          "length": 524,
+          "endLine": 530,
+          "category": "Accessibility",
+          "matchByOccurrence": true,
+          "id": "src/views/TriageProductosView.jsx::526:53::react-doctor/control-has-associated-label::f26bf2b7b0ccaf69ae1baa84626ffc342fc5d1fe5fde5bd6792f6981921d7c55",
+          "normalizedFilePath": "src/views/TriageProductosView.jsx",
+          "tags": [
+            "react-jsx-only"
+          ]
+        },
+        {
+          "filePath": "src/views/TriageProductosView.jsx",
+          "plugin": "react-doctor",
+          "rule": "control-has-associated-label",
+          "severity": "warning",
+          "title": "Control missing accessible label",
+          "message": "Blind users can't tell what this control does because screen readers find no label, so add visible text, `aria-label`, or `aria-labelledby`.",
+          "help": "Give every interactive control a label screen readers can read.",
+          "line": 543,
+          "column": 53,
+          "offset": 30177,
+          "length": 659,
+          "endLine": 548,
+          "category": "Accessibility",
+          "matchByOccurrence": true,
+          "id": "src/views/TriageProductosView.jsx::543:53::react-doctor/control-has-associated-label::f26bf2b7b0ccaf69ae1baa84626ffc342fc5d1fe5fde5bd6792f6981921d7c55",
+          "normalizedFilePath": "src/views/TriageProductosView.jsx",
+          "tags": [
+            "react-jsx-only"
+          ]
+        },
+        {
+          "filePath": "src/views/historial/HistorialEditModal.jsx",
+          "plugin": "react-doctor",
+          "rule": "no-adjust-state-on-prop-change",
+          "severity": "warning",
+          "title": "State adjusted after a prop changes",
+          "message": "This effect adjusts state after a prop changes, so users briefly see the stale value.",
+          "help": "Remove the adjustment effect by deriving values during render, resetting the component with a key, or updating related state in the event that changes the prop. Avoid tracking the previous prop in more state, which preserves the duplication. See https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes",
+          "line": 43,
+          "column": 17,
+          "offset": 1776,
+          "length": 17,
+          "endLine": 43,
+          "category": "Bugs",
+          "fixGroupId": "e463c84f56cf4e32",
+          "id": "src/views/historial/HistorialEditModal.jsx::43:17::react-doctor/no-adjust-state-on-prop-change::b8010c4751223dfc1470083cfca98dd8d2ae8ac73b6b1a537e68945671d23938",
+          "normalizedFilePath": "src/views/historial/HistorialEditModal.jsx",
+          "tags": [
+            "test-noise"
+          ]
+        },
+        {
+          "filePath": "src/views/historial/HistorialEditModal.jsx",
+          "plugin": "react-doctor",
+          "rule": "no-adjust-state-on-prop-change",
+          "severity": "warning",
+          "title": "State adjusted after a prop changes",
+          "message": "This effect adjusts state after a prop changes, so users briefly see the stale value.",
+          "help": "Remove the adjustment effect by deriving values during render, resetting the component with a key, or updating related state in the event that changes the prop. Avoid tracking the previous prop in more state, which preserves the duplication. See https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes",
+          "line": 45,
+          "column": 17,
+          "offset": 1831,
+          "length": 21,
+          "endLine": 45,
+          "category": "Bugs",
+          "fixGroupId": "e463c84f56cf4e32",
+          "id": "src/views/historial/HistorialEditModal.jsx::45:17::react-doctor/no-adjust-state-on-prop-change::b8010c4751223dfc1470083cfca98dd8d2ae8ac73b6b1a537e68945671d23938",
+          "normalizedFilePath": "src/views/historial/HistorialEditModal.jsx",
+          "tags": [
+            "test-noise"
+          ]
+        },
+        {
+          "filePath": "src/views/historial/HistorialEditModal.jsx",
+          "plugin": "react-doctor",
+          "rule": "control-has-associated-label",
+          "severity": "warning",
+          "title": "Control missing accessible label",
+          "message": "Blind users can't tell what this control does because screen readers find no label, so add visible text, `aria-label`, or `aria-labelledby`.",
+          "help": "Give every interactive control a label screen readers can read.",
+          "line": 117,
+          "column": 29,
+          "offset": 5516,
+          "length": 263,
+          "endLine": 121,
+          "category": "Accessibility",
+          "matchByOccurrence": true,
+          "id": "src/views/historial/HistorialEditModal.jsx::117:29::react-doctor/control-has-associated-label::f26bf2b7b0ccaf69ae1baa84626ffc342fc5d1fe5fde5bd6792f6981921d7c55",
+          "normalizedFilePath": "src/views/historial/HistorialEditModal.jsx",
+          "tags": [
+            "react-jsx-only"
+          ]
+        },
+        {
+          "filePath": "src/views/historial/HistorialEditModal.jsx",
+          "plugin": "react-doctor",
+          "rule": "label-has-associated-control",
+          "severity": "warning",
+          "title": "Label missing associated control",
+          "message": "Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it.",
+          "help": "Tie every label to a control with `htmlFor`, or by nesting the input.",
+          "line": 158,
+          "column": 33,
+          "offset": 8140,
+          "length": 87,
+          "endLine": 158,
+          "category": "Accessibility",
+          "matchByOccurrence": true,
+          "id": "src/views/historial/HistorialEditModal.jsx::158:33::react-doctor/label-has-associated-control::bd02bb7d17131af17130278c262805df4e8f9fc17abee3065e11951a48a41bdc",
+          "normalizedFilePath": "src/views/historial/HistorialEditModal.jsx",
+          "tags": [
+            "react-jsx-only"
+          ]
+        },
+        {
+          "filePath": "src/views/historial/HistorialEditModal.jsx",
+          "plugin": "react-doctor",
+          "rule": "label-has-associated-control",
+          "severity": "warning",
+          "title": "Label missing associated control",
+          "message": "Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it.",
+          "help": "Tie every label to a control with `htmlFor`, or by nesting the input.",
+          "line": 209,
+          "column": 33,
+          "offset": 11537,
+          "length": 87,
+          "endLine": 209,
+          "category": "Accessibility",
+          "matchByOccurrence": true,
+          "id": "src/views/historial/HistorialEditModal.jsx::209:33::react-doctor/label-has-associated-control::bd02bb7d17131af17130278c262805df4e8f9fc17abee3065e11951a48a41bdc",
+          "normalizedFilePath": "src/views/historial/HistorialEditModal.jsx",
+          "tags": [
+            "react-jsx-only"
+          ]
+        },
+        {
+          "filePath": "src/views/historial/HistorialEditModal.jsx",
+          "plugin": "react-doctor",
+          "rule": "label-has-associated-control",
+          "severity": "warning",
+          "title": "Label missing associated control",
+          "message": "Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it.",
+          "help": "Tie every label to a control with `htmlFor`, or by nesting the input.",
+          "line": 236,
+          "column": 33,
+          "offset": 13330,
+          "length": 87,
+          "endLine": 236,
+          "category": "Accessibility",
+          "matchByOccurrence": true,
+          "id": "src/views/historial/HistorialEditModal.jsx::236:33::react-doctor/label-has-associated-control::bd02bb7d17131af17130278c262805df4e8f9fc17abee3065e11951a48a41bdc",
+          "normalizedFilePath": "src/views/historial/HistorialEditModal.jsx",
+          "tags": [
+            "react-jsx-only"
+          ]
+        },
+        {
           "filePath": "src/views/productos/ProductosHeaderBar.jsx",
           "plugin": "react-doctor",
           "rule": "control-has-associated-label",
@@ -582,6 +874,7 @@
         "src/components/LoginModal.jsx",
         "src/components/ProductAutocomplete.jsx",
         "src/components/ProductDetailExpansion.jsx",
+        "src/components/ProductHistoryModal.jsx",
         "src/components/Sidebar.jsx",
         "src/components/SynonymManagerModal.jsx",
         "src/components/SynonymTable.jsx",
@@ -605,6 +898,7 @@
         "src/utils/categoryCategorizer.js",
         "src/utils/duplicateRules.js",
         "src/utils/pdfGenerator.js",
+        "src/utils/triageClassifier.js",
         "src/views/AnalisisHorariosView.jsx",
         "src/views/CarteraView.jsx",
         "src/views/ComprasView.jsx",
@@ -622,6 +916,7 @@
         "src/views/ReservasView.jsx",
         "src/views/RetirosView.jsx",
         "src/views/SystemView.jsx",
+        "src/views/TriageProductosView.jsx",
         "src/views/VentasView.jsx",
         "src/views/analisis-horarios/AnalisisHorariosHeader.jsx",
         "src/views/cartera/CarteraCronAuditPanel.jsx",
@@ -637,6 +932,7 @@
         "src/views/duplicados/DuplicadosCards.jsx",
         "src/views/duplicados/DuplicadosHeaderBar.jsx",
         "src/views/duplicados/aiScanService.js",
+        "src/views/historial/HistorialEditModal.jsx",
         "src/views/home/HomeRightColumn.jsx",
         "src/views/horarios/HitosCardsGrid.jsx",
         "src/views/horarios/HitosTimelineCell.jsx",
@@ -646,6 +942,7 @@
         "src/views/proveedores/ProveedoresHistoryChart.jsx",
         "src/views/proveedores/ProveedoresMergeModal.jsx",
         "src/views/reportes/ExpandedPeriodPanel.jsx",
+        "src/views/reportes/PeriodCategoryPerformance.jsx",
         "src/views/reportes/PeriodProducts.jsx",
         "src/views/reportes/ProductPivotTable.jsx",
         "src/views/reportes/ReportesChartsPanel.jsx",
@@ -657,10 +954,10 @@
         "tailwind.config.js",
         "vite.config.js"
       ],
-      "analyzedFileCount": 85,
+      "analyzedFileCount": 90,
       "complete": true,
-      "scannedFileCount": 85,
-      "elapsedMilliseconds": 20349.4973
+      "scannedFileCount": 90,
+      "elapsedMilliseconds": 39717.545699999995
     }
   ],
   "diagnostics": [
@@ -682,6 +979,47 @@
       ]
     },
     {
+      "filePath": "src/components/ProductHistoryModal.jsx",
+      "plugin": "react-doctor",
+      "rule": "prefer-module-scope-pure-function",
+      "severity": "warning",
+      "title": "Pure function rebuilt every render",
+      "message": "`detectOperationType` inside `ProductHistoryModal` uses no local state but is rebuilt on every render, so it wastes work & breaks memoized children. Move it to the top of the file, outside the component.",
+      "help": "Move the function above the component, at the top of the file. It doesn't use local state, so rebuilding it each update is wasted work.",
+      "line": 63,
+      "column": 33,
+      "offset": 1817,
+      "length": 563,
+      "endLine": 69,
+      "category": "Maintainability",
+      "id": "src/components/ProductHistoryModal.jsx::63:33::react-doctor/prefer-module-scope-pure-function::e9153edef383783886aa13624ec638ff3d10491e7107e0b94510699d394f3ca1",
+      "normalizedFilePath": "src/components/ProductHistoryModal.jsx",
+      "tags": [
+        "test-noise"
+      ]
+    },
+    {
+      "filePath": "src/components/ProductHistoryModal.jsx",
+      "plugin": "react-doctor",
+      "rule": "control-has-associated-label",
+      "severity": "warning",
+      "title": "Control missing accessible label",
+      "message": "Blind users can't tell what this control does because screen readers find no label, so add visible text, `aria-label`, or `aria-labelledby`.",
+      "help": "Give every interactive control a label screen readers can read.",
+      "line": 113,
+      "column": 29,
+      "offset": 5056,
+      "length": 346,
+      "endLine": 117,
+      "category": "Accessibility",
+      "matchByOccurrence": true,
+      "id": "src/components/ProductHistoryModal.jsx::113:29::react-doctor/control-has-associated-label::f26bf2b7b0ccaf69ae1baa84626ffc342fc5d1fe5fde5bd6792f6981921d7c55",
+      "normalizedFilePath": "src/components/ProductHistoryModal.jsx",
+      "tags": [
+        "react-jsx-only"
+      ]
+    },
+    {
       "filePath": "src/services/api.js",
       "plugin": "react-doctor",
       "rule": "js-flatmap-filter",
@@ -691,7 +1029,7 @@
       "help": "Use `.flatMap(item => condition ? [value] : [])` to change and drop items in one pass, instead of building a throwaway array in between",
       "line": 619,
       "column": 23,
-      "offset": 22734,
+      "offset": 22720,
       "length": 49,
       "endLine": 619,
       "category": "Performance",
@@ -711,7 +1049,7 @@
       "help": "Use `.flatMap(item => condition ? [value] : [])` to change and drop items in one pass, instead of building a throwaway array in between",
       "line": 660,
       "column": 22,
-      "offset": 23964,
+      "offset": 23909,
       "length": 47,
       "endLine": 660,
       "category": "Performance",
@@ -738,6 +1076,27 @@
       "id": "src/utils/categoryCategorizer.js::274:24::react-doctor/js-combine-iterations::86f8632615fdfb3adc9efe484c1e1ab781c7771048e0b9f5c2d8b6920d63cb33",
       "normalizedFilePath": "src/utils/categoryCategorizer.js",
       "tags": [
+        "test-noise"
+      ]
+    },
+    {
+      "filePath": "src/views/HistorialView.jsx",
+      "plugin": "react-doctor",
+      "rule": "no-giant-component",
+      "severity": "warning",
+      "title": "Large component is hard to read and change",
+      "message": "Component \"HistorialView\" is over 300 lines long, which is hard to read & change. Split it into a few smaller components.",
+      "help": "Pull each section into its own component so the parent is easier to read, test, and change.",
+      "line": 127,
+      "column": 7,
+      "offset": 6058,
+      "length": 13,
+      "endLine": 127,
+      "category": "Maintainability",
+      "id": "src/views/HistorialView.jsx::127:7::react-doctor/no-giant-component::dda92af81324f67cf01cc6a63aace1b7f594d313a37ab27eeb0d5ba54855ac38",
+      "normalizedFilePath": "src/views/HistorialView.jsx",
+      "tags": [
+        "react-jsx-only",
         "test-noise"
       ]
     },
@@ -1108,6 +1467,236 @@
       "tags": []
     },
     {
+      "filePath": "src/views/TriageProductosView.jsx",
+      "plugin": "react-doctor",
+      "rule": "no-giant-component",
+      "severity": "warning",
+      "title": "Large component is hard to read and change",
+      "message": "Component \"TriageProductosView\" is over 300 lines long, which is hard to read & change. Split it into a few smaller components.",
+      "help": "Pull each section into its own component so the parent is easier to read, test, and change.",
+      "line": 33,
+      "column": 25,
+      "offset": 828,
+      "length": 19,
+      "endLine": 33,
+      "category": "Maintainability",
+      "id": "src/views/TriageProductosView.jsx::33:25::react-doctor/no-giant-component::301ed270b5ce04b04b0959da34b05066c5d4a0b182d542f2a87d88b4dc0f4dc4",
+      "normalizedFilePath": "src/views/TriageProductosView.jsx",
+      "tags": [
+        "react-jsx-only",
+        "test-noise"
+      ]
+    },
+    {
+      "filePath": "src/views/TriageProductosView.jsx",
+      "plugin": "react-doctor",
+      "rule": "js-combine-iterations",
+      "severity": "warning",
+      "title": "Chained array iterations",
+      "message": "This loops over your list twice because .filter().map() makes two passes, so do it in one pass with .reduce() or a for...of loop",
+      "help": "Combine `.map().filter()` style chains into one pass with `.reduce()` or a `for...of` loop, so you only loop over the list once",
+      "line": 196,
+      "column": 31,
+      "offset": 6691,
+      "length": 315,
+      "endLine": 202,
+      "category": "Performance",
+      "id": "src/views/TriageProductosView.jsx::196:31::react-doctor/js-combine-iterations::86f8632615fdfb3adc9efe484c1e1ab781c7771048e0b9f5c2d8b6920d63cb33",
+      "normalizedFilePath": "src/views/TriageProductosView.jsx",
+      "tags": [
+        "test-noise"
+      ]
+    },
+    {
+      "filePath": "src/views/TriageProductosView.jsx",
+      "plugin": "react-doctor",
+      "rule": "control-has-associated-label",
+      "severity": "warning",
+      "title": "Control missing accessible label",
+      "message": "Blind users can't tell what this control does because screen readers find no label, so add visible text, `aria-label`, or `aria-labelledby`.",
+      "help": "Give every interactive control a label screen readers can read.",
+      "line": 416,
+      "column": 29,
+      "offset": 20226,
+      "length": 393,
+      "endLine": 420,
+      "category": "Accessibility",
+      "matchByOccurrence": true,
+      "id": "src/views/TriageProductosView.jsx::416:29::react-doctor/control-has-associated-label::f26bf2b7b0ccaf69ae1baa84626ffc342fc5d1fe5fde5bd6792f6981921d7c55",
+      "normalizedFilePath": "src/views/TriageProductosView.jsx",
+      "tags": [
+        "react-jsx-only"
+      ]
+    },
+    {
+      "filePath": "src/views/TriageProductosView.jsx",
+      "plugin": "react-doctor",
+      "rule": "control-has-associated-label",
+      "severity": "warning",
+      "title": "Control missing accessible label",
+      "message": "Blind users can't tell what this control does because screen readers find no label, so add visible text, `aria-label`, or `aria-labelledby`.",
+      "help": "Give every interactive control a label screen readers can read.",
+      "line": 526,
+      "column": 53,
+      "offset": 28680,
+      "length": 524,
+      "endLine": 530,
+      "category": "Accessibility",
+      "matchByOccurrence": true,
+      "id": "src/views/TriageProductosView.jsx::526:53::react-doctor/control-has-associated-label::f26bf2b7b0ccaf69ae1baa84626ffc342fc5d1fe5fde5bd6792f6981921d7c55",
+      "normalizedFilePath": "src/views/TriageProductosView.jsx",
+      "tags": [
+        "react-jsx-only"
+      ]
+    },
+    {
+      "filePath": "src/views/TriageProductosView.jsx",
+      "plugin": "react-doctor",
+      "rule": "control-has-associated-label",
+      "severity": "warning",
+      "title": "Control missing accessible label",
+      "message": "Blind users can't tell what this control does because screen readers find no label, so add visible text, `aria-label`, or `aria-labelledby`.",
+      "help": "Give every interactive control a label screen readers can read.",
+      "line": 543,
+      "column": 53,
+      "offset": 30177,
+      "length": 659,
+      "endLine": 548,
+      "category": "Accessibility",
+      "matchByOccurrence": true,
+      "id": "src/views/TriageProductosView.jsx::543:53::react-doctor/control-has-associated-label::f26bf2b7b0ccaf69ae1baa84626ffc342fc5d1fe5fde5bd6792f6981921d7c55",
+      "normalizedFilePath": "src/views/TriageProductosView.jsx",
+      "tags": [
+        "react-jsx-only"
+      ]
+    },
+    {
+      "filePath": "src/views/historial/HistorialEditModal.jsx",
+      "plugin": "react-doctor",
+      "rule": "no-adjust-state-on-prop-change",
+      "severity": "warning",
+      "title": "State adjusted after a prop changes",
+      "message": "This effect adjusts state after a prop changes, so users briefly see the stale value.",
+      "help": "Remove the adjustment effect by deriving values during render, resetting the component with a key, or updating related state in the event that changes the prop. Avoid tracking the previous prop in more state, which preserves the duplication. See https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes",
+      "line": 43,
+      "column": 17,
+      "offset": 1776,
+      "length": 17,
+      "endLine": 43,
+      "category": "Bugs",
+      "fixGroupId": "e463c84f56cf4e32",
+      "id": "src/views/historial/HistorialEditModal.jsx::43:17::react-doctor/no-adjust-state-on-prop-change::b8010c4751223dfc1470083cfca98dd8d2ae8ac73b6b1a537e68945671d23938",
+      "normalizedFilePath": "src/views/historial/HistorialEditModal.jsx",
+      "tags": [
+        "test-noise"
+      ]
+    },
+    {
+      "filePath": "src/views/historial/HistorialEditModal.jsx",
+      "plugin": "react-doctor",
+      "rule": "no-adjust-state-on-prop-change",
+      "severity": "warning",
+      "title": "State adjusted after a prop changes",
+      "message": "This effect adjusts state after a prop changes, so users briefly see the stale value.",
+      "help": "Remove the adjustment effect by deriving values during render, resetting the component with a key, or updating related state in the event that changes the prop. Avoid tracking the previous prop in more state, which preserves the duplication. See https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes",
+      "line": 45,
+      "column": 17,
+      "offset": 1831,
+      "length": 21,
+      "endLine": 45,
+      "category": "Bugs",
+      "fixGroupId": "e463c84f56cf4e32",
+      "id": "src/views/historial/HistorialEditModal.jsx::45:17::react-doctor/no-adjust-state-on-prop-change::b8010c4751223dfc1470083cfca98dd8d2ae8ac73b6b1a537e68945671d23938",
+      "normalizedFilePath": "src/views/historial/HistorialEditModal.jsx",
+      "tags": [
+        "test-noise"
+      ]
+    },
+    {
+      "filePath": "src/views/historial/HistorialEditModal.jsx",
+      "plugin": "react-doctor",
+      "rule": "control-has-associated-label",
+      "severity": "warning",
+      "title": "Control missing accessible label",
+      "message": "Blind users can't tell what this control does because screen readers find no label, so add visible text, `aria-label`, or `aria-labelledby`.",
+      "help": "Give every interactive control a label screen readers can read.",
+      "line": 117,
+      "column": 29,
+      "offset": 5516,
+      "length": 263,
+      "endLine": 121,
+      "category": "Accessibility",
+      "matchByOccurrence": true,
+      "id": "src/views/historial/HistorialEditModal.jsx::117:29::react-doctor/control-has-associated-label::f26bf2b7b0ccaf69ae1baa84626ffc342fc5d1fe5fde5bd6792f6981921d7c55",
+      "normalizedFilePath": "src/views/historial/HistorialEditModal.jsx",
+      "tags": [
+        "react-jsx-only"
+      ]
+    },
+    {
+      "filePath": "src/views/historial/HistorialEditModal.jsx",
+      "plugin": "react-doctor",
+      "rule": "label-has-associated-control",
+      "severity": "warning",
+      "title": "Label missing associated control",
+      "message": "Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it.",
+      "help": "Tie every label to a control with `htmlFor`, or by nesting the input.",
+      "line": 158,
+      "column": 33,
+      "offset": 8140,
+      "length": 87,
+      "endLine": 158,
+      "category": "Accessibility",
+      "matchByOccurrence": true,
+      "id": "src/views/historial/HistorialEditModal.jsx::158:33::react-doctor/label-has-associated-control::bd02bb7d17131af17130278c262805df4e8f9fc17abee3065e11951a48a41bdc",
+      "normalizedFilePath": "src/views/historial/HistorialEditModal.jsx",
+      "tags": [
+        "react-jsx-only"
+      ]
+    },
+    {
+      "filePath": "src/views/historial/HistorialEditModal.jsx",
+      "plugin": "react-doctor",
+      "rule": "label-has-associated-control",
+      "severity": "warning",
+      "title": "Label missing associated control",
+      "message": "Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it.",
+      "help": "Tie every label to a control with `htmlFor`, or by nesting the input.",
+      "line": 209,
+      "column": 33,
+      "offset": 11537,
+      "length": 87,
+      "endLine": 209,
+      "category": "Accessibility",
+      "matchByOccurrence": true,
+      "id": "src/views/historial/HistorialEditModal.jsx::209:33::react-doctor/label-has-associated-control::bd02bb7d17131af17130278c262805df4e8f9fc17abee3065e11951a48a41bdc",
+      "normalizedFilePath": "src/views/historial/HistorialEditModal.jsx",
+      "tags": [
+        "react-jsx-only"
+      ]
+    },
+    {
+      "filePath": "src/views/historial/HistorialEditModal.jsx",
+      "plugin": "react-doctor",
+      "rule": "label-has-associated-control",
+      "severity": "warning",
+      "title": "Label missing associated control",
+      "message": "Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it.",
+      "help": "Tie every label to a control with `htmlFor`, or by nesting the input.",
+      "line": 236,
+      "column": 33,
+      "offset": 13330,
+      "length": 87,
+      "endLine": 236,
+      "category": "Accessibility",
+      "matchByOccurrence": true,
+      "id": "src/views/historial/HistorialEditModal.jsx::236:33::react-doctor/label-has-associated-control::bd02bb7d17131af17130278c262805df4e8f9fc17abee3065e11951a48a41bdc",
+      "normalizedFilePath": "src/views/historial/HistorialEditModal.jsx",
+      "tags": [
+        "react-jsx-only"
+      ]
+    },
+    {
       "filePath": "src/views/productos/ProductosHeaderBar.jsx",
       "plugin": "react-doctor",
       "rule": "control-has-associated-label",
@@ -1194,12 +1783,12 @@
   ],
   "summary": {
     "errorCount": 0,
-    "warningCount": 28,
-    "affectedFileCount": 10,
-    "totalDiagnosticCount": 28,
+    "warningCount": 42,
+    "affectedFileCount": 14,
+    "totalDiagnosticCount": 42,
     "score": null,
     "scoreLabel": null
   },
-  "elapsedMilliseconds": 20399.1086,
+  "elapsedMilliseconds": 39746.9582,
   "error": null
 }

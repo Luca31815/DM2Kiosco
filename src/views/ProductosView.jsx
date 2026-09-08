@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback } from 'react'
 import DataTable from '../components/DataTable'
-import { useProductos, usePredictiveStock } from '../hooks/useData'
+import { useProductos, usePredictiveStock, useCategorias } from '../hooks/useData'
 import { Edit2, Check, X, Loader2, Package, TrendingUp, TrendingDown, Clock, Search, Timer, Trash2, PackagePlus, DollarSign, FileText, Bookmark } from 'lucide-react'
 import * as api from '../services/api'
 import { useSWRConfig } from 'swr'
@@ -31,6 +31,7 @@ const ProductosView = () => {
     const [isSyncingPrecios, setIsSyncingPrecios] = useState(false)
     const [isExporting, setIsExporting] = useState(false)
     const [isSynonymModalOpen, setIsSynonymModalOpen] = useState(false)
+    const { categorias, subcategoriasPorCategoria, loading: loadingCategorias } = useCategorias()
 
     const [selectedCategoria, setSelectedCategoria] = useState('')
     const [selectedSubcategoria, setSelectedSubcategoria] = useState('')
@@ -98,7 +99,12 @@ const ProductosView = () => {
 
     const handleEditStart = (product) => {
         setEditingId(product.producto_id)
-        setEditForm({ ...product, p_guardar_alias: true })
+        setEditForm({
+            ...product,
+            categoria: product.categoria || '',
+            subcategoria: product.subcategoria || '',
+            p_guardar_alias: true
+        })
     }
 
     const handleSave = useCallback(async () => {
@@ -121,7 +127,9 @@ const ProductosView = () => {
             nombre: nombreNormalizado,
             stock_actual: stockNum,
             ultimo_precio_venta: isNaN(precioVentaNum) ? 0 : precioVentaNum,
-            ultimo_costo_compra: isNaN(precioCompraNum) ? 0 : precioCompraNum
+            ultimo_costo_compra: isNaN(precioCompraNum) ? 0 : precioCompraNum,
+            categoria: editForm.categoria !== undefined ? (editForm.categoria || 'SIN_CATEGORIA') : null,
+            subcategoria: editForm.subcategoria !== undefined ? (editForm.subcategoria || null) : null
         }
 
         const loadingToast = toast.loading('Procesando cambios...')
@@ -130,6 +138,7 @@ const ProductosView = () => {
             const result = await api.actualizarProducto(dataToSend)
             if (result.success) {
                 mutate(key => Array.isArray(key) && key[0] === 'productos')
+                mutate('categorias_disponibles')
                 if (result.tipo_accion === 'MERGE' || result.renombrado) {
                     mutate('ventas')
                     mutate('compras')
@@ -246,7 +255,9 @@ const ProductosView = () => {
         setEditForm,
         isSaving,
         handleSave,
-        handleEditStart
+        handleEditStart,
+        categorias,
+        subcategoriasPorCategoria
     })
 
     const handleSort = (column) => {
@@ -278,6 +289,9 @@ const ProductosView = () => {
                 setSelectedCategoria={handleCategoriaChange}
                 selectedSubcategoria={selectedSubcategoria}
                 setSelectedSubcategoria={handleSubcategoriaChange}
+                categorias={categorias}
+                subcategoriasPorCategoria={subcategoriasPorCategoria}
+                loadingCategorias={loadingCategorias}
             />
 
             <DataTable

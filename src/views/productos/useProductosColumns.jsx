@@ -8,7 +8,9 @@ export const useProductosColumns = ({
     setEditForm,
     isSaving,
     handleSave,
-    handleEditStart
+    handleEditStart,
+    categorias = [],
+    subcategoriasPorCategoria = {}
 }) => {
     return useMemo(() => [
         {
@@ -50,15 +52,66 @@ export const useProductosColumns = ({
         {
             key: 'categoria',
             label: 'Categoría',
-            width: 'w-32',
-            render: (val, row) => (
-                <div className="flex flex-col text-xs font-semibold">
-                    <span className="text-slate-300">{row.categoria || 'SIN_CATEGORIA'}</span>
-                    {row.subcategoria && row.subcategoria !== 'GENERAL' && (
-                        <span className="text-[10px] text-slate-500">{row.subcategoria}</span>
-                    )}
-                </div>
-            )
+            width: 'w-44',
+            render: (val, row) => {
+                if (editingId === row.producto_id) {
+                    const currentCat = editForm.categoria || ''
+                    const availableSubs = currentCat && subcategoriasPorCategoria[currentCat]
+                        ? subcategoriasPorCategoria[currentCat]
+                        : []
+
+                    return (
+                        <div className="flex flex-col gap-1.5 py-1 min-w-[160px]" onClick={e => e.stopPropagation()}>
+                            <select
+                                aria-label="Categoría del producto"
+                                value={editForm.categoria || ''}
+                                onChange={(e) => {
+                                    const newCat = e.target.value
+                                    const newSubs = newCat && subcategoriasPorCategoria[newCat]
+                                        ? subcategoriasPorCategoria[newCat]
+                                        : []
+                                    setEditForm({
+                                        ...editForm,
+                                        categoria: newCat,
+                                        subcategoria: newSubs.includes(editForm.subcategoria)
+                                            ? editForm.subcategoria
+                                            : (newSubs[0] || '')
+                                    })
+                                }}
+                                className="bg-slate-800 text-[11px] font-bold text-white px-2 py-1 rounded-lg border border-white/10 outline-none focus:ring-1 focus:ring-amber-500 cursor-pointer"
+                            >
+                                <option value="">SIN_CATEGORIA</option>
+                                {categorias.map(cat => (
+                                    <option key={cat} value={cat}>{cat}</option>
+                                ))}
+                            </select>
+
+                            {availableSubs.length > 0 && (
+                                <select
+                                    aria-label="Subcategoría del producto"
+                                    value={editForm.subcategoria || ''}
+                                    onChange={(e) => setEditForm({ ...editForm, subcategoria: e.target.value })}
+                                    className="bg-slate-800 text-[10px] font-semibold text-slate-300 px-2 py-1 rounded-lg border border-white/10 outline-none focus:ring-1 focus:ring-amber-500 cursor-pointer"
+                                >
+                                    <option value="">SIN_SUBCATEGORIA</option>
+                                    {availableSubs.map(sub => (
+                                        <option key={sub} value={sub}>{sub}</option>
+                                    ))}
+                                </select>
+                            )}
+                        </div>
+                    )
+                }
+
+                return (
+                    <div className="flex flex-col text-xs font-semibold">
+                        <span className="text-slate-300">{row.categoria || 'SIN_CATEGORIA'}</span>
+                        {row.subcategoria && row.subcategoria !== 'GENERAL' && (
+                            <span className="text-[10px] text-slate-500">{row.subcategoria}</span>
+                        )}
+                    </div>
+                )
+            }
         },
         {
             key: 'ultimo_precio_venta',
@@ -179,5 +232,5 @@ export const useProductosColumns = ({
                 </div>
             )
         }
-    ], [editingId, editForm, isSaving, handleSave, handleEditStart, setEditForm])
+    ], [editingId, editForm, isSaving, handleSave, handleEditStart, setEditForm, categorias, subcategoriasPorCategoria])
 }

@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase'
+import { CATEGORIAS_LIST, SUBCATEGORIAS_BY_CATEGORIA } from '../utils/triageClassifier'
 
 // Helper para detectar modo demo desde la cookie
 const isDemo = () => {
@@ -17,7 +18,11 @@ export const fetchTableData = async (tableName, options = {}) => {
     let query = supabase.from(tableName).select(select, { count: 'exact' })
 
     if (filterCategoria) {
-        query = query.eq('categoria', filterCategoria)
+        if (filterCategoria === 'SIN_CATEGORIA') {
+            query = query.or('categoria.is.null,categoria.eq.,categoria.eq.SIN_CATEGORIA')
+        } else {
+            query = query.eq('categoria', filterCategoria)
+        }
     }
 
     if (filterSubcategoria) {
@@ -306,22 +311,7 @@ export const getDuplicadosTrigram = async () => {
     return data || []
 }
 
-export const actualizarProducto = async (data) => {
-    if (isDemo()) throw new Error('Acción deshabilitada en el modo Demo');
-    const { data: result, error } = await supabase.rpc('actualizar_producto_global_v2', {
-        p_id: data.producto_id,
-        p_nuevo_nombre: data.nombre,
-        p_nuevo_precio_venta: data.ultimo_precio_venta,
-        p_nuevo_costo_compra: data.ultimo_costo_compra,
-        p_nuevo_stock: data.stock_actual,
-        p_guardar_alias: data.p_guardar_alias ?? true
-    })
-    if (error) {
-        console.error('Error calling actualizar_producto_global_v2:', error)
-        throw error
-    }
-    return result
-}
+// actualizarProducto y getCategoriasDisponibles definidos abajo en la sección de productos
 
 export const crearReserva = async (reserva, productos, pagos) => {
     if (isDemo()) throw new Error('Acción deshabilitada en el modo Demo');
@@ -788,6 +778,94 @@ export const clasificarProducto = async ({ producto_id, categoria, subcategoria,
     }
     return { success: true, data: data?.[0] };
 };
+
+export const actualizarProducto = async (data) => {
+    if (isDemo()) throw new Error('Acción deshabilitada en el modo Demo');
+    
+    const params = {
+        p_id: data.producto_id,
+        p_nuevo_nombre: data.nombre,
+        p_nuevo_precio_venta: data.ultimo_precio_venta,
+        p_nuevo_costo_compra: data.ultimo_costo_compra,
+        p_nuevo_stock: data.stock_actual,
+        p_guardar_alias: data.p_guardar_alias ?? true
+    };
+
+    if (data.categoria !== undefined) {
+        params.p_nueva_categoria = data.categoria;
+    }
+    if (data.subcategoria !== undefined) {
+        params.p_nueva_subcategoria = data.subcategoria;
+    }
+
+    const { data: result, error } = await supabase.rpc('actualizar_producto_global_v2', params);
+    if (error) {
+        console.error('Error calling actualizar_producto_global_v2:', error);
+        throw error;
+    }
+    return result;
+}
+
+export const getCategoriasDisponibles = async () => {
+    if (isDemo()) {
+        return {
+            categorias: CATEGORIAS_LIST,
+            subcategoriasPorCategoria: SUBCATEGORIAS_BY_CATEGORIA
+        };
+    }
+    try {
+        const { data, error } = await supabase
+            .from('productos_base')
+            .select('categoria, subcategoria')
+            .not('categoria', 'is', null);
+
+        if (error) {
+            console.error('Error fetching categorias de productos_base:', error);
+            return {
+                categorias: CATEGORIAS_LIST,
+                subcategoriasPorCategoria: SUBCATEGORIAS_BY_CATEGORIA
+            };
+        }
+
+        const catsSet = new Set(CATEGORIAS_LIST);
+        const subsByCat = {};
+        Object.keys(SUBCATEGORIAS_BY_CATEGORIA).forEach(k => {
+            subsByCat[k] = [...SUBCATEGORIAS_BY_CATEGORIA[k]];
+        });
+
+        (data || []).forEach(item => {
+            if (item.categoria && item.categoria.trim()) {
+                const cat = item.categoria.trim();
+                catsSet.add(cat);
+                if (!subsByCat[cat]) {
+                    subsByCat[cat] = [];
+                }
+                if (item.subcategoria && item.subcategoria.trim()) {
+                    const sub = item.subcategoria.trim();
+                    if (!subsByCat[cat].includes(sub)) {
+                        subsByCat[cat].push(sub);
+                    }
+                }
+            }
+        });
+
+        const sortedCats = Array.from(catsSet).sort((a, b) => a.localeCompare(b));
+        Object.keys(subsByCat).forEach(c => {
+            subsByCat[c].sort((a, b) => a.localeCompare(b));
+        });
+
+        return {
+            categorias: sortedCats,
+            subcategoriasPorCategoria: subsByCat
+        };
+    } catch (err) {
+        console.error('Error in getCategoriasDisponibles:', err);
+        return {
+            categorias: CATEGORIAS_LIST,
+            subcategoriasPorCategoria: SUBCATEGORIAS_BY_CATEGORIA
+        };
+    }
+}
 
 export const clasificarProductosBatch = async (items = []) => {
     if (isDemo()) throw new Error('Acción deshabilitada en el modo Demo');

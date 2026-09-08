@@ -97,6 +97,26 @@ export function useProductos(options = {}) {
     }
 }
 
+export function useCategorias() {
+    const { isDemoMode } = useAuth()
+    const { data, error, isLoading } = useSWR(
+        'categorias_disponibles',
+        () => api.getCategoriasDisponibles(),
+        {
+            revalidateOnFocus: false,
+            revalidateIfStale: false,
+            dedupingInterval: 60000
+        }
+    )
+
+    return {
+        categorias: data?.categorias || [],
+        subcategoriasPorCategoria: data?.subcategoriasPorCategoria || {},
+        loading: isLoading,
+        error
+    }
+}
+
 export function useProductosDuplicadosTrigram() {
     const { isDemoMode } = useAuth()
     const { data: rawDups, isLoading, error } = useSWR(

@@ -8,12 +8,16 @@
 CREATE OR REPLACE FUNCTION public.actualizar_producto_global_v2(
     p_id bigint, 
     p_nuevo_nombre text, 
-    p_nuevo_precio_venta numeric, 
-    p_nuevo_costo_compra numeric, 
-    p_nuevo_stock integer
+    p_nuevo_precio_venta numeric DEFAULT NULL::numeric, 
+    p_nuevo_costo_compra numeric DEFAULT NULL::numeric, 
+    p_nuevo_stock integer DEFAULT NULL::integer, 
+    p_guardar_alias boolean DEFAULT true,
+    p_nueva_categoria text DEFAULT NULL::text,
+    p_nueva_subcategoria text DEFAULT NULL::text
 )
 RETURNS jsonb
 LANGUAGE plpgsql
+SECURITY DEFINER
 AS $function$
 DECLARE
     v_nombre_viejo text;
@@ -115,8 +119,18 @@ BEGIN
     -- Actualizar tabla maestra (base)
     UPDATE public.productos_base 
     SET nombre = v_nombre_norm,
-        ultimo_precio_venta = p_nuevo_precio_venta,
-        ultimo_costo_compra = p_nuevo_costo_compra,
+        ultimo_precio_venta = COALESCE(p_nuevo_precio_venta, ultimo_precio_venta),
+        ultimo_costo_compra = COALESCE(p_nuevo_costo_compra, ultimo_costo_compra),
+        categoria = CASE 
+            WHEN p_nueva_categoria IS NULL THEN categoria
+            WHEN p_nueva_categoria IN ('SIN_CATEGORIA', '') THEN NULL
+            ELSE p_nueva_categoria
+        END,
+        subcategoria = CASE 
+            WHEN p_nueva_subcategoria IS NULL THEN subcategoria
+            WHEN p_nueva_subcategoria IN ('SIN_SUBCATEGORIA', '') THEN NULL
+            ELSE p_nueva_subcategoria
+        END,
         fecha_actualizacion = now()
     WHERE producto_id = p_id;
 

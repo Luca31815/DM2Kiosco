@@ -1,28 +1,5 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 import { Package, Loader2, DollarSign, FileText, PackagePlus, Trash2, Bookmark, Filter } from 'lucide-react'
-
-const CATEGORIAS_DISPONIBLES = [
-    'ALMACEN',
-    'BEBIDAS',
-    'CIGARRILLOS',
-    'FARMACIA',
-    'GALLETITAS',
-    'GOLOSINAS',
-    'LACTEOS',
-    'SNACKS',
-    'SIN_CATEGORIA'
-]
-
-const SUBCATEGORIAS_DISPONIBLES = {
-    BEBIDAS: ['GASEOSA', 'JUGO', 'AGUA', 'ENERGIZANTE', 'ALCOHOL'],
-    GOLOSINAS: ['CHOCOLATE', 'ALFAJOR', 'CARAMELO', 'CHICLE', 'TURRON_BARRITA', 'HELADOS', 'CHUPETIN'],
-    FARMACIA: ['MEDICAMENTOS', 'HIGIENE'],
-    ALMACEN: ['GENERAL', 'INFUSIONES'],
-    GALLETITAS: ['DULCES', 'BIZCOCHOS', 'SALADAS'],
-    CIGARRILLOS: ['CIGARRILLOS', 'ACCESORIOS'],
-    LACTEOS: ['LACTEOS'],
-    SNACKS: ['SNACKS']
-}
 
 export const ProductosHeaderBar = ({
     handleSyncPrecios,
@@ -34,13 +11,17 @@ export const ProductosHeaderBar = ({
     selectedCategoria = '',
     setSelectedCategoria,
     selectedSubcategoria = '',
-    setSelectedSubcategoria
+    setSelectedSubcategoria,
+    categorias = [],
+    subcategoriasPorCategoria = {},
+    loadingCategorias = false
 }) => {
     const { isSyncingPrecios = false, isExporting = false, isSyncing = false, isCleaning = false } = loadingStates ?? {}
     
-    const subcats = selectedCategoria && SUBCATEGORIAS_DISPONIBLES[selectedCategoria] 
-        ? SUBCATEGORIAS_DISPONIBLES[selectedCategoria] 
-        : []
+    const subcats = useMemo(() => {
+        if (!selectedCategoria) return []
+        return subcategoriasPorCategoria[selectedCategoria] || []
+    }, [selectedCategoria, subcategoriasPorCategoria])
 
     return (
         <div className="flex flex-col gap-4">
@@ -118,10 +99,11 @@ export const ProductosHeaderBar = ({
                     }}
                     className="bg-slate-800 text-xs font-bold text-white px-3 py-2 rounded-xl border border-white/10 outline-none focus:ring-1 focus:ring-amber-500 cursor-pointer"
                 >
-                    <option value="">Todas las Categorías</option>
-                    {CATEGORIAS_DISPONIBLES.map(cat => (
+                    <option value="">Todas las Categorías {categorias.length > 0 ? `(${categorias.length})` : ''}</option>
+                    {categorias.map(cat => (
                         <option key={cat} value={cat}>{cat}</option>
                     ))}
+                    <option value="SIN_CATEGORIA">SIN_CATEGORIA</option>
                 </select>
 
                 {subcats.length > 0 && (
@@ -130,7 +112,7 @@ export const ProductosHeaderBar = ({
                         onChange={(e) => setSelectedSubcategoria && setSelectedSubcategoria(e.target.value)}
                         className="bg-slate-800 text-xs font-bold text-slate-300 px-3 py-2 rounded-xl border border-white/10 outline-none focus:ring-1 focus:ring-amber-500 cursor-pointer"
                     >
-                        <option value="">Todas las Subcategorías</option>
+                        <option value="">Todas las Subcategorías ({subcats.length})</option>
                         {subcats.map(sub => (
                             <option key={sub} value={sub}>{sub}</option>
                         ))}
