@@ -116,11 +116,32 @@ const ExpandedRow = ({ row, onEdit, onCancel, isCanceling }) => {
     )
 }
 
+export const isBotError = (row) => {
+    if (!row) return false
+    const estado = (row.estado || '').toUpperCase()
+    if (estado === 'CANCELADO') return false
+    if (estado === 'ERROR') return true
+
+    const err = (row.detalle_error || '').trim()
+    if (err && !err.startsWith('Operación anulada') && err !== 'Anulado por usuario') {
+        return true
+    }
+
+    const tipo = (row.tipo_accion || '').toUpperCase()
+    const msg = row.mensaje_enviado || ''
+    if ((tipo === 'DESCONOCIDO' || tipo === 'ERROR') && (msg.includes('⚠️') || msg.includes('❌'))) {
+        return true
+    }
+
+    return false
+}
+
 const SEARCH_COLUMNS = [
     { key: 'tipo_accion', label: 'Acción' },
     { key: 'operacion_id', label: 'ID Operación' },
     { key: 'mensaje_inicial', label: 'Mensaje Inicial' },
     { key: 'mensaje_enviado', label: 'Mensaje Enviado' },
+    { key: 'detalle_error', label: 'Detalle Error' },
     { key: 'log_id', label: 'ID Log' },
 ]
 
@@ -167,10 +188,17 @@ const HistorialView = () => {
 
         rawData.forEach((row) => {
             const st = (row.estado || '').toUpperCase()
-            if (st === 'PENDIENTE' || st === 'PROCESANDO') pendientes++
-            else if (st === 'ENVIADO' || st === 'EXITO') enviados++
-            else if (st === 'ERROR') errores++
-            else if (st === 'CANCELADO') cancelados++
+            const isErr = isBotError(row)
+
+            if (st === 'CANCELADO') {
+                cancelados++
+            } else if (isErr) {
+                errores++
+            } else if (st === 'PENDIENTE' || st === 'PROCESANDO') {
+                pendientes++
+            } else if (st === 'ENVIADO' || st === 'EXITO') {
+                enviados++
+            }
         })
 
         return {
@@ -189,17 +217,17 @@ const HistorialView = () => {
         if (statusTab === 'PROCESANDO') {
             return rawData.filter((r) => {
                 const st = (r.estado || '').toUpperCase()
-                return st === 'PENDIENTE' || st === 'PROCESANDO'
+                return (st === 'PENDIENTE' || st === 'PROCESANDO') && !isBotError(r)
             })
         }
         if (statusTab === 'ENVIADOS') {
             return rawData.filter((r) => {
                 const st = (r.estado || '').toUpperCase()
-                return st === 'ENVIADO' || st === 'EXITO'
+                return (st === 'ENVIADO' || st === 'EXITO') && !isBotError(r)
             })
         }
         if (statusTab === 'ERRORES') {
-            return rawData.filter((r) => (r.estado || '').toUpperCase() === 'ERROR')
+            return rawData.filter(isBotError)
         }
         if (statusTab === 'CANCELADOS') {
             return rawData.filter((r) => (r.estado || '').toUpperCase() === 'CANCELADO')
@@ -305,8 +333,27 @@ const HistorialView = () => {
             key: 'estado',
             label: 'Estado',
             width: 'w-36',
-            render: (val) => {
+            render: (val, row) => {
                 const st = (val || '').toUpperCase()
+                const isErr = isBotError(row)
+
+                if (st === 'CANCELADO') {
+                    return (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md bg-orange-950/60 text-orange-400 border border-orange-800/50">
+                            <Ban className="w-3 h-3" /> CANCELADO
+                        </span>
+                    )
+                }
+                if (isErr) {
+                    return (
+                        <span
+                            className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md bg-red-950/60 text-red-400 border border-red-800/50"
+                            title={row.detalle_error || 'Error de procesamiento / validación del bot'}
+                        >
+                            <AlertCircle className="w-3 h-3" /> ERROR
+                        </span>
+                    )
+                }
                 if (st === 'ENVIADO' || st === 'EXITO') {
                     return (
                         <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md bg-emerald-950/60 text-emerald-400 border border-emerald-800/50">
@@ -318,20 +365,6 @@ const HistorialView = () => {
                     return (
                         <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md bg-amber-950/60 text-amber-400 border border-amber-800/50 animate-pulse">
                             <Clock className="w-3 h-3 animate-spin" /> {st}
-                        </span>
-                    )
-                }
-                if (st === 'ERROR') {
-                    return (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md bg-red-950/60 text-red-400 border border-red-800/50">
-                            <XCircle className="w-3 h-3" /> ERROR
-                        </span>
-                    )
-                }
-                if (st === 'CANCELADO') {
-                    return (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md bg-orange-950/60 text-orange-400 border border-orange-800/50">
-                            <Ban className="w-3 h-3" /> CANCELADO
                         </span>
                     )
                 }
@@ -456,7 +489,11 @@ const HistorialView = () => {
                     <span className="text-xl font-black text-emerald-300">{stats.enviados}</span>
                 </div>
 
-                <div className="p-3.5 rounded-2xl bg-slate-900/60 border border-slate-800 backdrop-blur-sm">
+                <div className={`p-3.5 rounded-2xl border backdrop-blur-sm transition-all ${
+                    stats.errores > 0
+                        ? 'bg-red-950/20 border-red-500/40 shadow-[0_0_15px_rgba(239,68,68,0.15)]'
+                        : 'bg-slate-900/60 border-slate-800'
+                }`}>
                     <span className="text-[11px] font-semibold text-red-400 uppercase tracking-wider block mb-1 flex items-center gap-1">
                         <AlertCircle className="w-3 h-3" /> Errores
                     </span>
