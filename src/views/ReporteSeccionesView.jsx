@@ -1,6 +1,5 @@
 import React, { useState, useMemo } from 'react'
 import { useReporteSecciones } from '../hooks/useData'
-import { DEFAULT_SECTION_RULES } from '../utils/categoryCategorizer'
 import { 
   BarChart3, 
   ShoppingBag, 
@@ -24,7 +23,8 @@ import {
   Plus,
   Layers,
   Sparkles,
-  PackageCheck
+  PackageCheck,
+  Utensils
 } from 'lucide-react'
 
 // Mapa de íconos por nombre
@@ -38,7 +38,9 @@ const ICON_MAP = {
   Milk: Milk,
   HeartPulse: HeartPulse,
   ShoppingBag: ShoppingBag,
-  HelpCircle: HelpCircle
+  HelpCircle: HelpCircle,
+  Sparkles: Sparkles,
+  Utensils: Utensils
 }
 
 export default function ReporteSeccionesView() {
@@ -47,7 +49,7 @@ export default function ReporteSeccionesView() {
   const [minComprasMes, setMinComprasMes] = useState(3)
   const [searchTerm, setSearchTerm] = useState('')
   const [expandedSection, setExpandedSection] = useState(null)
-  const [customRules, setCustomRules] = useState(DEFAULT_SECTION_RULES)
+  const [customRules, setCustomRules] = useState([])
   
   // Modal para agregar categoría personalizada
   const [showAddModal, setShowAddModal] = useState(false)

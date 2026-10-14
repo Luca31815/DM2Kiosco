@@ -1,68 +1,61 @@
-// categoryCategorizer.js - Categorización por palabras clave y cálculo de métricas de sección
-
-export const DEFAULT_SECTION_RULES = [
-  {
-    id: 'GOLOSINAS',
-    name: 'Golosinas, Alfajores y Chocolates',
-    keywords: ['GOLOSINAS', 'ALFAJOR', 'ALFAJORES', 'CHOCOLATE', 'CHOCOLATES', 'BOMBON', 'CARAMELO', 'CHICLE', 'TURRON', 'BLOCK', 'MARROC', 'GUAYMALLEN', 'JORGITO', 'RASTA', 'MILKA', 'COFLER'],
-    color: '#ec4899',
-    iconName: 'Candy'
-  },
-  {
-    id: 'BEBIDAS',
-    name: 'Bebidas, Gaseosas y Cervezas',
-    keywords: ['BEBIDAS', 'GASEOSA', 'GASEOSAS', 'COCA', 'FANTA', 'SPRITE', 'PEPSI', 'MANAO', 'CERVEZA', 'FERNET', 'VINO', 'AGUA', 'JUGO', 'SPEED', 'MONSTER', 'QUILMES', 'BRAHMA', 'HEINEKEN', 'BRANCA'],
-    color: '#06b6d4',
-    iconName: 'CupSoda'
-  },
-  {
-    id: 'CIGARRILLOS',
-    name: 'Cigarrillos y Afines',
-    keywords: ['CIGARRILLO', 'CIGARRILLOS', 'MARLBORO', 'CHESTERFIELD', 'PHILIP', 'LUCKY', 'CAMEL', 'ROTHMANS', 'RED POINT', 'MASTER', 'MELBOURNE', 'TABACO', 'ENCENDEDOR', 'VAPE'],
-    color: '#ef4444',
-    iconName: 'Cigarette'
-  },
-  {
-    id: 'FARMACIA',
-    name: 'Farmacia y Cuidado Personal',
-    keywords: ['FARMACIA', 'AFEITADORA', 'GILLETTE', 'ALCOHOL', 'ALGODON', 'CURITAS', 'DESODORANTE', 'JABON', 'PAPEL', 'PRESERVATIVO', 'TOALLITA', 'MEDICAMENTO', 'ACTRON', 'IBU', 'TAFIROL', 'PARACETAMOL', 'ALIKAL', 'IBUPROFENO'],
-    color: '#14b8a6',
-    iconName: 'HeartPulse'
-  },
-  {
-    id: 'GALLETITAS',
-    name: 'Galletitas y Bakery',
-    keywords: ['GALLETITA', 'GALLETITAS', 'BIZCOCHO', 'BIZCOCHOS', 'DON SATUR', 'OREO', 'CHOCLINA', 'TRAVIATA', 'CREMONA', 'FACTURA', 'PAN', 'TOSTADA', 'PEPA', 'PEPAS', 'MAGDALENA', 'SONRISAS', 'OPERAS', 'RUMBA', 'CHOCOLINAS', 'BUDIN', 'CRIOLLITAS', 'PITUSAS'],
-    color: '#8b5cf6',
-    iconName: 'Cookie'
-  },
-  {
-    id: 'SNACKS',
-    name: 'Snacks y Copetín',
-    keywords: ['SNACK', 'SNACKS', 'PAPAS', 'PAPA', 'CHIZITO', 'CHIZITOS', 'MANI', 'KRACHITOS', 'LAYS', 'DORITOS', 'CHEETOS', 'PALITOS', 'SALADIX', 'ACEITUNAS', 'NACHOS', 'PIPAS'],
-    color: '#10b981',
-    iconName: 'Popcorn'
-  },
-  {
-    id: 'LACTEOS',
-    name: 'Lácteos, Fríos y Sánguches',
-    keywords: ['LECHE', 'YOGUR', 'QUESO', 'FIAMBRE', 'JAMON', 'PALETA', 'SALAME', 'MANTECA', 'CREMA', 'SERENISIMA', 'ILOLAY', 'SANGUCHE', 'SANGUCHES', 'EMPANADA', 'TARTA', 'PEBETE', 'DULCE DE LECHE', 'HELADO'],
-    color: '#3b82f6',
-    iconName: 'Milk'
-  },
-  {
-    id: 'ALMACEN',
-    name: 'Almacén General y Limpieza',
-    keywords: ['ALMACEN', 'ACEITE', 'HARINA', 'FIDEOS', 'ARROZ', 'AZUCAR', 'YERBA', 'SAL', 'CAFE', 'TE', 'MAYONESA', 'LENA', 'CARBON', 'PILA', 'PILAS', 'PEGAMENTO', 'PRECINTOS', 'DETERGENTE', 'CHIP', 'GATO', 'PERRO', 'LAMPARA'],
-    color: '#64748b',
-    iconName: 'ShoppingBag'
-  }
+// Paleta armónica de colores e íconos sugeridos para categorías dinámicas
+const COLOR_PALETTE = [
+  { color: '#ec4899', iconName: 'Candy' },
+  { color: '#06b6d4', iconName: 'CupSoda' },
+  { color: '#f43f5e', iconName: 'Cigarette' },
+  { color: '#10b981', iconName: 'HeartPulse' },
+  { color: '#8b5cf6', iconName: 'Cookie' },
+  { color: '#84cc16', iconName: 'Popcorn' },
+  { color: '#0284c7', iconName: 'Milk' },
+  { color: '#f59e0b', iconName: 'ShoppingBag' },
+  { color: '#14b8a6', iconName: 'Sparkles' },
+  { color: '#f97316', iconName: 'Utensils' },
+  { color: '#6366f1', iconName: 'Layers' },
+  { color: '#a855f7', iconName: 'ShoppingBag' }
 ]
+
+function getVisualsForCategory(catName) {
+  const norm = normalizeText(catName)
+  if (norm.includes('BEBIDA')) return { color: '#06b6d4', iconName: 'CupSoda' }
+  if (norm.includes('CIGARRILLO') || norm.includes('TABACO')) return { color: '#f43f5e', iconName: 'Cigarette' }
+  if (norm.includes('GOLOSINA') || norm.includes('CHOCOLATE')) return { color: '#ec4899', iconName: 'Candy' }
+  if (norm.includes('GALLETITA') || norm.includes('BIZCOCHO')) return { color: '#8b5cf6', iconName: 'Cookie' }
+  if (norm.includes('SNACK')) return { color: '#84cc16', iconName: 'Popcorn' }
+  if (norm.includes('FARMACIA') || norm.includes('CUIDADO')) return { color: '#10b981', iconName: 'HeartPulse' }
+  if (norm.includes('LACTEO') || norm.includes('FRESCO')) return { color: '#0284c7', iconName: 'Milk' }
+  if (norm.includes('COMIDA') || norm.includes('ELABORADO')) return { color: '#f97316', iconName: 'Utensils' }
+  if (norm.includes('LIMPIEZA')) return { color: '#14b8a6', iconName: 'Sparkles' }
+  if (norm.includes('ALMACEN') || norm.includes('COMESTIBLE')) return { color: '#f59e0b', iconName: 'ShoppingBag' }
+  if (norm.includes('VARIOS') || norm.includes('SERVICIO') || norm.includes('BAZAR')) return { color: '#64748b', iconName: 'Layers' }
+
+  // Hash determinista para cualquier categoría nueva o personalizada
+  let hash = 0
+  for (let i = 0; i < catName.length; i++) {
+    hash = catName.charCodeAt(i) + ((hash << 5) - hash)
+  }
+  const idx = Math.abs(hash) % COLOR_PALETTE.length
+  return COLOR_PALETTE[idx]
+}
+
+/**
+ * Convierte un nombre en formato "TITULO O TODO MAYUSCULA" a Title Case legible
+ */
+function toDisplayTitle(str) {
+  if (!str) return 'Sin Categorizar'
+  return str
+    .toLowerCase()
+    .split(' ')
+    .map(word => {
+      if (['y', 'e', 'o', 'u', 'de', 'del', 'la', 'las', 'el', 'los'].includes(word)) return word
+      return word.charAt(0).toUpperCase() + word.slice(1)
+    })
+    .join(' ')
+}
 
 /**
  * Normaliza una cadena para búsquedas (mayúsculas, remueve acentos)
  */
-function normalizeText(text) {
+export function normalizeText(text) {
   if (!text) return ''
   return String(text)
     .toUpperCase()
@@ -71,55 +64,9 @@ function normalizeText(text) {
 }
 
 /**
- * Escapa caracteres especiales de RegExp en una palabra clave
+ * Clasifica un producto dinámicamente según la categoría real que viene de la base de datos
  */
-function escapeRegExp(text) {
-  return String(text).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-}
-
-/**
- * Mapeo explícito de la categoría de la base de datos (productos.categoria, normalizada)
- * a la sección del reporte. Evita depender de coincidencias parciales de texto.
- */
-const DB_CATEGORY_TO_SECTION = {
-  'BEBIDAS': 'BEBIDAS',
-  'CIGARRILLOS Y TABACO': 'CIGARRILLOS',
-  'GOLOSINAS Y CHOCOLATES': 'GOLOSINAS',
-  'ALMACEN Y COMESTIBLES': 'ALMACEN',
-  'VARIOS Y SERVICIOS': 'ALMACEN',
-  'LIMPIEZA DEL HOGAR': 'ALMACEN',
-  'FARMACIA Y CUIDADO PERSONAL': 'FARMACIA',
-  'GALLETITAS Y BIZCOCHOS': 'GALLETITAS',
-  'SNACKS SALADOS': 'SNACKS',
-  'LACTEOS Y FRESCOS': 'LACTEOS'
-}
-
-// Categoría de la base cuya sección depende del nombre del producto (panificados vs sánguches)
-const DB_CATEGORY_MIXED = { 'COMIDAS Y ELABORADOS': 'LACTEOS' }
-
-function isCustomRule(rule) {
-  return String(rule.id).startsWith('custom_')
-}
-
-function matchByKeywords(normName, rules) {
-  for (const rule of rules) {
-    for (const kw of rule.keywords) {
-      const normKw = escapeRegExp(normalizeText(kw))
-      if (!normKw) continue
-      const regex = new RegExp(`(?:^|\\s|\\b)${normKw}(?:$|\\s|\\b)`, 'i')
-      if (regex.test(normName)) {
-        return rule
-      }
-    }
-  }
-  return null
-}
-
-/**
- * Clasifica un producto: 1) reglas personalizadas por palabra clave, 2) categoría de la base de datos
- * (automática, sin carga manual), 3) respaldo por palabras clave del nombre, 4) "Sin Categorizar".
- */
-export function categorizeProduct(productInput, customRules = DEFAULT_SECTION_RULES) {
+export function categorizeProduct(productInput, customRules = []) {
   let catStr = ''
   let productName = ''
 
@@ -130,46 +77,45 @@ export function categorizeProduct(productInput, customRules = DEFAULT_SECTION_RU
     productName = String(productInput || '')
   }
 
-  const normName = normalizeText(productName)
+  const normCat = normalizeText(catStr).trim()
 
-  // 1. Reglas personalizadas creadas por el usuario tienen prioridad
-  const userMatch = matchByKeywords(normName, customRules.filter(isCustomRule))
-  if (userMatch) return userMatch
-
-  // 2. Categoría asignada en la base de datos
-  if (catStr && catStr !== 'SIN_CATEGORIA') {
-    const normCat = normalizeText(catStr).trim()
-    const byId = id => customRules.find(r => r.id === id)
-
-    if (DB_CATEGORY_TO_SECTION[normCat]) {
-      const direct = byId(DB_CATEGORY_TO_SECTION[normCat])
-      if (direct) return direct
+  // 1. Reglas personalizadas creadas en pantalla por el usuario (si existieran)
+  if (Array.isArray(customRules)) {
+    const userRules = customRules.filter(r => String(r.id).startsWith('custom_'))
+    const normName = normalizeText(productName)
+    for (const rule of userRules) {
+      for (const kw of (rule.keywords || [])) {
+        const normKw = normalizeText(kw)
+        if (!normKw) continue
+        const regex = new RegExp(`(?:^|\\s|\\b)${normKw}(?:$|\\s|\\b)`, 'i')
+        if (regex.test(normName)) {
+          return rule
+        }
+      }
     }
-    if (DB_CATEGORY_MIXED[normCat]) {
-      const byName = matchByKeywords(normName, customRules.filter(r => !isCustomRule(r)))
-      const mixed = byName || byId(DB_CATEGORY_MIXED[normCat])
-      if (mixed) return mixed
-    }
-    const match = customRules.find(r =>
-      normalizeText(r.id) === normCat ||
-      normalizeText(r.name).includes(normCat) ||
-      normCat.includes(normalizeText(r.id))
-    )
-    if (match) return match
   }
 
-  // 3. Respaldo: palabras clave en el nombre
-  const fallback = matchByKeywords(normalizeText(productName), customRules)
-  if (fallback) return fallback
+  // 2. Si tiene categoría en la base de datos, la usa directamente
+  if (normCat && normCat !== 'SIN_CATEGORIA') {
+    const visuals = getVisualsForCategory(catStr)
+    return {
+      id: normCat,
+      name: toDisplayTitle(catStr),
+      rawCategory: catStr,
+      color: visuals.color,
+      iconName: visuals.iconName
+    }
+  }
 
+  // 3. Sin categoría / Pendiente
   return {
     id: 'otros',
     name: 'Sin Categorizar / Otros',
-    keywords: [],
     color: '#94a3b8',
     iconName: 'HelpCircle'
   }
 }
+
 
 /**
  * Agrupa productos por sección y calcula las métricas financieras y de reabastecimiento
@@ -178,44 +124,74 @@ export function aggregateBySections(products = [], options = {}) {
   const {
     periodDays = 30,
     targetCoverageDays = 7,
-    customRules = DEFAULT_SECTION_RULES,
+    customRules = [],
     lotesMap = {}
   } = options
 
   const sectionMap = {}
 
-  const rulesWithOtros = [
-    ...customRules,
-    {
-      id: 'otros',
-      name: 'Sin Categorizar / Otros',
-      keywords: [],
-      color: '#94a3b8',
-      iconName: 'HelpCircle'
-    }
-  ]
+  // Inicializar sección por defecto para productos sin categoría
+  sectionMap['otros'] = {
+    id: 'otros',
+    name: 'Sin Categorizar / Otros',
+    color: '#94a3b8',
+    iconName: 'HelpCircle',
+    ingresosTotales: 0,
+    costoMercaderiaVendida: 0,
+    gananciaNeta: 0,
+    unidadesVendidas: 0,
+    stockActualTotal: 0,
+    valorStockCosto: 0,
+    unidadesAReponer: 0,
+    presupuestoReposicion: 0,
+    productosCriticosCount: 0,
+    subcategoriasMap: {},
+    productos: []
+  }
 
-  rulesWithOtros.forEach(rule => {
-    sectionMap[rule.id] = {
-      ...rule,
-      ingresosTotales: 0,
-      costoMercaderiaVendida: 0,
-      gananciaNeta: 0,
-      unidadesVendidas: 0,
-      stockActualTotal: 0,
-      valorStockCosto: 0,
-      unidadesAReponer: 0,
-      presupuestoReposicion: 0,
-      productosCriticosCount: 0,
-      subcategoriasMap: {},
-      productos: []
-    }
-  })
+  // Si hay reglas manuales creadas en pantalla, agregarlas
+  if (Array.isArray(customRules)) {
+    customRules.filter(r => String(r.id).startsWith('custom_')).forEach(rule => {
+      sectionMap[rule.id] = {
+        ...rule,
+        ingresosTotales: 0,
+        costoMercaderiaVendida: 0,
+        gananciaNeta: 0,
+        unidadesVendidas: 0,
+        stockActualTotal: 0,
+        valorStockCosto: 0,
+        unidadesAReponer: 0,
+        presupuestoReposicion: 0,
+        productosCriticosCount: 0,
+        subcategoriasMap: {},
+        productos: []
+      }
+    })
+  }
 
   products.forEach(p => {
     const rawNombre = p.producto || p.nombre || 'Producto sin nombre'
     const section = categorizeProduct(p, customRules)
-    const secObj = sectionMap[section.id] || sectionMap['otros']
+
+    // Si la sección no existe en el mapa (nueva categoría descubierta en la DB), inicializarla dinámicamente
+    if (!sectionMap[section.id]) {
+      sectionMap[section.id] = {
+        ...section,
+        ingresosTotales: 0,
+        costoMercaderiaVendida: 0,
+        gananciaNeta: 0,
+        unidadesVendidas: 0,
+        stockActualTotal: 0,
+        valorStockCosto: 0,
+        unidadesAReponer: 0,
+        presupuestoReposicion: 0,
+        productosCriticosCount: 0,
+        subcategoriasMap: {},
+        productos: []
+      }
+    }
+    const secObj = sectionMap[section.id]
+
 
     const subcatKey = (p.subcategoria && p.subcategoria !== 'GENERAL') ? p.subcategoria : 'General'
     if (!secObj.subcategoriasMap[subcatKey]) {
