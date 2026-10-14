@@ -621,94 +621,116 @@ export const ejecutarCronReemplazosManual = async () => {
     return data;
 };
 
+// Supabase/PostgREST devuelve como máximo 1000 filas por consulta: se pagina hasta agotar resultados
+const fetchAllRows = async (buildQuery, pageSize = 1000) => {
+    let all = [];
+    let from = 0;
+    for (;;) {
+        const { data, error } = await buildQuery().range(from, from + pageSize - 1);
+        if (error) throw error;
+        const rows = data || [];
+        all = all.concat(rows);
+        if (rows.length < pageSize) break;
+        from += pageSize;
+    }
+    return all;
+};
+
+// Un .in() con cientos de IDs excede el largo de URL permitido: se consulta en tandas
+const fetchInBatches = async (table, select, column, ids, batchSize = 150) => {
+    let all = [];
+    for (let i = 0; i < ids.length; i += batchSize) {
+        const chunk = ids.slice(i, i + batchSize);
+        const rows = await fetchAllRows(() => supabase.from(table).select(select).in(column, chunk));
+        all = all.concat(rows);
+    }
+    return all;
+};
+
 export const getConteoComprasProductos = async (days = 30) => {
     if (isDemo()) return {};
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
 
-    const { data: comprasData, error: comprasErr } = await supabase
-        .from('compras')
-        .select('compra_id')
-        .gte('Fecha', startDate.toISOString());
+    try {
+        const comprasData = await fetchAllRows(() => supabase
+            .from('compras')
+            .select('compra_id')
+            .gte('Fecha', startDate.toISOString())
+            .order('compra_id', { ascending: true }));
 
-    if (comprasErr || !comprasData || comprasData.length === 0) {
+        const compraIds = comprasData.map(c => c.compra_id).filter(Boolean);
+        if (compraIds.length === 0) return {};
+
+        const detallesData = await fetchInBatches('compras_detalles', 'producto, compra_id', 'compra_id', compraIds);
+
+        const counts = {};
+        detallesData.forEach(row => {
+            const normName = (row.producto || '').toLowerCase().trim();
+            if (!counts[normName]) counts[normName] = new Set();
+            counts[normName].add(row.compra_id);
+        });
+
+        const result = {};
+        Object.keys(counts).forEach(normName => {
+            result[normName] = counts[normName].size;
+        });
+
+        return result;
+    } catch (err) {
+        console.error('Error en getConteoComprasProductos:', err);
         return {};
     }
-
-    const compraIds = comprasData.map(c => c.compra_id).filter(Boolean);
-    if (compraIds.length === 0) return {};
-
-    const { data: detallesData, error: detallesErr } = await supabase
-        .from('compras_detalles')
-        .select('producto, compra_id')
-        .in('compra_id', compraIds);
-
-    if (detallesErr || !detallesData) {
-        return {};
-    }
-
-    const counts = {};
-    detallesData.forEach(row => {
-        const normName = (row.producto || '').toLowerCase().trim();
-        if (!counts[normName]) counts[normName] = new Set();
-        counts[normName].add(row.compra_id);
-    });
-
-    const result = {};
-    Object.keys(counts).forEach(normName => {
-        result[normName] = counts[normName].size;
-    });
-
-    return result;
 };
+
 
 export const getVentasProductosPeriodo = async (days = 30) => {
     if (isDemo()) return {};
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
 
-    const { data: ventasData, error: ventasErr } = await supabase
-        .from('ventas')
-        .select('venta_id')
-        .gte('fecha', startDate.toISOString());
+    try {
+        const ventasData = await fetchAllRows(() => supabase
+            .from('ventas')
+            .select('venta_id')
+            .gte('fecha', startDate.toISOString())
+            .order('venta_id', { ascending: true }));
 
-    if (ventasErr || !ventasData || ventasData.length === 0) {
+        const ventaIds = ventasData.map(v => v.venta_id).filter(Boolean);
+        if (ventaIds.length === 0) return {};
+
+        const detallesData = await fetchInBatches('ventas_detalles', 'producto, cantidad, subtotal', 'venta_id', ventaIds);
+
+        const result = {};
+        detallesData.forEach(row => {
+            const normName = (row.producto || '').toLowerCase().trim();
+            if (!result[normName]) {
+                result[normName] = { unidades: 0, ingresos: 0 };
+            }
+            result[normName].unidades += Number(row.cantidad || 0);
+            result[normName].ingresos += Number(row.subtotal || 0);
+        });
+
+        return result;
+    } catch (err) {
+        console.error('Error en getVentasProductosPeriodo:', err);
         return {};
     }
-
-    const ventaIds = ventasData.map(v => v.venta_id).filter(Boolean);
-    if (ventaIds.length === 0) return {};
-
-    const { data: detallesData, error: detallesErr } = await supabase
-        .from('ventas_detalles')
-        .select('producto, cantidad, subtotal')
-        .in('venta_id', ventaIds);
-
-    if (detallesErr || !detallesData) {
-        return {};
-    }
-
-    const result = {};
-    detallesData.forEach(row => {
-        const normName = (row.producto || '').toLowerCase().trim();
-        if (!result[normName]) {
-            result[normName] = { unidades: 0, ingresos: 0 };
-        }
-        result[normName].unidades += Number(row.cantidad || 0);
-        result[normName].ingresos += Number(row.subtotal || 0);
-    });
-
-    return result;
 };
+
 
 export const getLotesComprasProductos = async () => {
     if (isDemo()) return {};
 
-    const { data, error } = await supabase
-        .from('compras_detalles')
-        .select('producto, cantidad');
-
-    if (error || !data) {
+    let data;
+    try {
+        data = await fetchAllRows(() => supabase
+            .from('compras_detalles')
+            .select('producto, cantidad')
+            .order('compra_id', { ascending: true })
+            .order('producto', { ascending: true }));
+    } catch (error) {
+        console.error('Error en getLotesComprasProductos:', error);
         return {};
     }
 

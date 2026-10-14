@@ -71,7 +71,53 @@ function normalizeText(text) {
 }
 
 /**
- * Clasifica un producto según la lista de reglas de palabras clave o categoría de base de datos
+ * Escapa caracteres especiales de RegExp en una palabra clave
+ */
+function escapeRegExp(text) {
+  return String(text).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+/**
+ * Mapeo explícito de la categoría de la base de datos (productos.categoria, normalizada)
+ * a la sección del reporte. Evita depender de coincidencias parciales de texto.
+ */
+const DB_CATEGORY_TO_SECTION = {
+  'BEBIDAS': 'BEBIDAS',
+  'CIGARRILLOS Y TABACO': 'CIGARRILLOS',
+  'GOLOSINAS Y CHOCOLATES': 'GOLOSINAS',
+  'ALMACEN Y COMESTIBLES': 'ALMACEN',
+  'VARIOS Y SERVICIOS': 'ALMACEN',
+  'LIMPIEZA DEL HOGAR': 'ALMACEN',
+  'FARMACIA Y CUIDADO PERSONAL': 'FARMACIA',
+  'GALLETITAS Y BIZCOCHOS': 'GALLETITAS',
+  'SNACKS SALADOS': 'SNACKS',
+  'LACTEOS Y FRESCOS': 'LACTEOS'
+}
+
+// Categoría de la base cuya sección depende del nombre del producto (panificados vs sánguches)
+const DB_CATEGORY_MIXED = { 'COMIDAS Y ELABORADOS': 'LACTEOS' }
+
+function isCustomRule(rule) {
+  return String(rule.id).startsWith('custom_')
+}
+
+function matchByKeywords(normName, rules) {
+  for (const rule of rules) {
+    for (const kw of rule.keywords) {
+      const normKw = escapeRegExp(normalizeText(kw))
+      if (!normKw) continue
+      const regex = new RegExp(`(?:^|\\s|\\b)${normKw}(?:$|\\s|\\b)`, 'i')
+      if (regex.test(normName)) {
+        return rule
+      }
+    }
+  }
+  return null
+}
+
+/**
+ * Clasifica un producto: 1) reglas personalizadas por palabra clave, 2) categoría de la base de datos
+ * (automática, sin carga manual), 3) respaldo por palabras clave del nombre, 4) "Sin Categorizar".
  */
 export function categorizeProduct(productInput, customRules = DEFAULT_SECTION_RULES) {
   let catStr = ''
@@ -84,28 +130,37 @@ export function categorizeProduct(productInput, customRules = DEFAULT_SECTION_RU
     productName = String(productInput || '')
   }
 
-  // 1. Si el producto ya tiene categoría asignada en la DB, matchear directamente
+  const normName = normalizeText(productName)
+
+  // 1. Reglas personalizadas creadas por el usuario tienen prioridad
+  const userMatch = matchByKeywords(normName, customRules.filter(isCustomRule))
+  if (userMatch) return userMatch
+
+  // 2. Categoría asignada en la base de datos
   if (catStr && catStr !== 'SIN_CATEGORIA') {
-    const normCat = normalizeText(catStr)
-    const match = customRules.find(r => 
-      normalizeText(r.id) === normCat || 
+    const normCat = normalizeText(catStr).trim()
+    const byId = id => customRules.find(r => r.id === id)
+
+    if (DB_CATEGORY_TO_SECTION[normCat]) {
+      const direct = byId(DB_CATEGORY_TO_SECTION[normCat])
+      if (direct) return direct
+    }
+    if (DB_CATEGORY_MIXED[normCat]) {
+      const byName = matchByKeywords(normName, customRules.filter(r => !isCustomRule(r)))
+      const mixed = byName || byId(DB_CATEGORY_MIXED[normCat])
+      if (mixed) return mixed
+    }
+    const match = customRules.find(r =>
+      normalizeText(r.id) === normCat ||
       normalizeText(r.name).includes(normCat) ||
       normCat.includes(normalizeText(r.id))
     )
     if (match) return match
   }
 
-  // 2. Fallback a búsqueda de palabras clave en el nombre
-  const normName = normalizeText(productName)
-  for (const rule of customRules) {
-    for (const kw of rule.keywords) {
-      const normKw = normalizeText(kw)
-      const regex = new RegExp(`(?:^|\\s|\\b)${normKw}(?:$|\\s|\\b)`, 'i')
-      if (regex.test(normName)) {
-        return rule
-      }
-    }
-  }
+  // 3. Respaldo: palabras clave en el nombre
+  const fallback = matchByKeywords(normalizeText(productName), customRules)
+  if (fallback) return fallback
 
   return {
     id: 'otros',
@@ -208,11 +263,8 @@ export function aggregateBySections(products = [], options = {}) {
       rawNeeded = Math.max(5, Math.ceil(ventasDiarias * targetCoverageDays))
     }
 
-    // 3. Safety Stock (+1 lote) para productos de alta rotación (>= 3 compras en el mes)
-    const isAltaRotacion = (p.compras_count || 0) >= 3
-    if (isAltaRotacion && rawNeeded > 0 && loteHabitual > 1) {
-      rawNeeded += loteHabitual
-    }
+    // 3. (Sin safety stock extra: la cobertura elegida ya define el stock deseado y el
+    //    redondeo al lote habitual aporta el margen de compra)
 
     // 4. Redondeo a Lote Habitual de Compra
     let unidadesAComprar = rawNeeded

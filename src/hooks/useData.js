@@ -631,19 +631,19 @@ export function useReporteSecciones(options = {}) {
         SWR_OPTIONS
     )
 
-    const { data: ventas7dRes } = useSWR(
+    const { data: ventas7dRes, isLoading: loadingVentas7d } = useSWR(
         !isDemoMode ? 'ventas_productos_periodo_7d' : null,
         () => api.getVentasProductosPeriodo(7),
         SWR_OPTIONS
     )
 
-    const { data: ventas30dRes } = useSWR(
+    const { data: ventas30dRes, isLoading: loadingVentas30d } = useSWR(
         !isDemoMode ? 'ventas_productos_periodo_30d' : null,
         () => api.getVentasProductosPeriodo(30),
         SWR_OPTIONS
     )
 
-    const { data: lotesRes } = useSWR(
+    const { data: lotesRes, isLoading: loadingLotes } = useSWR(
         !isDemoMode ? 'lotes_compras_productos' : null,
         () => api.getLotesComprasProductos(),
         SWR_OPTIONS
@@ -696,7 +696,9 @@ export function useReporteSecciones(options = {}) {
                     compras_count: comprasCount,
                     stock_actual: prodInfo.stock_actual !== undefined ? prodInfo.stock_actual : 0,
                     ultimo_costo_compra: costoUnitario,
-                    ultimo_precio_venta: prodInfo.ultimo_precio_venta || 0
+                    ultimo_precio_venta: prodInfo.ultimo_precio_venta || 0,
+                    categoria: prodInfo.categoria || r.categoria || '',
+                    subcategoria: prodInfo.subcategoria || r.subcategoria || ''
                 }
             })
         }
@@ -735,7 +737,7 @@ export function useReporteSecciones(options = {}) {
     return {
         sections,
         totals,
-        loading: loadingRent || loadingProd || loadingCompras || loadingVentasPeriodo
+        loading: loadingRent || loadingProd || loadingCompras || loadingVentasPeriodo || loadingVentas7d || loadingVentas30d || loadingLotes
     }
 }
 
