@@ -605,7 +605,7 @@ export function useDescalcesPagos(options = {}) {
 
 export function useReporteSecciones(options = {}) {
     const { isDemoMode } = useAuth()
-    const { periodDays = 30, targetCoverageDays = 7, minComprasMes = 3, customRules } = options
+    const { periodDays = 30, targetCoverageDays = 7, minVentasPeriodo = 1, minComprasMes, customRules } = options
 
     const { data: rentabilidadRes, isLoading: loadingRent } = useSWR(
         !isDemoMode ? 'rentabilidad_productos_full' : null,
@@ -675,9 +675,9 @@ export function useReporteSecciones(options = {}) {
                 const normName = (r.producto || '').toLowerCase().trim()
                 const prodInfo = prodMap.get(normName) || {}
                 const comprasCount = comprasCountsRes?.[normName] || 0
-                const periodSales = ventasPeriodoRes?.[normName] || { unidades: 0, ingresos: 0 }
-                const sales7d = ventas7dRes?.[normName] || { unidades: 0 }
-                const sales30d = ventas30dRes?.[normName] || { unidades: 0 }
+                const periodSales = ventasPeriodoRes?.[normName] || { unidades: 0, ingresos: 0, ventasCount: 0 }
+                const sales7d = ventas7dRes?.[normName] || { unidades: 0, ventasCount: 0 }
+                const sales30d = ventas30dRes?.[normName] || { unidades: 0, ventasCount: 0 }
 
                 const costoUnitario = prodInfo.ultimo_costo_compra || r.ppp_costo_unitario || 0
                 const unidadesVendidasPeriodo = periodSales.unidades
@@ -690,6 +690,9 @@ export function useReporteSecciones(options = {}) {
                     unidades_vendidas: unidadesVendidasPeriodo,
                     unidades_vendidas_7d: sales7d.unidades,
                     unidades_vendidas_30d: sales30d.unidades,
+                    ventas_count: periodSales.ventasCount || 0,
+                    ventas_count_7d: sales7d.ventasCount || 0,
+                    ventas_count_30d: sales30d.ventasCount || 0,
                     ingresos_totales: ingresosTotalesPeriodo,
                     costo_mercaderia_vendida: cmvPeriodo,
                     ganancia_neta: gananciaNetaPeriodo,
@@ -704,12 +707,13 @@ export function useReporteSecciones(options = {}) {
         }
 
         let filteredList = rawList
-        if (minComprasMes > 0 && !isDemoMode) {
-            filteredList = rawList.filter(r => (r.compras_count || 0) >= minComprasMes)
+        const threshold = minVentasPeriodo !== undefined ? minVentasPeriodo : (minComprasMes || 0)
+        if (threshold > 0 && !isDemoMode) {
+            filteredList = rawList.filter(r => (r.ventas_count || 0) >= (minVentasPeriodo || minComprasMes || 0) || (r.unidades_vendidas || 0) >= (minVentasPeriodo || minComprasMes || 0) || (r.stock_actual <= 0 && (r.unidades_vendidas || 0) > 0))
         }
 
         return aggregateBySections(filteredList, { periodDays, targetCoverageDays, customRules, lotesMap: lotesRes || {} })
-    }, [isDemoMode, rentabilidadRes, productosRes, comprasCountsRes, ventasPeriodoRes, ventas7dRes, ventas30dRes, lotesRes, periodDays, targetCoverageDays, minComprasMes, customRules])
+    }, [isDemoMode, rentabilidadRes, productosRes, comprasCountsRes, ventasPeriodoRes, ventas7dRes, ventas30dRes, lotesRes, periodDays, targetCoverageDays, minVentasPeriodo, minComprasMes, customRules])
 
     const totals = useMemo(() => {
         return sections.reduce((acc, sec) => {

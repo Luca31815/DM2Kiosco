@@ -46,7 +46,7 @@ const ICON_MAP = {
 export default function ReporteSeccionesView() {
   const [periodDays, setPeriodDays] = useState(30)
   const [targetCoverageDays, setTargetCoverageDays] = useState(7)
-  const [minComprasMes, setMinComprasMes] = useState(3)
+  const [minVentasPeriodo, setMinVentasPeriodo] = useState(1)
   const [searchTerm, setSearchTerm] = useState('')
   const [expandedSection, setExpandedSection] = useState(null)
   const [customRules, setCustomRules] = useState([])
@@ -59,7 +59,7 @@ export default function ReporteSeccionesView() {
   const { sections, totals, loading } = useReporteSecciones({
     periodDays,
     targetCoverageDays,
-    minComprasMes,
+    minVentasPeriodo,
     customRules
   })
 
@@ -117,19 +117,19 @@ export default function ReporteSeccionesView() {
 
         {/* Selector de Controles */}
         <div className="flex flex-wrap items-center gap-3">
-          {/* Filtro por compras en los últimos 30 días */}
+          {/* Filtro por rotación de ventas a clientes */}
           <div className="flex items-center gap-2 bg-slate-800/90 p-1.5 rounded-xl border border-slate-700">
-            <span className="text-xs text-slate-400 pl-2 font-medium">Filtrar compras:</span>
+            <span className="text-xs text-slate-400 pl-2 font-medium">Filtrar rotación:</span>
             {[
-              { label: '> 3 Compras (30 días)', min: 3 },
-              { label: '> 1 Compra', min: 1 },
+              { label: 'Con Ventas', min: 1 },
+              { label: '> 3 Ventas', min: 3 },
               { label: 'Todos', min: 0 }
             ].map(item => (
               <button
                 key={item.min}
-                onClick={() => setMinComprasMes(item.min)}
+                onClick={() => setMinVentasPeriodo(item.min)}
                 className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
-                  minComprasMes === item.min
+                  minVentasPeriodo === item.min
                     ? 'bg-amber-600 text-white shadow-md shadow-amber-600/30'
                     : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
                 }`}
@@ -416,7 +416,28 @@ export default function ReporteSeccionesView() {
                                 </span>
                               </td>
                               <td className="py-2.5 px-3 text-right font-medium text-slate-300">
-                                {p.unidadesVendidas} u.
+                                <div className="flex flex-col items-end">
+                                  <span className="font-bold text-slate-200">{p.unidadesVendidas} u.</span>
+                                  {p.ventasCount > 0 ? (
+                                    <span 
+                                      className={`text-[10px] ${
+                                        p.esVentaAislada 
+                                          ? 'text-amber-400 font-semibold' 
+                                          : 'text-slate-400 font-normal'
+                                      }`}
+                                      title={
+                                        p.esVentaAislada 
+                                          ? 'Venta atípica: todo el volumen provino de 1 sola venta' 
+                                          : `Promedio: ~${p.unidadesPorVenta} unidades por ticket`
+                                      }
+                                    >
+                                      en {p.ventasCount} {p.ventasCount === 1 ? 'venta' : 'ventas'}
+                                      {p.esVentaAislada ? ' (⚠️ Bloque)' : p.ventasCount > 1 ? ` (~${p.unidadesPorVenta}/vta)` : ''}
+                                    </span>
+                                  ) : (
+                                    <span className="text-[10px] text-slate-500 italic">0 ventas</span>
+                                  )}
+                                </div>
                               </td>
                               <td className="py-2.5 px-3 text-right font-bold text-emerald-400">
                                 ${p.gananciaNeta.toLocaleString('es-AR', { maximumFractionDigits: 0 })}

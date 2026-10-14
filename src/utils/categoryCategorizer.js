@@ -210,6 +210,9 @@ export function aggregateBySections(products = [], options = {}) {
     const loteHabitual = lotesMap[normNombre] || (isCigarrillo ? 5 : 1)
 
     const unidadesVendidas = Number(p.unidades_vendidas || p.unidadesVendidas || 0)
+    const ventasCount = Number(p.ventas_count || p.ventasCount || 0)
+    const unidadesPorVenta = ventasCount > 0 ? (unidadesVendidas / ventasCount) : 0
+    const esVentaAislada = ventasCount === 1 && unidadesVendidas >= 3
     const unidadesVendidas30d = Number(p.unidades_vendidas_30d || unidadesVendidas)
     const ingresosTotales = Number(p.ingresos_totales || p.ingreso_total || p.recaudacion_total || (unidadesVendidas * (p.ultimo_precio_venta || p.precio_venta || 0)) || 0)
     const costoMercaderiaVendida = Number(p.costo_mercaderia_vendida || p.costo_total || 0)
@@ -279,6 +282,9 @@ export function aggregateBySections(products = [], options = {}) {
       categoria: p.categoria || 'SIN_CATEGORIA',
       subcategoria: p.subcategoria || 'GENERAL',
       unidadesVendidas,
+      ventasCount,
+      unidadesPorVenta: Number(unidadesPorVenta.toFixed(1)),
+      esVentaAislada,
       ingresosTotales,
       costoMercaderiaVendida,
       gananciaNeta,

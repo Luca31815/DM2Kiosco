@@ -699,16 +699,25 @@ export const getVentasProductosPeriodo = async (days = 30) => {
         const ventaIds = ventasData.map(v => v.venta_id).filter(Boolean);
         if (ventaIds.length === 0) return {};
 
-        const detallesData = await fetchInBatches('ventas_detalles', 'producto, cantidad, subtotal', 'venta_id', ventaIds);
+        const detallesData = await fetchInBatches('ventas_detalles', 'venta_id, producto, cantidad, subtotal', 'venta_id', ventaIds);
 
         const result = {};
+        const countsSet = {};
         detallesData.forEach(row => {
             const normName = (row.producto || '').toLowerCase().trim();
             if (!result[normName]) {
-                result[normName] = { unidades: 0, ingresos: 0 };
+                result[normName] = { unidades: 0, ingresos: 0, ventasCount: 0 };
+                countsSet[normName] = new Set();
             }
             result[normName].unidades += Number(row.cantidad || 0);
             result[normName].ingresos += Number(row.subtotal || 0);
+            if (row.venta_id) {
+                countsSet[normName].add(row.venta_id);
+            }
+        });
+
+        Object.keys(result).forEach(normName => {
+            result[normName].ventasCount = countsSet[normName] ? countsSet[normName].size : 0;
         });
 
         return result;
