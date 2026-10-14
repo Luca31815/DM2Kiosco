@@ -312,7 +312,12 @@ export function aggregateBySections(products = [], options = {}) {
         ? ((sec.gananciaNeta / sec.ingresosTotales) * 100).toFixed(1)
         : '0.0'
 
-      sec.productos.sort((a, b) => b.gananciaNeta - a.gananciaNeta)
+      sec.productos.sort((a, b) => {
+        if (b.unidadesAComprar !== a.unidadesAComprar) {
+          return b.unidadesAComprar - a.unidadesAComprar
+        }
+        return b.gananciaNeta - a.gananciaNeta
+      })
 
       return {
         ...sec,
