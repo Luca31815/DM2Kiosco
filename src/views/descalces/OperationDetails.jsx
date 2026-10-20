@@ -3,7 +3,6 @@ import {
     AlertTriangle, Coins, Package, Loader2, Edit2, Check, X, Plus, Info,
     Trash2, Zap, Sparkles, CheckCircle2
 } from 'lucide-react'
-import { toast } from 'react-hot-toast'
 import * as api from '../../services/api'
 import { OperationItemsTable, OperationPaymentsTable } from './OperationTables'
 import { OperationConciliationAssistant } from './OperationConciliationAssistant'
@@ -53,7 +52,10 @@ const OperationDetails = ({ operacionId, tipoOperacion, onRefresh, cabeceraOrigi
     }, [operacionId, tipoOperacion])
 
     React.useEffect(() => {
-        loadDetails()
+        const init = async () => {
+            await loadDetails()
+        }
+        init()
     }, [loadDetails])
 
     // --- ACCIONES DE EDICIÓN ---

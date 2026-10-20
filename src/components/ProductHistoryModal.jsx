@@ -23,13 +23,12 @@ export default function ProductHistoryModal({ product, isOpen, onClose }) {
     const [searchTerm, setSearchTerm] = useState('')
 
     useEffect(() => {
-        if (!isOpen || !product) {
-            setMessages([])
-            return
-        }
-
         let isMounted = true
         const fetchHistory = async () => {
+            if (!isOpen || !product) {
+                if (isMounted) setMessages([])
+                return
+            }
             setLoading(true)
             try {
                 const data = await api.getProductBotHistory(product.nombre)

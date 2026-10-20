@@ -98,7 +98,7 @@ export function useProductos(options = {}) {
 }
 
 export function useCategorias() {
-    const { isDemoMode } = useAuth()
+    const { isDemoMode: _isDemoMode } = useAuth()
     const { data, error, isLoading } = useSWR(
         'categorias_disponibles',
         () => api.getCategoriasDisponibles(),

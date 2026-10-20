@@ -144,9 +144,9 @@ export const checkDuplicateStatus = (p1, p2, ignoredPairs = [], learnedSynonyms 
     const id1 = p1.producto_id || p1.id;
     const id2 = p2.producto_id || p2.id;
 
-    // 0. Verificar si ya fue ignorado por el usuario
-    const pairId = [String(id1), String(id2)].sort().join('_');
-    if (ignoredPairs.includes(pairId)) {
+    // 0. Verificar si ya fue ignorado por el usuario (soporta separador '|' y '_')
+    const sortedIds = [String(id1), String(id2)].sort();
+    if (ignoredPairs.includes(sortedIds.join('|')) || ignoredPairs.includes(sortedIds.join('_'))) {
         return { isDuplicate: false, confidence: 0, reason: "Ignorado por el usuario" };
     }
 

@@ -4,6 +4,7 @@ import ProductAutocomplete from '../../components/ProductAutocomplete'
 
 export const useProductosColumns = ({
     editingId,
+    setEditingId,
     editForm,
     setEditForm,
     isSaving,
@@ -263,5 +264,5 @@ export const useProductosColumns = ({
                 </div>
             )
         }
-    ], [editingId, editForm, isSaving, handleSave, handleEditStart, setEditForm, categorias, subcategoriasPorCategoria, isSelectionMode, selectedProductIds, toggleSelectProduct, toggleSelectVisible, allVisibleSelected])
+    ], [editingId, setEditingId, editForm, isSaving, handleSave, handleEditStart, setEditForm, categorias, subcategoriasPorCategoria, isSelectionMode, selectedProductIds, toggleSelectProduct, toggleSelectVisible, allVisibleSelected])
 }

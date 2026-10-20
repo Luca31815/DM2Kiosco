@@ -221,7 +221,7 @@ const ReportesView = () => {
         return Object.values(map).sort((a, b) => b.ganancia_total - a.ganancia_total).slice(0, 5)
     }, [topProductsData])
 
-    const gananciaReal = useMemo(() => {
+    const _gananciaReal = useMemo(() => {
         if (!topProductsData || !topProductsData.length) return { total: 0, productos: 0 }
         const map = topProductsData.reduce((acc, curr) => {
             const name = curr.producto?.trim() || 'Sin Nombre'

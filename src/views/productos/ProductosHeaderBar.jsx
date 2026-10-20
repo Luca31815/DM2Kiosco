@@ -14,7 +14,7 @@ export const ProductosHeaderBar = ({
     setSelectedSubcategoria,
     categorias = [],
     subcategoriasPorCategoria = {},
-    loadingCategorias = false,
+    loadingCategorias: _loadingCategorias = false,
     isSelectionMode = false,
     setIsSelectionMode,
     selectedProductIds = new Set(),

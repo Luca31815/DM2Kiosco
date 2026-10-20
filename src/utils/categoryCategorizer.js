@@ -206,7 +206,8 @@ export function aggregateBySections(products = [], options = {}) {
     const subObj = secObj.subcategoriasMap[subcatKey]
 
     const normNombre = rawNombre.toLowerCase().trim()
-    const isCigarrillo = section.id === 'cigarrillos' || normNombre.includes('cigarrillo')
+    const secIdLower = (section.id || '').toLowerCase()
+    const isCigarrillo = secIdLower.includes('cigarrillo') || secIdLower.includes('tabaco') || normNombre.includes('cigarrillo')
     const loteHabitual = lotesMap[normNombre] || (isCigarrillo ? 5 : 1)
 
     const unidadesVendidas = Number(p.unidades_vendidas || p.unidadesVendidas || 0)
@@ -228,7 +229,7 @@ export function aggregateBySections(products = [], options = {}) {
     let ventasDiarias = (v7d > 0 && v30d > 0) ? (0.6 * v7d + 0.4 * v30d) : (periodDays > 0 ? (unidadesVendidas / periodDays) : 0)
 
     // 2. Factor Fin de Semana (+20%) para rubros de alta rotación fin de semana
-    const isWeekendCategory = ['cervezas', 'bebidas', 'cigarrillos', 'snacks', 'alfajores'].includes(section.id)
+    const isWeekendCategory = ['cerveza', 'bebida', 'cigarrillo', 'tabaco', 'snack', 'alfajor', 'golosina'].some(k => secIdLower.includes(k))
     if (isWeekendCategory && ventasDiarias > 0) {
       ventasDiarias *= 1.20
     }

@@ -160,7 +160,7 @@ const SystemView = () => {
             )
         },
         {
-            key: 'resumen', label: 'Cambios', render: (_, row) => calculateDiff(row.valor_anterior, row.valor_nuevo)
+            key: 'resumen', label: 'Cambios', render: (_, row) => <RenderChanges oldVal={row.valor_anterior} newVal={row.valor_nuevo} />
         },
         {
             key: 'usuario', label: 'Origen', render: (val, row) => (

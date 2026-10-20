@@ -130,17 +130,7 @@ const ReporteProductosView = () => {
 
 
 
-    const scrollContainerRef = useRef(null)
-
-    const scroll = (direction) => {
-        if (scrollContainerRef.current) {
-            const scrollAmount = 300
-            scrollContainerRef.current.scrollBy({
-                left: direction === 'left' ? -scrollAmount : scrollAmount,
-                behavior: 'smooth'
-            })
-        }
-    }
+    const _scrollContainerRef = useRef(null)
 
     return (
         <div className="space-y-6">

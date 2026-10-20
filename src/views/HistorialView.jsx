@@ -23,7 +23,6 @@ import HistorialEditModal from './historial/HistorialEditModal'
 
 const ExpandedRow = ({ row, onEdit, onCancel, isCanceling }) => {
     const isCancelled = row.estado === 'CANCELADO'
-    const isPending = row.estado === 'PENDIENTE' || row.estado === 'PROCESANDO'
 
     return (
         <div className="bg-slate-900/80 p-5 rounded-2xl border border-slate-700/80 mx-2 mb-3 text-sm text-slate-300 space-y-4 shadow-xl">
@@ -116,7 +115,7 @@ const ExpandedRow = ({ row, onEdit, onCancel, isCanceling }) => {
     )
 }
 
-export const isBotError = (row) => {
+const isBotError = (row) => {
     if (!row) return false
     const estado = (row.estado || '').toUpperCase()
     if (estado === 'CANCELADO') return false

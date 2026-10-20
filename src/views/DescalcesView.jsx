@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react'
-import { LazyMotion, domAnimation, m, AnimatePresence } from 'framer-motion'
+import { AnimatePresence } from 'framer-motion'
 import {
     AlertTriangle, Coins, ShieldCheck, RefreshCcw,
     ChevronDown, ChevronUp, Calendar, User, Info,

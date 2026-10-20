@@ -1,7 +1,7 @@
 import React from 'react'
 import { AnimatePresence } from 'framer-motion'
 import { X } from 'lucide-react'
-import ProveedoresHistoryChart from './ProveedoresHistoryChart'
+const ProveedoresHistoryChart = React.lazy(() => import('./ProveedoresHistoryChart'))
 
 export const ProveedorProductDrawer = ({
     selectedProduct,

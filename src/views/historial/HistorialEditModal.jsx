@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { LazyMotion, domAnimation, m, AnimatePresence } from 'framer-motion'
 import { Tag, CheckCircle, X, Loader2, Info, Sparkles } from 'lucide-react'
 import { toast } from 'react-hot-toast'
@@ -35,7 +35,9 @@ const HistorialEditModal = ({ isOpen, onClose, message, onSuccess }) => {
     const [detalleError, setDetalleError] = useState('')
     const [isSubmitting, setIsSubmitting] = useState(false)
 
-    useEffect(() => {
+    const [prevMessage, setPrevMessage] = useState(null)
+    if (message !== prevMessage) {
+        setPrevMessage(message)
         if (message) {
             const currentTipo = message.tipo_accion || 'DESCONOCIDO'
             if (ACCIONES_SUGERIDAS.includes(currentTipo)) {
@@ -48,7 +50,7 @@ const HistorialEditModal = ({ isOpen, onClose, message, onSuccess }) => {
             setEstado(message.estado || 'ENVIADO')
             setDetalleError(message.detalle_error || '')
         }
-    }, [message])
+    }
 
     if (!isOpen || !message) return null
 

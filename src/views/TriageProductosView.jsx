@@ -43,7 +43,7 @@ export default function TriageProductosView() {
     const [isBatchSaving, setIsBatchSaving] = useState(false)
 
     // Carga de datos mediante SWR
-    const { data: rawProducts, count, loading, mutate: mutateTriage } = useTriageProducts(activeTab)
+    const { data: rawProducts, count: _count, loading, mutate: mutateTriage } = useTriageProducts(activeTab)
     const { count: pendingCount } = useTriagePendingCount()
 
     // Formateador de moneda
@@ -469,7 +469,7 @@ export default function TriageProductosView() {
                                 const availableSubs = SUBCATEGORIAS_BY_CATEGORIA[currentCat] || []
 
                                 const familiaObj = FAMILIAS_CANONICAS.find(f => f.id === currentCat)
-                                const badgeStyle = familiaObj?.badgeColor || 'bg-slate-800 text-slate-400 border-white/5'
+                                const _badgeStyle = familiaObj?.badgeColor || 'bg-slate-800 text-slate-400 border-white/5'
 
                                 return (
                                     <m.div

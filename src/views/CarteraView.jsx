@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import useSWR, { useSWRConfig } from 'swr'
 import * as api from '../services/api'
-import { LazyMotion, domAnimation, m, AnimatePresence } from 'framer-motion'
+import { AnimatePresence } from 'framer-motion'
 import { 
     Wallet, 
     CreditCard, 

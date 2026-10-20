@@ -1,12 +1,9 @@
 import React, { useState, useMemo } from 'react'
 import DataTable from '../components/DataTable'
-import { useReservas, useReservasDetalles, useMovimientosDinero, useMovimientosStock } from '../hooks/useData'
+import { useReservas } from '../hooks/useData'
 import { Loader2, Edit2, Check, X, Search, Calendar, User, Package, CreditCard, ChevronRight, Trash2 } from 'lucide-react'
-import * as api from '../services/api'
-import { useSWRConfig } from 'swr'
 import ProductAutocomplete from '../components/ProductAutocomplete'
 import ClientAutocomplete from '../components/ClientAutocomplete'
-import { toast } from 'react-hot-toast'
 
 import { ReservasExpandedRow as ExpandedRow } from '../components/reservas/ReservasExpandedRow'
 

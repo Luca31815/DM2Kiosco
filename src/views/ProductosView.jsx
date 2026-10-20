@@ -386,7 +386,7 @@ const ProductosView = () => {
     }, [selectedProductIds, mutate])
 
     const columns = useProductosColumns({
-        editingId,
+        editingId, setEditingId,
         editForm,
         setEditForm,
         isSaving,

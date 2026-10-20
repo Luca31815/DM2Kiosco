@@ -23,10 +23,8 @@ import {
 import ProductAutocomplete from '../components/ProductAutocomplete'
 import * as api from '../services/api'
 import { mutate } from 'swr'
-import { toast } from 'react-hot-toast'
 import { ProveedoresMergeModal } from './proveedores/ProveedoresMergeModal'
 import { ProveedorProductDrawer } from './proveedores/ProveedorProductDrawer'
-const ProveedoresHistoryChart = React.lazy(() => import('./proveedores/ProveedoresHistoryChart'))
 import { AnimatePresence } from 'framer-motion'
 
 

@@ -13,11 +13,7 @@ const SynonymManagerModal = ({ isOpen, onClose }) => {
     const [filter, setFilter] = useState('')
     const [view, setView] = useState('all') // 'all' | 'conflicts'
 
-    useEffect(() => {
-        if (isOpen) loadData()
-    }, [isOpen])
-
-    const loadData = async () => {
+    const loadData = React.useCallback(async () => {
         setLoading(true)
         try {
             const [all, conf] = await Promise.all([
@@ -31,7 +27,15 @@ const SynonymManagerModal = ({ isOpen, onClose }) => {
         } finally {
             setLoading(false)
         }
-    }
+    }, [])
+
+    useEffect(() => {
+        if (!isOpen) return
+        const init = async () => {
+            await loadData()
+        }
+        init()
+    }, [isOpen, loadData])
 
     const handleDelete = async (alias) => {
         try {

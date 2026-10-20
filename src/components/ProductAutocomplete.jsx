@@ -5,6 +5,11 @@ import { Loader2 } from 'lucide-react'
 
 const ProductAutocomplete = ({ value, onChange, placeholder = 'Buscar producto...', className = '' }) => {
     const [inputValue, setInputValue] = useState(value || '')
+    const [prevPropValue, setPrevPropValue] = useState(value)
+    if (value !== prevPropValue) {
+        setPrevPropValue(value)
+        setInputValue(value || '')
+    }
     const [showSuggestions, setShowSuggestions] = useState(false)
     const [debouncedQuery, setDebouncedQuery] = useState('')
     const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 })
@@ -19,34 +24,30 @@ const ProductAutocomplete = ({ value, onChange, placeholder = 'Buscar producto..
         return () => clearTimeout(timer)
     }, [inputValue])
 
-    // Sync external value changes
-    useEffect(() => {
-        setInputValue(value || '')
-    }, [value])
-
     const [suggestions, setSuggestions] = useState([])
     const [loading, setLoading] = useState(false)
 
     // Fetch suggestions using trigram similarity
     useEffect(() => {
-        if (!debouncedQuery || debouncedQuery.length < 2) {
-            setSuggestions([])
-            return
-        }
-
+        let isMounted = true
         const fetchSuggestions = async () => {
+            if (!debouncedQuery || debouncedQuery.length < 2) {
+                if (isMounted) setSuggestions([])
+                return
+            }
             setLoading(true)
             try {
                 const results = await api.buscarProductosSimilares(debouncedQuery)
-                setSuggestions(results || [])
+                if (isMounted) setSuggestions(results || [])
             } catch (err) {
                 console.error('Error fetching suggestions:', err)
             } finally {
-                setLoading(false)
+                if (isMounted) setLoading(false)
             }
         }
 
         fetchSuggestions()
+        return () => { isMounted = false }
     }, [debouncedQuery])
 
     // Update position for portal
