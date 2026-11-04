@@ -290,7 +290,7 @@ const VentasView = () => {
                 details = data || [];
             }
             if (!pagos) {
-                const { data } = await supabase.from('movimientos_dinero').select('*').eq('operacion_id', sale.venta_id);
+                const { data } = await supabase.from('movimientos_dinero').select('*').eq('referencia_id', sale.venta_id);
                 pagos = data || [];
             }
         } catch (err) {

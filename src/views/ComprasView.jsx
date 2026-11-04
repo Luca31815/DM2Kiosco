@@ -355,7 +355,7 @@ const ComprasView = () => {
                 details = data || [];
             }
             if (!pagos) {
-                const { data } = await supabase.from('movimientos_dinero').select('*').eq('operacion_id', purchase.compra_id);
+                const { data } = await supabase.from('movimientos_dinero').select('*').eq('referencia_id', purchase.compra_id);
                 pagos = data || [];
             }
         } catch (err) {
