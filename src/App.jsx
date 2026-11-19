@@ -29,6 +29,7 @@ const ReporteSeccionesView = lazy(() => import('./views/ReporteSeccionesView'))
 const TriageProductosView = lazy(() => import('./views/TriageProductosView'))
 const ComparadorVentasView = lazy(() => import('./views/ComparadorVentasView'))
 const RadarPreciosMesView = lazy(() => import('./views/RadarPreciosMesView'))
+const FinanzasApp = lazy(() => import('./finanzas/FinanzasApp'))
 
 const LoadingScreen = () => (
   <div className="flex-1 flex items-center justify-center p-20">
@@ -43,32 +44,47 @@ function App() {
       <AuthProvider>
         <AuthGuard>
           <Router>
-            <Layout>
-              <Suspense fallback={<LoadingScreen />}>
-                <Routes>
-                  <Route path="/" element={<HomeView />} />
-                  <Route path="/ventas" element={<VentasView />} />
-                  <Route path="/compras" element={<ComprasView />} />
-                  <Route path="/reservas" element={<ReservasView />} />
-                  <Route path="/triage" element={<TriageProductosView />} />
-                  <Route path="/productos" element={<ProductosView />} />
-                  <Route path="/rentabilidad" element={<RentabilidadProductosView />} />
-                  <Route path="/reportes" element={<ReportesView />} />
-                  <Route path="/reporte-productos" element={<ReporteProductosView />} />
-                  <Route path="/analisis-horarios" element={<AnalisisHorariosView />} />
-                  <Route path="/historial" element={<HistorialView />} />
-                  <Route path="/sistema" element={<SystemView />} />
-                  <Route path="/retiros" element={<RetirosView />} />
-                  <Route path="/proveedores" element={<ProveedoresView />} />
-                  <Route path="/duplicados" element={<DuplicadosView />} />
-                  <Route path="/descalces" element={<DescalcesView />} />
-                  <Route path="/cartera" element={<CarteraView />} />
-                  <Route path="/secciones" element={<ReporteSeccionesView />} />
-                  <Route path="/comparador-ventas" element={<ComparadorVentasView />} />
-                  <Route path="/radar-precios" element={<RadarPreciosMesView />} />
-                </Routes>
-              </Suspense>
-            </Layout>
+            <Routes>
+              <Route
+                path="/finanzas/*"
+                element={
+                  <Suspense fallback={<LoadingScreen />}>
+                    <FinanzasApp />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/*"
+                element={
+                  <Layout>
+                    <Suspense fallback={<LoadingScreen />}>
+                      <Routes>
+                        <Route path="/" element={<HomeView />} />
+                        <Route path="/ventas" element={<VentasView />} />
+                        <Route path="/compras" element={<ComprasView />} />
+                        <Route path="/reservas" element={<ReservasView />} />
+                        <Route path="/triage" element={<TriageProductosView />} />
+                        <Route path="/productos" element={<ProductosView />} />
+                        <Route path="/rentabilidad" element={<RentabilidadProductosView />} />
+                        <Route path="/reportes" element={<ReportesView />} />
+                        <Route path="/reporte-productos" element={<ReporteProductosView />} />
+                        <Route path="/analisis-horarios" element={<AnalisisHorariosView />} />
+                        <Route path="/historial" element={<HistorialView />} />
+                        <Route path="/sistema" element={<SystemView />} />
+                        <Route path="/retiros" element={<RetirosView />} />
+                        <Route path="/proveedores" element={<ProveedoresView />} />
+                        <Route path="/duplicados" element={<DuplicadosView />} />
+                        <Route path="/descalces" element={<DescalcesView />} />
+                        <Route path="/cartera" element={<CarteraView />} />
+                        <Route path="/secciones" element={<ReporteSeccionesView />} />
+                        <Route path="/comparador-ventas" element={<ComparadorVentasView />} />
+                        <Route path="/radar-precios" element={<RadarPreciosMesView />} />
+                      </Routes>
+                    </Suspense>
+                  </Layout>
+                }
+              />
+            </Routes>
             <SpeedInsights />
             <Analytics />
           </Router>

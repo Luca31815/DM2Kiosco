@@ -25,13 +25,11 @@ import {
     Eye,
     Layers,
     Inbox,
-    ExternalLink
+    ArrowLeftRight
 } from 'lucide-react'
 import { LazyMotion, domAnimation, m, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
 import { useTriagePendingCount } from '../hooks/useData'
-
-const FINANZAS_APP_URL = (import.meta.env.VITE_FINANZAS_URL || 'http://localhost:5174').trim()
 
 const navGroups = [
     {
@@ -197,19 +195,17 @@ const Sidebar = memo(({ isOpen, onClose }) => {
 
                         {/* Footer */}
                         <div className="relative z-10 p-4 border-t border-white/5 space-y-2">
-                            <a
-                                href={FINANZAS_APP_URL}
-                                target="_blank"
-                                rel="noopener noreferrer"
+                            <Link
+                                to="/finanzas"
                                 onClick={onClose}
                                 className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600/20 via-teal-600/15 to-blue-600/20 hover:from-emerald-600/30 hover:to-blue-600/30 border border-emerald-500/30 text-emerald-300 font-bold text-xs transition-all group"
                             >
                                 <span className="flex items-center gap-2">
                                     <Wallet className="h-4 w-4 text-emerald-400" />
-                                    <span>Finanzas & Metas ↗</span>
+                                    <span>Finanzas & Metas</span>
                                 </span>
-                                <ExternalLink className="h-3.5 w-3.5 text-emerald-400/70 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-                            </a>
+                                <ArrowLeftRight className="h-3.5 w-3.5 text-emerald-400/70 group-hover:translate-x-0.5 transition-transform" />
+                            </Link>
 
                             {session ? (
                                 <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-white/3">

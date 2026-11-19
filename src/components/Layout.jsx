@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
+import { Link } from 'react-router-dom'
 import Sidebar from './Sidebar'
-import { Menu, RefreshCw, Clock, LogOut, LogIn, Eye } from 'lucide-react'
+import { Menu, RefreshCw, Clock, LogOut, LogIn, Eye, Wallet } from 'lucide-react'
 import { Toaster } from 'react-hot-toast'
 import { useAuth } from '../context/AuthContext'
 import { useIsMobile } from '../hooks/useIsMobile'
@@ -114,10 +115,19 @@ const TopBar = React.memo(({ onMenuClick }) => {
                     <LogoTrigger />
                 </div>
 
-                {/* Right: Time + Status + Refresh + Auth Button */}
+                {/* Right: Time + Finanzas Switch + Status + Refresh + Auth Button */}
                 <div className="flex items-center gap-2 md:gap-4 shrink-0">
                     {/* Live clock — only this component ticks on desktop */}
                     {!isMobile && <LiveClock />}
+
+                    <Link
+                        to="/finanzas"
+                        title="Ir a DM2 Finanzas & Metas"
+                        className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/25 text-emerald-300 font-bold text-xs transition-all active:scale-95"
+                    >
+                        <Wallet className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
+                        <span>Finanzas</span>
+                    </Link>
 
                     {/* Mode status badge */}
                     {session ? (
