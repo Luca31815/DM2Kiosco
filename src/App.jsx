@@ -27,6 +27,8 @@ const DescalcesView = lazy(() => import('./views/DescalcesView'))
 const CarteraView = lazy(() => import('./views/CarteraView'))
 const ReporteSeccionesView = lazy(() => import('./views/ReporteSeccionesView'))
 const TriageProductosView = lazy(() => import('./views/TriageProductosView'))
+const ComparadorVentasView = lazy(() => import('./views/ComparadorVentasView'))
+const RadarPreciosMesView = lazy(() => import('./views/RadarPreciosMesView'))
 
 const LoadingScreen = () => (
   <div className="flex-1 flex items-center justify-center p-20">
@@ -62,6 +64,8 @@ function App() {
                   <Route path="/descalces" element={<DescalcesView />} />
                   <Route path="/cartera" element={<CarteraView />} />
                   <Route path="/secciones" element={<ReporteSeccionesView />} />
+                  <Route path="/comparador-ventas" element={<ComparadorVentasView />} />
+                  <Route path="/radar-precios" element={<RadarPreciosMesView />} />
                 </Routes>
               </Suspense>
             </Layout>
