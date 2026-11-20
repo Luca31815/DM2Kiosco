@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react'
 import { Layers, ChevronRight, Receipt, ArrowUpDown } from 'lucide-react'
 import { formatCurrency, formatNumber, formatPct, getCategoryMeta, getDeltaColorClass } from './comparadorFormatters'
 
-const CategoriaRankingTable = ({
+const CategoriaRankingTable = React.memo(({
     categorias,
     selectedCategoria,
     onSelectCategoria,
@@ -216,6 +216,8 @@ const CategoriaRankingTable = ({
             </div>
         </div>
     )
-}
+})
+
+CategoriaRankingTable.displayName = 'CategoriaRankingTable'
 
 export default CategoriaRankingTable

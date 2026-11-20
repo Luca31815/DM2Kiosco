@@ -750,6 +750,85 @@ export const simularNuevoPrecioVenta = ({
     }
 }
 
+const COMPARADOR_CACHE_TTL_MS = 60 * 1000
+const MAX_CACHE_ENTRIES = 100
+const comparadorCache = new Map()
+const inFlightRequests = new Map()
+
+export const clearComparadorCache = () => {
+    comparadorCache.clear()
+    inFlightRequests.clear()
+}
+
+const buildCacheKey = (fnName, args) => `${fnName}:${JSON.stringify(args)}`
+
+const setCacheEntry = (key, value, ttlMs) => {
+    if (comparadorCache.size >= MAX_CACHE_ENTRIES) {
+        const oldestKey = comparadorCache.keys().next().value
+        if (oldestKey !== undefined) {
+            comparadorCache.delete(oldestKey)
+        }
+    }
+    comparadorCache.set(key, {
+        value,
+        expiresAt: Date.now() + ttlMs
+    })
+}
+
+const executeCachedRpc = async ({
+    fnName,
+    args,
+    normalize,
+    client = supabase,
+    forceRefresh = false,
+    ttlMs = COMPARADOR_CACHE_TTL_MS
+}) => {
+    if (client !== supabase) {
+        const { data, error } = await client.rpc(fnName, args)
+        if (error) {
+            console.error(`Error en ${fnName}:`, error)
+            throw error
+        }
+        return normalize(data)
+    }
+
+    const key = buildCacheKey(fnName, args)
+    const now = Date.now()
+
+    if (!forceRefresh) {
+        const cached = comparadorCache.get(key)
+        if (cached && cached.expiresAt > now) {
+            return cached.value
+        }
+        if (cached) {
+            comparadorCache.delete(key)
+        }
+
+        const pending = inFlightRequests.get(key)
+        if (pending) {
+            return pending
+        }
+    }
+
+    const requestPromise = (async () => {
+        const { data, error } = await client.rpc(fnName, args)
+        if (error) {
+            console.error(`Error en ${fnName}:`, error)
+            throw error
+        }
+        const normalized = normalize(data)
+        setCacheEntry(key, normalized, ttlMs)
+        return normalized
+    })().finally(() => {
+        if (inFlightRequests.get(key) === requestPromise) {
+            inFlightRequests.delete(key)
+        }
+    })
+
+    inFlightRequests.set(key, requestPromise)
+    return requestPromise
+}
+
 /**
  * RPC 1 (Pilar 1): Comparación global de períodos, descomposición Laspeyres, franjas, días y ranking de categorías.
  */
@@ -759,23 +838,25 @@ export const compararVentasPeriodosCategorias = async ({
     inicioB,
     finB,
     categoria = null,
-    search = null
+    search = null,
+    client = supabase,
+    forceRefresh = false
 }) => {
     const { p_categoria, p_search } = sanitizeComparadorFilters({ categoria, search })
-    const { data, error } = await supabase.rpc('fn_comparar_ventas_periodos_categorias', {
-        p_inicio_a: inicioA,
-        p_fin_a: finA,
-        p_inicio_b: inicioB,
-        p_fin_b: finB,
-        p_categoria,
-        p_search
+    return executeCachedRpc({
+        fnName: 'fn_comparar_ventas_periodos_categorias',
+        args: {
+            p_inicio_a: inicioA,
+            p_fin_a: finA,
+            p_inicio_b: inicioB,
+            p_fin_b: finB,
+            p_categoria,
+            p_search
+        },
+        normalize: normalizeComparadorResponse,
+        client,
+        forceRefresh
     })
-
-    if (error) {
-        console.error('Error en fn_comparar_ventas_periodos_categorias:', error)
-        throw error
-    }
-    return normalizeComparadorResponse(data)
 }
 
 /**
@@ -787,23 +868,25 @@ export const compararPreciosYCausasCategoria = async ({
     inicioB,
     finB,
     categoria = null,
-    search = null
+    search = null,
+    client = supabase,
+    forceRefresh = false
 }) => {
     const { p_categoria, p_search } = sanitizeComparadorFilters({ categoria, search })
-    const { data, error } = await supabase.rpc('fn_comparar_precios_y_causas_categoria', {
-        p_inicio_a: inicioA,
-        p_fin_a: finA,
-        p_inicio_b: inicioB,
-        p_fin_b: finB,
-        p_categoria,
-        p_search
+    return executeCachedRpc({
+        fnName: 'fn_comparar_precios_y_causas_categoria',
+        args: {
+            p_inicio_a: inicioA,
+            p_fin_a: finA,
+            p_inicio_b: inicioB,
+            p_fin_b: finB,
+            p_categoria,
+            p_search
+        },
+        normalize: normalizeCategoriaDrilldownResponse,
+        client,
+        forceRefresh
     })
-
-    if (error) {
-        console.error('Error en fn_comparar_precios_y_causas_categoria:', error)
-        throw error
-    }
-    return normalizeCategoriaDrilldownResponse(data)
 }
 
 /**
@@ -814,25 +897,27 @@ export const getTicketsDrilldownComparador = async ({
     fin,
     categoria = null,
     producto = null,
-    limit = 50
+    limit = 50,
+    client = supabase,
+    forceRefresh = false
 }) => {
     const { p_categoria, p_search: p_producto } = sanitizeComparadorFilters({
         categoria,
         search: producto
     })
-    const { data, error } = await supabase.rpc('fn_tickets_drilldown_comparador', {
-        p_inicio: inicio,
-        p_fin: fin,
-        p_categoria,
-        p_producto,
-        p_limit: toNum(limit, 50)
+    return executeCachedRpc({
+        fnName: 'fn_tickets_drilldown_comparador',
+        args: {
+            p_inicio: inicio,
+            p_fin: fin,
+            p_categoria,
+            p_producto,
+            p_limit: toNum(limit, 50)
+        },
+        normalize: normalizeTicketsDrilldownResponse,
+        client,
+        forceRefresh
     })
-
-    if (error) {
-        console.error('Error en fn_tickets_drilldown_comparador:', error)
-        throw error
-    }
-    return normalizeTicketsDrilldownResponse(data)
 }
 
 /**
@@ -843,22 +928,24 @@ export const getRadarPreciosUltimoMes = async ({
     modo = 'ambos',
     categoria = null,
     search = null,
-    incluirLogistica = true
+    incluirLogistica = true,
+    client = supabase,
+    forceRefresh = false
 } = {}) => {
     const { p_categoria, p_search } = sanitizeComparadorFilters({ categoria, search })
     const safeModo = ['ambos', 'solo_compras', 'solo_ventas', 'todos'].includes(modo) ? modo : 'ambos'
 
-    const { data, error } = await supabase.rpc('fn_radar_precios_ultimo_mes', {
-        p_dias: toNum(dias, 30),
-        p_modo: safeModo,
-        p_categoria,
-        p_search,
-        p_incluir_logistica: Boolean(incluirLogistica)
+    return executeCachedRpc({
+        fnName: 'fn_radar_precios_ultimo_mes',
+        args: {
+            p_dias: toNum(dias, 30),
+            p_modo: safeModo,
+            p_categoria,
+            p_search,
+            p_incluir_logistica: Boolean(incluirLogistica)
+        },
+        normalize: normalizeRadarPreciosResponse,
+        client,
+        forceRefresh
     })
-
-    if (error) {
-        console.error('Error en fn_radar_precios_ultimo_mes:', error)
-        throw error
-    }
-    return normalizeRadarPreciosResponse(data)
 }

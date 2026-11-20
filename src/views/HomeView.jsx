@@ -9,27 +9,25 @@ import {
     Activity,
     Zap,
     BarChart2,
-    Wallet,
-    CheckCircle2,
-    Eye,
-    BrainCircuit,
-    ChevronRight,
 } from 'lucide-react'
 import { useReporte, useReservas, useProductos, useProductosDuplicadosTrigram } from '../hooks/useData'
 import { StatCard, SkeletonCard } from '../components/home/HomeStatCards'
 const HomeChart = React.lazy(() => import('../components/home/HomeChart').then(m => ({ default: m.HomeChart })))
 import { HomeRightColumn } from './home/HomeRightColumn'
-import { StockBar, QuickAction, FileBarChart2 } from '../components/home/HomeWidgets'
+import { QuickAction, FileBarChart2 } from '../components/home/HomeWidgets'
 
 const currencyFormatter = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 })
+const DAILY_OPTS = { sortColumn: 'fecha', sortOrder: 'desc', pageSize: 60 }
+const RESERVAS_OPTS = {}
+const PRODUCTS_OPTS = { pageSize: 20, sortColumn: 'stock_actual', sortOrder: 'asc' }
 
 // ── Main HomeView ─────────────────────────────────────────────────────────────
 const HomeView = () => {
     const navigate = useNavigate()
     const [chartPeriod, setChartPeriod] = useState(30)
-    const { data: dailyReport } = useReporte('diario', { sortColumn: 'fecha', sortOrder: 'desc', pageSize: 60 })
-    const { data: reservas } = useReservas({}, true)
-    const { data: productos, loading: loadingProductos } = useProductos({ pageSize: 20, sortColumn: 'stock_actual', sortOrder: 'asc' })
+    const { data: dailyReport } = useReporte('diario', DAILY_OPTS)
+    const { data: reservas } = useReservas(RESERVAS_OPTS, true)
+    const { data: productos, loading: loadingProductos } = useProductos(PRODUCTS_OPTS)
     const { data: duplicados, loading: loadingDuplicados } = useProductosDuplicadosTrigram()
 
     // ── KPI Calculations ───────────────────────────────────────────────────────
@@ -99,8 +97,13 @@ const HomeView = () => {
 
     const saldoReservas = useMemo(() => {
         const total = reservas.reduce((acc, curr) => acc + (parseFloat(curr.saldo_pendiente) || 0), 0)
-        return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(total)
+        return currencyFormatter.format(total)
     }, [reservas])
+
+    const headerDateStr = useMemo(
+        () => new Date().toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }),
+        []
+    )
 
     // ── Chart Data ─────────────────────────────────────────────────────────────
     const chartData = useMemo(() => {
@@ -145,7 +148,7 @@ const HomeView = () => {
                         Panel Principal
                     </h2>
                     <p className="text-slate-400 font-medium mt-1 text-sm">
-                        {new Date().toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                        {headerDateStr}
                     </p>
                 </div>
 

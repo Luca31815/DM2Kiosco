@@ -1,37 +1,22 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useCallback, Suspense } from 'react'
 import DataTable from '../components/DataTable'
 import { useReporte, useReporteVentasPeriodico } from '../hooks/useData'
 import {
     FileBarChart, Calendar, ChevronRight, TrendingUp, TrendingDown,
     ShoppingCart, Package, ArrowUpRight, ArrowDownRight,
-    Activity, Clock, Tag, BarChart2, Percent, Sigma, ArrowRight, Target,
-    CreditCard, PieChart, Sparkles
+    BarChart2, ArrowRight, Target, CreditCard
 } from 'lucide-react'
-import {
-    AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
-    ResponsiveContainer, BarChart, Bar, Cell, LabelList
-} from 'recharts'
-import { motion } from 'framer-motion'
 
 import { KPICard } from './reportes/ReportesKPI'
 import ExpandedPeriodPanel from './reportes/ExpandedPeriodPanel'
 import { MES_NAMES } from './reportes/reportesHelpers'
 
-// ── Custom Tooltip for Chart ──────────────────────────────────────────────────
-const CustomTooltip = ({ active, payload, label }) => {
-    if (!active || !payload?.length) return null
-    return (
-        <div className="premium-panel p-4 shadow-2xl min-w-[180px]">
-            <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-3">{label}</p>
-            {payload.map((p, i) => (
-                <div key={i} className="flex justify-between items-center gap-4 text-xs font-bold mb-1.5 last:mb-0">
-                    <span style={{ color: p.color }} className="font-extrabold">{p.name === 'ingresos' ? 'Ingresos' : p.name === 'egresos' ? 'Egresos' : 'Saldo'}</span>
-                    <span className="text-white tabular-nums">${Math.floor(p.value).toLocaleString()}</span>
-                </div>
-            ))}
-        </div>
-    )
-}
+const ReportesEvolucionChart = React.lazy(() =>
+    import('./reportes/ReportesChartsPanel').then((m) => ({ default: m.ReportesEvolucionChart }))
+)
+const ReportesTopProductsChart = React.lazy(() =>
+    import('./reportes/ReportesChartsPanel').then((m) => ({ default: m.ReportesTopProductsChart }))
+)
 
 // ─────────────────────────────────────────────────────────────────────────────
 // COMPONENTE PRINCIPAL — ReportesView
@@ -80,44 +65,54 @@ const ReportesView = () => {
         }))
     }, [data, reportType])
 
-    const handleReportTypeChange = (type) => {
+    const handleReportTypeChange = useCallback((type) => {
         setReportType(type)
         setFilterValue('')
         if (type === 'diario') setSortColumn('fecha')
         if (type === 'semanal') setSortColumn('semana_del')
         if (type === 'mensual') setSortColumn('anio')
-    }
+    }, [])
 
-    const handleSort = (column) => {
+    const handleSort = useCallback((column) => {
         if (sortColumn === column) {
-            setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
+            setSortOrder((prevOrd) => (prevOrd === 'asc' ? 'desc' : 'asc'))
         } else {
             setSortColumn(column)
             setSortOrder('asc')
         }
-    }
+    }, [sortColumn])
+
+    const renderExpandedRow = useCallback((item) => (
+        <ExpandedPeriodPanel item={item} reportType={reportType} />
+    ), [reportType])
+
+    const getRowKey = useCallback((row) => (
+        reportType === 'diario' ? row.fecha :
+        reportType === 'semanal' ? row.semana_del :
+        `${row.mes}-${row.anio}`
+    ), [reportType])
 
     // Columnas de la tabla según el tipo de periodo
     const columns = useMemo(() => {
         const common = [
             { key: 'cant_ventas', label: 'Ventas', render: (val) => (
                 <div className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-brand-jade animate-pulse" />
+                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
                     <span className="font-bold text-slate-300 tabular-nums">{val}</span>
                 </div>
             )},
             { key: 'cant_compras', label: 'Compras', render: (val) => (
                 <div className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-brand-ruby" />
-                    <span className="font-bold text-slate-450 tabular-nums">{val}</span>
+                    <div className="w-1.5 h-1.5 rounded-full bg-rose-400" />
+                    <span className="font-bold text-slate-400 tabular-nums">{val}</span>
                 </div>
             )},
-            { key: 'ingresos', label: 'Ingresos', render: (val) => <span className="font-black text-brand-jade tabular-nums">${Math.floor(val).toLocaleString()}</span> },
-            { key: 'egresos', label: 'Egresos', render: (val) => <span className="font-black text-brand-ruby tabular-nums">${Math.floor(val).toLocaleString()}</span> },
+            { key: 'ingresos', label: 'Ingresos', render: (val) => <span className="font-black text-emerald-400 tabular-nums">${Math.floor(val).toLocaleString()}</span> },
+            { key: 'egresos', label: 'Egresos', render: (val) => <span className="font-black text-rose-400 tabular-nums">${Math.floor(val).toLocaleString()}</span> },
             { key: 'saldo', label: 'Balance Neto', render: (val) => (
                 <div className="flex items-center gap-1.5">
-                    {val >= 0 ? <ArrowUpRight className="h-3.5 w-3.5 text-brand-indigo" /> : <ArrowDownRight className="h-3.5 w-3.5 text-brand-ruby" />}
-                    <span className={`font-black tabular-nums ${val >= 0 ? 'text-brand-indigo' : 'text-brand-ruby'}`}>${Math.floor(val).toLocaleString()}</span>
+                    {val >= 0 ? <ArrowUpRight className="h-3.5 w-3.5 text-indigo-400" /> : <ArrowDownRight className="h-3.5 w-3.5 text-rose-400" />}
+                    <span className={`font-black tabular-nums ${val >= 0 ? 'text-indigo-400' : 'text-rose-400'}`}>${Math.floor(val).toLocaleString()}</span>
                 </div>
             )},
         ]
@@ -130,7 +125,7 @@ const ReportesView = () => {
                 const dayName = date.toLocaleDateString('es-ES', { weekday: 'short' })
                 return (
                     <div className="flex items-center gap-2">
-                        <span className="text-[9px] uppercase tracking-wider text-slate-550 font-black w-8">{dayName}</span>
+                        <span className="text-[9px] uppercase tracking-wider text-slate-500 font-black w-8">{dayName}</span>
                         <span className="font-bold text-slate-200">{d}/{m}/{y}</span>
                     </div>
                 )
@@ -148,7 +143,7 @@ const ReportesView = () => {
                 return (
                     <div className="flex items-center gap-2">
                         <span className="font-bold text-slate-200">{d}/{m}/{y}</span>
-                        <ArrowRight className="h-3 w-3 text-slate-650" />
+                        <ArrowRight className="h-3 w-3 text-slate-600" />
                         <span className="font-bold text-slate-400">{endStr}</span>
                     </div>
                 )
@@ -158,7 +153,7 @@ const ReportesView = () => {
         if (reportType === 'mensual') {
             return [{ key: 'mes', label: 'Mes', render: (val, row) => (
                 <div className="flex items-center gap-2">
-                    <span className="text-[9px] text-slate-550 font-black tracking-wider w-8">{row.anio}</span>
+                    <span className="text-[9px] text-slate-500 font-black tracking-wider w-8">{row.anio}</span>
                     <span className="font-bold text-slate-200">{MES_NAMES[Number(val)] || val}</span>
                 </div>
             )}, ...common]
@@ -219,25 +214,6 @@ const ReportesView = () => {
             return acc
         }, {})
         return Object.values(map).sort((a, b) => b.ganancia_total - a.ganancia_total).slice(0, 5)
-    }, [topProductsData])
-
-    const _gananciaReal = useMemo(() => {
-        if (!topProductsData || !topProductsData.length) return { total: 0, productos: 0 }
-        const map = topProductsData.reduce((acc, curr) => {
-            const name = curr.producto?.trim() || 'Sin Nombre'
-            if (!acc[name]) {
-                acc[name] = { ganancia_total: Number(curr.ganancia_total || 0), recaudacion_total: Number(curr.recaudacion_total || 0) }
-            } else {
-                acc[name].ganancia_total += Number(curr.ganancia_total || 0)
-                acc[name].recaudacion_total += Number(curr.recaudacion_total || 0)
-            }
-            return acc
-        }, {})
-        const CON_COSTO_THRESHOLD = 0.001
-        const conCosto = Object.values(map).filter(p =>
-            p.recaudacion_total > 0 && p.ganancia_total < (p.recaudacion_total - CON_COSTO_THRESHOLD)
-        )
-        return { total: conCosto.reduce((s, p) => s + p.ganancia_total, 0), productos: conCosto.length }
     }, [topProductsData])
 
     // Ganancia Real Promedio Diario (Ponderada por mes actual y recencia)
@@ -359,11 +335,11 @@ const ReportesView = () => {
             <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4">
                 <div>
                     <div className="flex items-center gap-2 mb-1">
-                        <div className="h-1 w-6 bg-brand-indigo rounded-full" />
-                        <span className="text-[9px] font-black uppercase tracking-[0.18em] text-brand-indigo">Kiosco Estadísticas</span>
+                        <div className="h-1 w-6 bg-indigo-400 rounded-full" />
+                        <span className="text-[9px] font-black uppercase tracking-[0.18em] text-indigo-400">Kiosco Estadísticas</span>
                     </div>
                     <h2 className="text-3xl font-extrabold text-white tracking-tight flex items-center gap-2.5">
-                        <FileBarChart className="h-7 w-7 text-brand-indigo" />
+                        <FileBarChart className="h-7 w-7 text-indigo-400" />
                         <span>Reportes Comerciales</span>
                     </h2>
                     <p className="text-slate-500 font-bold mt-1 text-xs">Análisis de rendimiento, rentabilidad y flujo de caja diario, semanal y mensual.</p>
@@ -374,10 +350,11 @@ const ReportesView = () => {
                         {['diario', 'semanal', 'mensual'].map((type) => (
                             <button
                                 key={type}
+                                type="button"
                                 onClick={() => handleReportTypeChange(type)}
-                                className={`flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all duration-150 cursor-pointer ${
+                                className={`flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors duration-150 cursor-pointer ${
                                     reportType === type
-                                        ? 'bg-brand-indigo text-white shadow-md shadow-brand-indigo/10'
+                                        ? 'bg-indigo-500 text-white shadow-md shadow-indigo-500/10'
                                         : 'text-slate-500 hover:text-slate-300'
                                 }`}
                             >
@@ -408,24 +385,24 @@ const ReportesView = () => {
 
             {/* KPI Cards */}
             <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-                <KPICard title="Ingresos Totales" value={`$${Math.floor(totals.ingresos).toLocaleString()}`} subValue={`${totals.ventas} tickets generados`} trend={trends.ingresos} icon={ShoppingCart} colorClass="text-brand-jade" accentBg="bg-brand-jade" />
-                <KPICard title="Egresos / Gastos" value={`$${Math.floor(totals.egresos).toLocaleString()}`} subValue={`${totals.compras} compras cargadas`} trend={trends.egresos} icon={Package} colorClass="text-brand-ruby" accentBg="bg-brand-ruby" />
+                <KPICard title="Ingresos Totales" value={`$${Math.floor(totals.ingresos).toLocaleString()}`} subValue={`${totals.ventas} tickets generados`} trend={trends.ingresos} icon={ShoppingCart} colorClass="text-emerald-400" accentBg="bg-emerald-400" />
+                <KPICard title="Egresos / Gastos" value={`$${Math.floor(totals.egresos).toLocaleString()}`} subValue={`${totals.compras} compras cargadas`} trend={trends.egresos} icon={Package} colorClass="text-rose-400" accentBg="bg-rose-400" />
                 <KPICard title="Ticket Promedio" value={`$${Math.floor(ticketPromedio).toLocaleString()}`} subValue="Ingreso medio por venta" trend={trends.ticket} icon={CreditCard} colorClass="text-slate-200" accentBg="bg-slate-200" />
-                <KPICard title="Balance Neto" value={`$${Math.floor(totals.balance).toLocaleString()}`} subValue={`Margen: ${margenNetoTotal.toFixed(1)}%`} trend={trends.balance} icon={totals.balance >= 0 ? TrendingUp : TrendingDown} colorClass={totals.balance >= 0 ? 'text-brand-jade' : 'text-brand-ruby'} accentBg={totals.balance >= 0 ? 'bg-brand-jade' : 'bg-brand-ruby'} />
+                <KPICard title="Balance Neto" value={`$${Math.floor(totals.balance).toLocaleString()}`} subValue={`Margen: ${margenNetoTotal.toFixed(1)}%`} trend={trends.balance} icon={totals.balance >= 0 ? TrendingUp : TrendingDown} colorClass={totals.balance >= 0 ? 'text-emerald-400' : 'text-rose-400'} accentBg={totals.balance >= 0 ? 'bg-emerald-400' : 'bg-rose-400'} />
 
                 {/* Ganancia Real Promedio Día */}
-                <div className="relative overflow-hidden p-6 rounded-3xl border border-brand-indigo/15 bg-slate-900/40 shadow-xl hover:border-brand-indigo/20 transition-all duration-300 group">
-                    <div className="absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl opacity-10 bg-brand-indigo" />
+                <div className="relative overflow-hidden p-6 rounded-3xl border border-indigo-400/15 bg-slate-900/40 shadow-xl hover:border-indigo-400/20 transition-colors duration-300 group">
+                    <div className="absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl opacity-10 bg-indigo-400" />
                     <div className="relative z-10">
                         <div className="flex justify-between items-start mb-5">
-                            <div className="p-3 rounded-2xl bg-white/[0.02] border border-white/5 text-brand-indigo"><TrendingUp className="h-5 w-5" /></div>
+                            <div className="p-3 rounded-2xl bg-white/[0.02] border border-white/5 text-indigo-400"><TrendingUp className="h-5 w-5" /></div>
                             {loadingTop ? <div className="w-16 h-5 bg-white/5 rounded-lg animate-pulse" /> : (
-                                <div className="flex items-center gap-1 text-[9px] font-black px-2.5 py-1 rounded-xl bg-brand-indigo/10 text-brand-indigo border border-brand-indigo/15">
+                                <div className="flex items-center gap-1 text-[9px] font-black px-2.5 py-1 rounded-xl bg-indigo-400/10 text-indigo-400 border border-indigo-400/15">
                                     {gananciaRealPromedioDiario.modo}
                                 </div>
                             )}
                         </div>
-                        <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-505 mb-2">Ganancia Real / Día</h4>
+                        <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Ganancia Real / Día</h4>
                         <div className="flex flex-col gap-1">
                             {loadingTop ? <div className="w-28 h-8 bg-white/5 rounded-xl animate-pulse" /> : <span className="text-3xl font-black text-white tracking-tight tabular-nums font-outfit">${gananciaRealPromedioDiario.valor.toLocaleString()}</span>}
                             <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">Promedio ponderado por recencia</span>
@@ -436,86 +413,37 @@ const ReportesView = () => {
 
             {/* Gráficos */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2 premium-panel p-5 h-[340px]">
+                <div className="lg:col-span-2 glass-panel rounded-2xl p-5 h-[340px]">
                     <div className="flex items-center justify-between mb-6">
                         <div>
                             <h3 className="text-xs font-black uppercase tracking-wider text-white flex items-center gap-2">
-                                <BarChart2 className="h-4.5 w-4.5 text-brand-indigo" />
+                                <BarChart2 className="h-4.5 w-4.5 text-indigo-400" />
                                 <span>Evolución del Flujo de Caja</span>
                             </h3>
                             <p className="text-[10px] text-slate-500 mt-1 font-bold">Ingresos vs Egresos — {reportType === 'diario' ? 'por día' : reportType === 'semanal' ? 'por semana' : 'por mes'}</p>
                         </div>
                         <div className="flex items-center gap-4 text-[9px] font-black text-slate-500 uppercase tracking-wider">
-                            <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-brand-jade" />Ingresos</div>
-                            <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-brand-ruby" />Egresos</div>
+                            <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-emerald-400" />Ingresos</div>
+                            <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-rose-400" />Egresos</div>
                         </div>
                     </div>
-                    <ResponsiveContainer width="100%" height="80%" debounce={50}>
-                        <AreaChart data={chartData} margin={{ top: 5, right: 5, left: 5, bottom: 0 }}>
-                            <defs>
-                                <linearGradient id="colorIngresos" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor="oklch(0.72 0.16 150)" stopOpacity={0.15} />
-                                    <stop offset="95%" stopColor="oklch(0.72 0.16 150)" stopOpacity={0} />
-                                </linearGradient>
-                                <linearGradient id="colorEgresos" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor="oklch(0.65 0.20 15)" stopOpacity={0.15} />
-                                    <stop offset="95%" stopColor="oklch(0.65 0.20 15)" stopOpacity={0} />
-                                </linearGradient>
-                            </defs>
-                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
-                            <XAxis dataKey="name" stroke="#475569" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(val) => {
-                                if (reportType === 'diario' && val?.includes('-')) {
-                                    const parts = val.split('-')
-                                    return `${parts[2]}/${parts[1]}`
-                                }
-                                return val
-                            }} />
-                            <YAxis stroke="#475569" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(val) => `$${(val / 1000).toFixed(0)}k`} />
-                            <Tooltip content={<CustomTooltip />} />
-                            <Area type="monotone" dataKey="ingresos" stroke="oklch(0.72 0.16 150)" strokeWidth={2.5} fillOpacity={1} fill="url(#colorIngresos)" dot={false} activeDot={{ r: 4, fill: 'oklch(0.72 0.16 150)' }} />
-                            <Area type="monotone" dataKey="egresos" stroke="oklch(0.65 0.20 15)" strokeWidth={2.5} fillOpacity={1} fill="url(#colorEgresos)" dot={false} activeDot={{ r: 4, fill: 'oklch(0.65 0.20 15)' }} />
-                        </AreaChart>
-                    </ResponsiveContainer>
+                    <Suspense fallback={<div className="h-4/5 w-full rounded-xl bg-white/5 animate-pulse" />}>
+                        <ReportesEvolucionChart chartData={chartData} reportType={reportType} />
+                    </Suspense>
                 </div>
 
-                <div className="premium-panel p-5 h-[340px] flex flex-col">
+                <div className="glass-panel rounded-2xl p-5 h-[340px] flex flex-col">
                     <div className="mb-5">
                         <h3 className="text-xs font-black uppercase tracking-wider text-white flex items-center gap-2">
-                            <Target className="h-4.5 w-4.5 text-brand-jade animate-pulse" />
+                            <Target className="h-4.5 w-4.5 text-emerald-400" />
                             <span>Top 5 — Ganancia Real</span>
                         </h3>
                         <p className="text-[10px] text-slate-500 mt-1 font-bold">Productos más rentables del periodo</p>
                     </div>
                     <div className="flex-1">
-                        {loadingTop ? (
-                            <div className="space-y-3 mt-4">{[1, 2, 3, 4, 5].map(i => <div key={i} className="h-8 bg-white/5 rounded-xl animate-pulse" />)}</div>
-                        ) : aggregatedTopData.length === 0 ? (
-                            <div className="flex items-center justify-center h-full text-slate-600 text-xs italic font-bold">Sin datos disponibles</div>
-                        ) : (
-                            <ResponsiveContainer width="100%" height="100%" debounce={50}>
-                                <BarChart layout="vertical" data={aggregatedTopData} margin={{ left: 15, right: 55, top: 0, bottom: 0 }}>
-                                    <XAxis type="number" hide />
-                                    <YAxis dataKey="producto" type="category" axisLine={false} tickLine={false} fontSize={10} width={100} tick={{ fill: '#94a3b8', fontWeight: 700 }} />
-                                    <Tooltip cursor={{ fill: '#ffffff04' }} content={({ active, payload }) => {
-                                        if (!active || !payload?.length) return null
-                                        const d = payload[0].payload
-                                        return (
-                                            <div className="premium-panel p-3 text-[10px] font-bold space-y-1">
-                                                <p className="text-white font-extrabold">{d.producto}</p>
-                                                <p className="text-brand-jade">Ganancia: ${Math.floor(d.ganancia_total).toLocaleString()}</p>
-                                                <p className="text-slate-400">Cantidad: {Number(d.cantidad_total || 0).toLocaleString()}</p>
-                                            </div>
-                                        )
-                                    }} />
-                                    <Bar dataKey="ganancia_total" radius={[0, 6, 6, 0]} barSize={18}>
-                                        {aggregatedTopData.map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={index === 0 ? 'oklch(0.72 0.16 150)' : `oklch(0.72 0.16 150 / ${0.7 - index * 0.12})`} />
-                                        ))}
-                                        <LabelList dataKey="ganancia_total" position="right" fill="#64748b" fontSize={10} fontWeight="bold" formatter={(val) => `$${Math.floor(val / 1000)}k`} />
-                                    </Bar>
-                                </BarChart>
-                            </ResponsiveContainer>
-                        )}
+                        <Suspense fallback={<div className="h-full w-full rounded-xl bg-white/5 animate-pulse" />}>
+                            <ReportesTopProductsChart aggregatedTopData={aggregatedTopData} loadingTop={loadingTop} />
+                        </Suspense>
                     </div>
                 </div>
             </div>
@@ -529,34 +457,27 @@ const ReportesView = () => {
                 sortColumn={sortColumn}
                 sortOrder={sortOrder}
                 onFilter={setFilterValue}
-                renderExpandedRow={(item) => <ExpandedPeriodPanel item={item} reportType={reportType} />}
-                rowKey={(row) =>
-                    reportType === 'diario' ? row.fecha :
-                    reportType === 'semanal' ? row.semana_del :
-                    `${row.mes}-${row.anio}`
-                }
+                renderExpandedRow={renderExpandedRow}
+                rowKey={getRowKey}
                 minWidth="800px"
             />
 
             {/* Barra flotante inferior */}
             <div className="fixed bottom-0 left-0 right-0 z-40 pointer-events-none px-2 pb-4 sm:pb-6 sm:px-4">
-                <motion.div
-                    initial={{ y: 20, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ delay: 0.3 }}
-                    className="bg-slate-950/85 backdrop-blur-xl border border-white/5 shadow-2xl rounded-2xl p-3 md:px-8 md:py-3.5 grid grid-cols-3 md:flex md:flex-row items-center justify-between w-full max-w-4xl mx-auto pointer-events-auto gap-2 md:gap-10"
+                <div
+                    className="bg-slate-950/85 backdrop-blur-xl border border-white/5 shadow-2xl rounded-2xl p-3 md:px-8 md:py-3.5 grid grid-cols-3 md:flex md:flex-row items-center justify-between w-full max-w-4xl mx-auto pointer-events-auto gap-2 md:gap-10 animate-fade-in-up"
                 >
                     <div className="flex flex-col items-center md:items-start">
-                        <span className="text-[9px] font-black uppercase tracking-widest text-brand-jade mb-0.5">Ingresos</span>
+                        <span className="text-[9px] font-black uppercase tracking-widest text-emerald-400 mb-0.5">Ingresos</span>
                         <span className="text-base md:text-lg font-black text-white tabular-nums">${Math.floor(totals.ingresos).toLocaleString()}</span>
                     </div>
                     <div className="flex flex-col items-center md:items-start">
-                        <span className="text-[9px] font-black uppercase tracking-widest text-brand-ruby mb-0.5">Egresos</span>
+                        <span className="text-[9px] font-black uppercase tracking-widest text-rose-400 mb-0.5">Egresos</span>
                         <span className="text-base md:text-lg font-black text-white tabular-nums">${Math.floor(totals.egresos).toLocaleString()}</span>
                     </div>
                     <div className="flex flex-col items-center md:items-start">
-                        <span className="text-[9px] font-black uppercase tracking-widest text-brand-indigo mb-0.5">Balance Neto</span>
-                        <span className={`text-base md:text-lg font-black tabular-nums ${totals.balance >= 0 ? 'text-brand-jade' : 'text-brand-ruby'}`}>${Math.floor(totals.balance).toLocaleString()}</span>
+                        <span className="text-[9px] font-black uppercase tracking-widest text-indigo-400 mb-0.5">Balance Neto</span>
+                        <span className={`text-base md:text-lg font-black tabular-nums ${totals.balance >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>${Math.floor(totals.balance).toLocaleString()}</span>
                     </div>
                     <div className="hidden md:flex items-center gap-8 border-l border-white/10 pl-10">
                         <div className="flex flex-col items-end">
@@ -569,10 +490,10 @@ const ReportesView = () => {
                         </div>
                         <div className="flex flex-col items-end">
                             <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-0.5">Margen</span>
-                            <span className={`text-base font-black tabular-nums ${margenNetoTotal >= 0 ? 'text-brand-jade' : 'text-brand-ruby'}`}>{margenNetoTotal.toFixed(1)}%</span>
+                            <span className={`text-base font-black tabular-nums ${margenNetoTotal >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>{margenNetoTotal.toFixed(1)}%</span>
                         </div>
                     </div>
-                </motion.div>
+                </div>
             </div>
         </div>
     )

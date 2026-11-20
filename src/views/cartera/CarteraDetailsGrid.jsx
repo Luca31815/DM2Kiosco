@@ -2,7 +2,7 @@ import React from 'react'
 import { m } from 'framer-motion'
 import { RefreshCw } from 'lucide-react'
 
-export const CarteraDetailsGrid = ({ loadingCartera, cartera, formatCurrency }) => {
+export const CarteraDetailsGrid = React.memo(({ loadingCartera, cartera, formatCurrency }) => {
     return (
         <div className="glass-panel p-6 rounded-2xl bg-white/5 border-white/5 space-y-6">
             <div>
@@ -51,4 +51,5 @@ export const CarteraDetailsGrid = ({ loadingCartera, cartera, formatCurrency }) 
             )}
         </div>
     )
-}
+})
+CarteraDetailsGrid.displayName = 'CarteraDetailsGrid'

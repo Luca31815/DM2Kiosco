@@ -1,10 +1,15 @@
 import React, { useState, useMemo, useCallback } from 'react'
 import DataTable from '../components/DataTable'
-import { useProductos, usePredictiveStock, useCategorias } from '../hooks/useData'
-import { Edit2, Check, X, Loader2, Package, TrendingUp, TrendingDown, Clock, Search, Timer, Trash2, PackagePlus, DollarSign, FileText, Bookmark } from 'lucide-react'
+import {
+    useProductos,
+    usePredictiveStock,
+    useCategorias,
+    invalidateProductos,
+    invalidateVentas,
+    invalidateCompras,
+    invalidateReservas,
+} from '../hooks/useData'
 import * as api from '../services/api'
-import { useSWRConfig } from 'swr'
-import ProductAutocomplete from '../components/ProductAutocomplete'
 import { toast } from 'react-hot-toast'
 import ProductDetailExpansion from '../components/ProductDetailExpansion'
 import { generateProductsPDF } from '../utils/pdfGenerator'
@@ -14,6 +19,7 @@ import { ProductosHeaderBar } from './productos/ProductosHeaderBar'
 import { useProductosColumns } from './productos/useProductosColumns'
 import BatchCategoryModal from './productos/BatchCategoryModal'
 
+const EMPTY_EDIT_FORM = {}
 
 const ProductosView = () => {
     const isMobile = useIsMobile()
@@ -22,10 +28,9 @@ const ProductosView = () => {
     const [filterValue, setFilterValue] = useState('')
     const [page, setPage] = useState(1)
     const pageSize = isMobile ? 10 : 20
-    const { mutate } = useSWRConfig()
 
     const [editingId, setEditingId] = useState(null)
-    const [editForm, setEditForm] = useState({})
+    const [editForm, setEditForm] = useState(EMPTY_EDIT_FORM)
     const [isSaving, setIsSaving] = useState(false)
     const [isCleaning, setIsCleaning] = useState(false)
     const [isSyncing, setIsSyncing] = useState(false)
@@ -43,18 +48,18 @@ const ProductosView = () => {
     const [selectedCategoria, setSelectedCategoria] = useState('')
     const [selectedSubcategoria, setSelectedSubcategoria] = useState('')
 
-    const handleCategoriaChange = (cat) => {
+    const handleCategoriaChange = useCallback((cat) => {
         setSelectedCategoria(cat)
         setSelectedSubcategoria('')
         setPage(1)
-    }
+    }, [])
 
-    const handleSubcategoriaChange = (sub) => {
+    const handleSubcategoriaChange = useCallback((sub) => {
         setSelectedSubcategoria(sub)
         setPage(1)
-    }
+    }, [])
 
-    const options = React.useMemo(() => ({
+    const options = useMemo(() => ({
         sortColumn,
         sortOrder,
         filterColumn: 'nombre',
@@ -68,29 +73,22 @@ const ProductosView = () => {
     const { data: rawData, count, loading } = useProductos(options)
     
     const { data: predictionData } = usePredictiveStock()
+
+    const predictionMap = useMemo(() => {
+        if (!predictionData || predictionData.length === 0) return new Map()
+        return new Map(predictionData.map(pred => [pred.nombre, pred]))
+    }, [predictionData])
     
-    const productsWithPrediction = React.useMemo(() => {
+    const productsWithPrediction = useMemo(() => {
         if (!rawData) return []
-        let list = rawData.map(p => {
-            const prediction = predictionData?.find(pred => pred.nombre === p.nombre)
+        const list = rawData.map(p => {
+            const prediction = predictionMap.get(p.nombre)
             return {
                 ...p,
                 dias_para_quiebre: prediction ? prediction.dias_para_quiebre : null,
                 ventas_diarias_promedio: prediction ? prediction.ventas_diarias_promedio : 0
             }
         })
-        if (selectedCategoria) {
-            if (selectedCategoria === 'SIN_CATEGORIA') {
-                list = list.filter(p => !p.categoria || p.categoria === 'SIN_CATEGORIA' || p.categoria.trim() === '')
-            } else {
-                const targetCat = selectedCategoria.trim().toUpperCase()
-                list = list.filter(p => (p.categoria || '').trim().toUpperCase() === targetCat)
-            }
-        }
-        if (selectedSubcategoria) {
-            const targetSub = selectedSubcategoria.trim().toUpperCase()
-            list = list.filter(p => (p.subcategoria || '').trim().toUpperCase() === targetSub)
-        }
         if (sortColumn === 'categoria') {
             const dir = sortOrder === 'asc' ? 1 : -1
             list.sort((a, b) => {
@@ -108,9 +106,9 @@ const ProductosView = () => {
             })
         }
         return list
-    }, [rawData, predictionData, selectedCategoria, selectedSubcategoria, sortColumn, sortOrder])
+    }, [rawData, predictionMap, sortColumn, sortOrder])
 
-    const handleEditStart = (product) => {
+    const handleEditStart = useCallback((product) => {
         setEditingId(product.producto_id)
         setEditForm({
             ...product,
@@ -118,7 +116,7 @@ const ProductosView = () => {
             subcategoria: product.subcategoria || '',
             p_guardar_alias: true
         })
-    }
+    }, [])
 
     const handleSave = useCallback(async () => {
         const nombreNormalizado = editForm.nombre?.trim().toUpperCase()
@@ -150,12 +148,11 @@ const ProductosView = () => {
         try {
             const result = await api.actualizarProducto(dataToSend)
             if (result.success) {
-                mutate(key => Array.isArray(key) && key[0] === 'productos')
-                mutate('categorias_disponibles')
+                invalidateProductos()
                 if (result.tipo_accion === 'MERGE' || result.renombrado) {
-                    mutate('ventas')
-                    mutate('compras')
-                    mutate('reservas')
+                    invalidateVentas()
+                    invalidateCompras()
+                    invalidateReservas()
                 }
                 if (result.tipo_accion === 'MERGE') {
                     toast.success('¡Unificación exitosa! Los productos se han fusionado.', { id: loadingToast, duration: 5000 })
@@ -163,6 +160,7 @@ const ProductosView = () => {
                     toast.success('Producto actualizado correctamente', { id: loadingToast })
                 }
                 setEditingId(null)
+                setEditForm(EMPTY_EDIT_FORM)
             } else {
                 toast.error('Error: ' + result.error, { id: loadingToast })
             }
@@ -171,7 +169,7 @@ const ProductosView = () => {
         } finally {
             setIsSaving(false)
         }
-    }, [editForm, mutate])
+    }, [editForm])
 
     const handleCleanup = async () => {
         if (!window.confirm('¿Estás seguro de que deseas eliminar permanentemente todos los productos que no tienen NINGUNA operación (Ventas, Compras o Reservas)?')) {
@@ -183,7 +181,7 @@ const ProductosView = () => {
         try {
             const countDeleted = await api.cleanupOrphanedProducts()
             toast.success(`Se han eliminado ${countDeleted} productos huérfanos.`, { id: loadingToast, duration: 5000 })
-            mutate(key => Array.isArray(key) && key[0] === 'productos')
+            invalidateProductos()
         } catch (error) {
             toast.error('Error al limpiar: ' + (error.message || 'Error desconocido'), { id: loadingToast })
         } finally {
@@ -199,7 +197,7 @@ const ProductosView = () => {
             if (result.success) {
                 if (result.count > 0) {
                     toast.success(`¡Listo! Se agregaron ${result.count} productos nuevos al catálogo.`, { id: loadingToast, duration: 5000 })
-                    mutate(key => Array.isArray(key) && key[0] === 'productos')
+                    invalidateProductos()
                 } else {
                     toast.success('¡Todo en orden! No había productos faltantes.', { id: loadingToast, duration: 4000 })
                 }
@@ -220,7 +218,7 @@ const ProductosView = () => {
             const result = await api.sincronizarPrecios()
             if (result.success) {
                 toast.success('¡Precios actualizados correctamente!', { id: loadingToast, duration: 4000 })
-                mutate(key => Array.isArray(key) && key[0] === 'productos')
+                invalidateProductos()
             } else {
                 toast.error('Error: ' + result.error, { id: loadingToast })
             }
@@ -248,7 +246,7 @@ const ProductosView = () => {
             })
 
             if (result.data && result.data.length > 0) {
-                generateProductsPDF(result.data)
+                await generateProductsPDF(result.data)
                 toast.success('PDF generado correctamente', { id: loadingToast })
             } else {
                 toast.error('No hay productos para exportar con los filtros seleccionados', { id: loadingToast })
@@ -349,7 +347,7 @@ const ProductosView = () => {
             const ids = Array.from(selectedProductIds)
             const products = await api.getProductosPorIds(ids)
             if (products && products.length > 0) {
-                generateProductsPDF(products)
+                await generateProductsPDF(products)
                 toast.success(`PDF generado con ${products.length} productos`, { id: loadingToast })
             } else {
                 toast.error('No se pudieron obtener los productos seleccionados', { id: loadingToast })
@@ -371,8 +369,7 @@ const ProductosView = () => {
             const res = await api.actualizarCategoriaLote(ids, categoria, subcategoria)
             if (res.success) {
                 toast.success(`¡Listo! Se actualizó la categoría de ${res.count || count} productos.`, { id: loadingToast, duration: 4000 })
-                mutate(key => Array.isArray(key) && key[0] === 'productos')
-                mutate('categorias_disponibles')
+                invalidateProductos()
                 setIsBatchCategoryModalOpen(false)
             } else {
                 toast.error('Error al actualizar: ' + (res.error || 'Error desconocido'), { id: loadingToast })
@@ -383,7 +380,7 @@ const ProductosView = () => {
         } finally {
             setIsBatchUpdating(false)
         }
-    }, [selectedProductIds, mutate])
+    }, [selectedProductIds])
 
     const columns = useProductosColumns({
         editingId, setEditingId,
@@ -401,21 +398,29 @@ const ProductosView = () => {
         allVisibleSelected
     })
 
-    const handleSort = (column) => {
+    const handleSort = useCallback((column) => {
         if (column === 'acciones') return
         setPage(1)
         if (sortColumn === column) {
-            setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
+            setSortOrder(prevOrd => (prevOrd === 'asc' ? 'desc' : 'asc'))
         } else {
             setSortColumn(column)
             setSortOrder('asc')
         }
-    }
+    }, [sortColumn])
 
-    const handleFilter = (val) => {
+    const handleFilter = useCallback((val) => {
         setFilterValue(val)
         setPage(1)
-    }
+    }, [])
+
+    const renderExpandedRow = useCallback((product) => (
+        <ProductDetailExpansion product={product} />
+    ), [])
+
+    const handleOpenBatchCategoryModal = useCallback(() => setIsBatchCategoryModalOpen(true), [])
+    const handleCloseBatchCategoryModal = useCallback(() => setIsBatchCategoryModalOpen(false), [])
+    const handleCloseSynonymModal = useCallback(() => setIsSynonymModalOpen(false), [])
 
     return (
         <div className="space-y-6">
@@ -439,7 +444,7 @@ const ProductosView = () => {
                 handleSelectAllFiltered={handleSelectAllFiltered}
                 handleDeselectAll={handleDeselectAll}
                 handleExportSelectedPDF={handleExportSelectedPDF}
-                onOpenBatchCategoryModal={() => setIsBatchCategoryModalOpen(true)}
+                onOpenBatchCategoryModal={handleOpenBatchCategoryModal}
                 filteredCount={count || productsWithPrediction.length}
             />
 
@@ -459,19 +464,17 @@ const ProductosView = () => {
                 onPageChange={setPage}
                 itemsPerPage={pageSize}
                 minWidth="950px"
-                renderExpandedRow={(product) => (
-                    <ProductDetailExpansion product={product} />
-                )}
+                renderExpandedRow={renderExpandedRow}
             />
 
             <SynonymManagerModal 
                 isOpen={isSynonymModalOpen} 
-                onClose={() => setIsSynonymModalOpen(false)} 
+                onClose={handleCloseSynonymModal} 
             />
 
             <BatchCategoryModal
                 isOpen={isBatchCategoryModalOpen}
-                onClose={() => setIsBatchCategoryModalOpen(false)}
+                onClose={handleCloseBatchCategoryModal}
                 onConfirm={handleBatchCategoryConfirm}
                 selectedCount={selectedProductIds.size}
                 categorias={categorias}

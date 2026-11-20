@@ -1,9 +1,14 @@
-import React, { useState, useRef, useMemo } from 'react'
+import React, { useState, useMemo, useCallback } from 'react'
 import DataTable from '../components/DataTable'
 import { useReporteVentasPeriodico, usePredictiveStock } from '../hooks/useData'
-import { BarChart3, Search, ChevronLeft, ChevronRight, BrainCircuit, AlertTriangle } from 'lucide-react'
+import { BarChart3, Search, BrainCircuit } from 'lucide-react'
 import ProductAutocomplete from '../components/ProductAutocomplete'
 import { ProductPivotTable } from './reportes/ProductPivotTable'
+
+const PREDICTIVE_STOCK_OPTIONS = {
+    sortColumn: 'dias_restantes',
+    sortOrder: 'asc'
+}
 
 const ProductSearchInput = ({ value, onChange }) => (
     <div className="relative w-full sm:w-64">
@@ -26,36 +31,32 @@ const ReporteProductosView = () => {
     const [sortOrder, setSortOrder] = useState('desc')
     const [filterValue, setFilterValue] = useState('')
 
-    const { data: prediccionData, loading: loadingPrediccion } = usePredictiveStock({
-        sortColumn: 'dias_restantes',
-        sortOrder: 'asc'
-    })
+    const { data: prediccionData, loading: loadingPrediccion } = usePredictiveStock(PREDICTIVE_STOCK_OPTIONS)
 
     const { data, loading } = useReporteVentasPeriodico({
         sortColumn,
         sortOrder,
         filterColumn: 'tipo_periodo',
         filterValue: periodType,
-        // We handle product filtering on the hook if the hook supported it, 
-        // but for now let's assume we can pass multiple filters or handle it simply.
-        // Actually, our useReporteVentasPeriodico (via fetchTableData) only supports one filterColumn.
-        // I should probably modify the hook or handle the secondary filter in a clever way.
-        // Let's use the 'producto' as the primary filter if search is active, and filter period on client side?
-        // Or better, let's just use the period as the fixed filter and filter product name on client side for now, 
-        // as the data per period shouldn't be massive.
     })
 
-    const filteredData = data.filter(item =>
-        item.producto.toLowerCase().includes(filterValue.toLowerCase())
-    )
+    const filteredData = useMemo(() => {
+        if (!data || !data.length) return []
+        const needle = filterValue.trim().toLowerCase()
+        if (!needle) return data
+        return data.filter(item =>
+            item.producto?.toLowerCase().includes(needle)
+        )
+    }, [data, filterValue])
 
     // Pivot Transformation
-    const pivotData = React.useMemo(() => {
+    const pivotData = useMemo(() => {
         if (viewMode !== 'PIVOT' || !filteredData.length) return { rows: [], periods: [] }
 
-        // Get unique periods and sort them (DESC order - most recent first)
-        const uniquePeriods = Array.from(new Set(filteredData.map(item => item.periodo_inicio)))
-            .sort((a, b) => new Date(b) - new Date(a))
+        // Get unique periods and sort them lexicographically (DESC order - most recent first)
+        const uniquePeriods = Array.from(new Set(filteredData.map(item => String(item.periodo_inicio || ''))))
+            .filter(Boolean)
+            .sort((a, b) => b.localeCompare(a))
 
         // Group by product
         const productMap = {}
@@ -119,18 +120,14 @@ const ReporteProductosView = () => {
         }
     ], [])
 
-    const handleSort = (column) => {
+    const handleSort = useCallback((column) => {
         if (sortColumn === column) {
-            setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
+            setSortOrder((prevOrd) => (prevOrd === 'asc' ? 'desc' : 'asc'))
         } else {
             setSortColumn(column)
             setSortOrder(['cantidad_total', 'recaudacion_total'].includes(column) ? 'desc' : 'asc')
         }
-    }
-
-
-
-    const _scrollContainerRef = useRef(null)
+    }, [sortColumn])
 
     return (
         <div className="space-y-6">

@@ -2,7 +2,7 @@ import React from 'react'
 import { ShieldCheck, RefreshCw, CheckCircle2, ArrowRight } from 'lucide-react'
 import { AnimatePresence, m } from 'framer-motion'
 
-export const CarteraCronAuditPanel = ({
+export const CarteraCronAuditPanel = React.memo(({
     handleRunCron,
     isExecutingCron,
     cronResult
@@ -82,4 +82,5 @@ export const CarteraCronAuditPanel = ({
             </AnimatePresence>
         </div>
     )
-}
+})
+CarteraCronAuditPanel.displayName = 'CarteraCronAuditPanel'

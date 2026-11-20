@@ -6,15 +6,12 @@ import { toast } from 'react-hot-toast'
 import {
     History,
     CheckCircle,
-    XCircle,
     AlertCircle,
     Ban,
     Tag,
     RefreshCw,
     Clock,
     Loader2,
-    Sparkles,
-    AlertTriangle,
     MessageSquare,
     Terminal,
     ArrowUpRight
@@ -154,12 +151,14 @@ const HistorialView = () => {
     const [cancelingLogId, setCancelingLogId] = useState(null)
     const [isRefreshing, setIsRefreshing] = useState(false)
 
-    const { data: rawData, loading, mutate } = useHistorialBot({
+    const historialOptions = useMemo(() => ({
         sortColumn,
         sortOrder,
         filterColumn,
         filterValue
-    })
+    }), [sortColumn, sortOrder, filterColumn, filterValue])
+
+    const { data: rawData, loading, mutate } = useHistorialBot(historialOptions)
 
     // Refresco manual con animación
     const handleRefresh = async () => {
@@ -234,14 +233,14 @@ const HistorialView = () => {
         return rawData
     }, [rawData, statusTab])
 
-    const handleSort = (column) => {
+    const handleSort = useCallback((column) => {
         if (sortColumn === column) {
-            setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
+            setSortOrder((prevOrd) => (prevOrd === 'asc' ? 'desc' : 'asc'))
         } else {
             setSortColumn(column)
             setSortOrder('asc')
         }
-    }
+    }, [sortColumn])
 
     // Cancelación segura de mensaje / operación
     const handleCancelMessage = useCallback(async (row) => {
@@ -430,6 +429,15 @@ const HistorialView = () => {
         }
     ], [cancelingLogId, handleCancelMessage])
 
+    const renderExpandedRow = useCallback((row) => (
+        <ExpandedRow
+            row={row}
+            onEdit={setEditingMessage}
+            onCancel={handleCancelMessage}
+            isCanceling={cancelingLogId === row.log_id}
+        />
+    ), [handleCancelMessage, cancelingLogId])
+
     return (
         <div className="space-y-6">
             {/* Header con título y botón de actualización */}
@@ -463,14 +471,14 @@ const HistorialView = () => {
 
             {/* Tarjetas / KPIs de Resumen */}
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-                <div className="p-3.5 rounded-2xl bg-slate-900/60 border border-slate-800 backdrop-blur-sm">
+                <div className="p-3.5 rounded-2xl bg-slate-900/60 border border-slate-800">
                     <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-1">
                         Total Registros
                     </span>
                     <span className="text-xl font-black text-white">{stats.total}</span>
                 </div>
 
-                <div className={`p-3.5 rounded-2xl border backdrop-blur-sm transition-all ${
+                <div className={`p-3.5 rounded-2xl border transition-colors ${
                     stats.pendientes > 0
                         ? 'bg-amber-950/20 border-amber-500/40 shadow-[0_0_15px_rgba(245,158,11,0.1)] animate-pulse'
                         : 'bg-slate-900/60 border-slate-800'
@@ -481,14 +489,14 @@ const HistorialView = () => {
                     <span className="text-xl font-black text-amber-300">{stats.pendientes}</span>
                 </div>
 
-                <div className="p-3.5 rounded-2xl bg-slate-900/60 border border-slate-800 backdrop-blur-sm">
+                <div className="p-3.5 rounded-2xl bg-slate-900/60 border border-slate-800">
                     <span className="text-[11px] font-semibold text-emerald-400 uppercase tracking-wider block mb-1 flex items-center gap-1">
                         <CheckCircle className="w-3 h-3" /> Enviados
                     </span>
                     <span className="text-xl font-black text-emerald-300">{stats.enviados}</span>
                 </div>
 
-                <div className={`p-3.5 rounded-2xl border backdrop-blur-sm transition-all ${
+                <div className={`p-3.5 rounded-2xl border transition-colors ${
                     stats.errores > 0
                         ? 'bg-red-950/20 border-red-500/40 shadow-[0_0_15px_rgba(239,68,68,0.15)]'
                         : 'bg-slate-900/60 border-slate-800'
@@ -499,7 +507,7 @@ const HistorialView = () => {
                     <span className="text-xl font-black text-red-300">{stats.errores}</span>
                 </div>
 
-                <div className="p-3.5 rounded-2xl bg-slate-900/60 border border-slate-800 backdrop-blur-sm col-span-2 sm:col-span-1">
+                <div className="p-3.5 rounded-2xl bg-slate-900/60 border border-slate-800 col-span-2 sm:col-span-1">
                     <span className="text-[11px] font-semibold text-orange-400 uppercase tracking-wider block mb-1 flex items-center gap-1">
                         <Ban className="w-3 h-3" /> Cancelados
                     </span>
@@ -555,14 +563,7 @@ const HistorialView = () => {
                 searchColumns={SEARCH_COLUMNS}
                 searchColumn={filterColumn}
                 onSearchColumnChange={setFilterColumn}
-                renderExpandedRow={(row) => (
-                    <ExpandedRow
-                        row={row}
-                        onEdit={(r) => setEditingMessage(r)}
-                        onCancel={handleCancelMessage}
-                        isCanceling={cancelingLogId === row.log_id}
-                    />
-                )}
+                renderExpandedRow={renderExpandedRow}
                 rowKey="log_id"
                 minWidth="900px"
             />

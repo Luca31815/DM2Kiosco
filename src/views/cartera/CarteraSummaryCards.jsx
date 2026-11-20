@@ -2,7 +2,7 @@ import React from 'react'
 import { m } from 'framer-motion'
 import { Coins, CreditCard, Wallet } from 'lucide-react'
 
-export const CarteraSummaryCards = ({
+export const CarteraSummaryCards = React.memo(({
     totalEfectivo,
     totalDigital,
     totalCartera,
@@ -64,4 +64,5 @@ export const CarteraSummaryCards = ({
             </m.div>
         </div>
     )
-}
+})
+CarteraSummaryCards.displayName = 'CarteraSummaryCards'

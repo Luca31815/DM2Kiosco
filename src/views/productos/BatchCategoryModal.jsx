@@ -1,13 +1,16 @@
 import React, { useState, useMemo } from 'react'
-import { FolderEdit, Check, X, Loader2, Tag, AlertCircle } from 'lucide-react'
+import { FolderEdit, Check, X, Loader2, AlertCircle } from 'lucide-react'
+
+const EMPTY_CATS = []
+const EMPTY_SUBCATS = {}
 
 export const BatchCategoryModal = ({
     isOpen,
     onClose,
     onConfirm,
     selectedCount = 0,
-    categorias = [],
-    subcategoriasPorCategoria = {},
+    categorias = EMPTY_CATS,
+    subcategoriasPorCategoria = EMPTY_SUBCATS,
     isUpdating = false
 }) => {
     const [targetCategoria, setTargetCategoria] = useState('')

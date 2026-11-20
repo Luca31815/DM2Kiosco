@@ -1,5 +1,7 @@
-import React, { useRef } from 'react'
+import React, { useRef, useState, useMemo, useCallback } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
+
+const PAGE_SIZE = 30
 
 export const ProductPivotTable = ({
     renderSearchInput,
@@ -10,6 +12,23 @@ export const ProductPivotTable = ({
     loading
 }) => {
     const scrollContainerRef = useRef(null)
+    const rowsLength = pivotData.rows.length
+    const [pageState, setPageState] = useState({ len: rowsLength, page: 1 })
+    const page = pageState.len === rowsLength ? pageState.page : 1
+    const setPage = useCallback((updater) => {
+        setPageState((prev) => {
+            const current = prev.len === rowsLength ? prev.page : 1
+            const next = typeof updater === 'function' ? updater(current) : updater
+            return { len: rowsLength, page: next }
+        })
+    }, [rowsLength])
+
+    const totalPages = Math.max(1, Math.ceil(rowsLength / PAGE_SIZE))
+    const safePage = Math.min(page, totalPages)
+    const paginatedRows = useMemo(() => {
+        const start = (safePage - 1) * PAGE_SIZE
+        return pivotData.rows.slice(start, start + PAGE_SIZE)
+    }, [pivotData.rows, safePage])
 
     const scroll = (direction) => {
         if (scrollContainerRef.current) {
@@ -72,20 +91,20 @@ export const ProductPivotTable = ({
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-800">
-                        {pivotData.rows.length === 0 ? (
+                        {paginatedRows.length === 0 ? (
                             <tr>
                                 <td colSpan={pivotData.periods.length + 1} className="px-6 py-12 text-center text-gray-500">
                                     No hay datos para mostrar en este período.
                                 </td>
                             </tr>
                         ) : (
-                            pivotData.rows.map((row, i) => (
+                            paginatedRows.map((row, i) => (
                                 <tr key={row.producto} className={i % 2 === 0 ? 'bg-gray-900/50' : 'bg-gray-900/20'}>
                                     <td className="px-6 py-3 font-medium text-white sticky left-0 z-20 bg-gray-900 border-r border-gray-800 shadow-lg truncate max-w-[250px]" title={row.producto}>
                                         {row.producto}
                                     </td>
                                     {pivotData.periods.map(p => {
-                                        const qty = row[p] || 0
+                                        const qty = row.values?.[p] ?? row[p] ?? 0
                                         return (
                                             <td key={p} className={`px-6 py-3 text-center tabular-nums font-mono ${qty > 0 ? 'text-indigo-400 font-bold' : 'text-gray-600'}`}>
                                                 {qty > 0 ? qty : '-'}
@@ -98,6 +117,37 @@ export const ProductPivotTable = ({
                     </tbody>
                 </table>
             </div>
+
+            {pivotData.rows.length > PAGE_SIZE && (
+                <div className="p-4 border-t border-gray-800 bg-gray-900/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-gray-400">
+                    <span>
+                        Mostrando {(safePage - 1) * PAGE_SIZE + 1}–{Math.min(safePage * PAGE_SIZE, pivotData.rows.length)} de {pivotData.rows.length} productos
+                    </span>
+                    <div className="flex items-center gap-2">
+                        <button
+                            type="button"
+                            disabled={safePage <= 1}
+                            onClick={() => setPage((p) => Math.max(1, p - 1))}
+                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-200 border border-gray-700 disabled:opacity-40 cursor-pointer"
+                        >
+                            <ChevronLeft className="h-3.5 w-3.5" />
+                            <span>Anterior</span>
+                        </button>
+                        <span className="font-bold text-gray-300 tabular-nums px-2">
+                            Página {safePage} de {totalPages}
+                        </span>
+                        <button
+                            type="button"
+                            disabled={safePage >= totalPages}
+                            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-200 border border-gray-700 disabled:opacity-40 cursor-pointer"
+                        >
+                            <span>Siguiente</span>
+                            <ChevronRight className="h-3.5 w-3.5" />
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

@@ -1,8 +1,8 @@
 import { supabase } from '../lib/supabase'
-import { CATEGORIAS_LIST, SUBCATEGORIAS_BY_CATEGORIA } from '../utils/triageClassifier'
+import { CATEGORIAS_LIST, SUBCATEGORIAS_BY_CATEGORIA } from '../utils/familiasCatalog'
 
 // Helper para detectar modo demo desde la cookie
-const isDemo = () => {
+export const isDemo = () => {
     if (typeof document === 'undefined') return false;
     const value = `; ${document.cookie}`;
     const parts = value.split(`; dashboard_mode=`);
@@ -13,9 +13,25 @@ const isDemo = () => {
 export const fetchTableData = async (tableName, options = {}) => {
     if (isDemo()) return { data: [], count: 0 }; // Failsafe
 
-    const { sortColumn, sortOrder, filterColumn, filterValue, filterCategoria, filterSubcategoria, page, pageSize = 20, dateRange, dateColumn, select = '*' } = options
+    const {
+        sortColumn,
+        sortOrder,
+        filterColumn,
+        filterValue,
+        filterCategoria,
+        filterSubcategoria,
+        page,
+        pageSize,
+        withCount,
+        dateRange,
+        dateColumn,
+        select = '*'
+    } = options
 
-    let query = supabase.from(tableName).select(select, { count: 'exact' })
+    const needCount = withCount !== undefined ? withCount : (page !== undefined)
+    let query = needCount
+        ? supabase.from(tableName).select(select, { count: 'exact' })
+        : supabase.from(tableName).select(select)
 
     if (filterCategoria) {
         if (filterCategoria === 'SIN_CATEGORIA') {
@@ -30,8 +46,10 @@ export const fetchTableData = async (tableName, options = {}) => {
     }
 
     if (filterColumn && filterValue) {
-        // If searching a numeric column with ilike (like IDs), cast to text
-        if (filterColumn.endsWith('_id') || filterColumn === 'id') {
+        if (filterColumn === 'tipo_periodo') {
+            query = query.eq(filterColumn, String(filterValue).trim().toUpperCase())
+        } else if (filterColumn.endsWith('_id') || filterColumn === 'id') {
+            // If searching a numeric column with ilike (like IDs), cast to text
             query = query.ilike(`${filterColumn}::text`, `%${filterValue}%`)
         } else {
             query = query.ilike(filterColumn, `%${filterValue}%`)
@@ -58,10 +76,12 @@ export const fetchTableData = async (tableName, options = {}) => {
         query = query.order(sortColumn, { ascending: sortOrder === 'asc' })
     }
 
-    if (page !== undefined && pageSize !== undefined) {
-        const from = (page - 1) * pageSize
-        const to = from + pageSize - 1
-        query = query.range(from, to)
+    if (page !== undefined) {
+        const size = pageSize ?? 20;
+        const from = (page - 1) * size;
+        query = query.range(from, from + size - 1);
+    } else if (pageSize !== undefined) {
+        query = query.range(0, pageSize - 1);
     }
 
     const { data, error, count } = await query
@@ -71,7 +91,7 @@ export const fetchTableData = async (tableName, options = {}) => {
         throw error
     }
 
-    return { data, count }
+    return { data, count: needCount ? count : (data ? data.length : 0) }
 }
 
 const fetchDetails = async (tableName, shadowColumn, id) => {
@@ -100,30 +120,20 @@ export const rollbackLog = async (logId) => {
 }
 
 export const getAISummaries = async ({ tipo = 'diario', pageSize = 12 } = {}) => {
-    let query = supabase
+    if (isDemo()) return { data: [] };
+
+    const { data, error } = await supabase
         .from('resumenes_ia')
         .select('*')
         .eq('tipo', tipo)
         .order('fecha', { ascending: false })
         .limit(pageSize)
 
-    const { data, error } = await query
     if (error) throw error
     return { data }
 }
 
-export const getSystemAlerts = async () => {
-    const { data, error } = await supabase
-        .from('alertas_log')
-        .select('*, logs_auditoria(*)')
-        .order('creado_el', { ascending: false })
-        .limit(50)
-
-    if (error) throw error
-    return { data }
-}
-
-export const getVentas = (options) => {
+export const getVentas = (options = {}) => {
     // Si no estamos filtrando por producto, usamos la vista LITE que es mucho más rápida
     const tableName = options.filterColumn === 'lista_productos' ? 'vista_ventas_search' : 'vista_ventas_lite'
     return fetchTableData(tableName, { sortColumn: 'fecha', sortOrder: 'desc', ...options })
@@ -202,15 +212,66 @@ export const getProductos = async (options = {}) => {
 export const getProductosPorIds = async (ids) => {
     if (!ids || ids.length === 0) return []
     if (isDemo()) return []
-    const { data, error } = await supabase
-        .from('productos')
-        .select('producto_id, nombre, categoria, subcategoria, stock_actual, ultimo_precio_venta, ultimo_costo_compra')
-        .in('producto_id', ids)
-    if (error) {
-        console.error('Error fetching productos por IDs:', error)
-        return []
+
+    const CHUNK_SIZE = 150
+    const uniqueIds = [...new Set(ids)]
+    const chunks = []
+    for (let i = 0; i < uniqueIds.length; i += CHUNK_SIZE) {
+        chunks.push(uniqueIds.slice(i, i + CHUNK_SIZE))
     }
-    return data || []
+
+    const results = await Promise.all(
+        chunks.map(async (chunk) => {
+            const { data, error } = await supabase
+                .from('productos')
+                .select('producto_id, nombre, categoria, subcategoria, stock_actual, ultimo_precio_venta, ultimo_costo_compra')
+                .in('producto_id', chunk)
+            if (error) {
+                console.error('Error fetching productos por IDs:', error)
+                return []
+            }
+            return data || []
+        })
+    )
+
+    return results.flat()
+}
+
+export const getProductosCategoriasPorNombres = async (nombres = []) => {
+    if (isDemo() || !Array.isArray(nombres) || nombres.length === 0) return []
+
+    const uniqueNames = []
+    const seen = new Set()
+    for (const raw of nombres) {
+        const name = typeof raw === 'string' ? raw.trim() : ''
+        if (name && !seen.has(name)) {
+            seen.add(name)
+            uniqueNames.push(name)
+        }
+    }
+    if (uniqueNames.length === 0) return []
+
+    const CHUNK_SIZE = 120
+    const chunks = []
+    for (let i = 0; i < uniqueNames.length; i += CHUNK_SIZE) {
+        chunks.push(uniqueNames.slice(i, i + CHUNK_SIZE))
+    }
+
+    const results = await Promise.all(
+        chunks.map(async (chunk) => {
+            const { data, error } = await supabase
+                .from('productos_base')
+                .select('nombre, categoria, subcategoria')
+                .in('nombre', chunk)
+            if (error) {
+                console.error('Error fetching productos categorias por nombres:', error)
+                return []
+            }
+            return data || []
+        })
+    )
+
+    return results.flat()
 }
 
 export const getRetiros = (options) => fetchTableData('retiros', { sortColumn: 'fecha', sortOrder: 'desc', ...options })
@@ -231,7 +292,17 @@ export const getAnalisisHorarioMensual = (options) => fetchTableData('vista_anal
 
 export const getHitosVentas = (options) => fetchTableData('vista_hitos_ventas', { sortColumn: 'dia', sortOrder: 'desc', ...options })
 
-export const getReporteVentasPeriodico = (options) => fetchTableData('vista_reporte_ventas_periodico', options)
+export const getReporteVentasPeriodico = (options = {}) => {
+    if (options.tipo_periodo && !options.filterColumn) {
+        const { tipo_periodo, ...rest } = options
+        return fetchTableData('vista_reporte_ventas_periodico', {
+            ...rest,
+            filterColumn: 'tipo_periodo',
+            filterValue: String(tipo_periodo).trim().toUpperCase()
+        })
+    }
+    return fetchTableData('vista_reporte_ventas_periodico', options)
+}
 
 export const getProveedores = (options) => fetchTableData('vista_proveedores_consolidada', options)
 export const getResumenProductosProveedor = (options) => fetchTableData('vista_resumen_productos_proveedor', options)
@@ -342,20 +413,6 @@ export const getDuplicadosTrigram = async () => {
 
 // actualizarProducto y getCategoriasDisponibles definidos abajo en la sección de productos
 
-export const crearReserva = async (reserva, productos, pagos) => {
-    if (isDemo()) throw new Error('Acción deshabilitada en el modo Demo');
-    const { data: result, error } = await supabase.rpc('crear_o_modificar_reserva_v5', {
-        p_reserva: reserva,
-        p_productos: productos,
-        p_pagos: pagos
-    })
-    if (error) {
-        console.error('Error calling crear_o_modificar_reserva_v5:', error)
-        throw error
-    }
-    return result
-}
-
 export const entregarReserva = async (reservaId) => {
     if (isDemo()) throw new Error('Acción deshabilitada en el modo Demo');
     const { data: result, error } = await supabase
@@ -397,7 +454,8 @@ export const crearRetiro = async (retiro) => {
 }
 
 export const getN8nErrors = (options) => fetchTableData('logs_errores_n8n', { sortColumn: 'fecha', sortOrder: 'desc', ...options })
-export const getPredictiveStock = (options) => fetchTableData('vista_prediccion_stock', options)
+// vista_prediccion_stock fue eliminada en Supabase; retornamos vacío para evitar errores 404 en cada consulta
+export const getPredictiveStock = async () => ({ data: [], count: 0 })
 
 export const getDescalcesPagos = (options) => fetchTableData('v_descalces_pagos', options)
 
@@ -623,26 +681,38 @@ export const ejecutarCronReemplazosManual = async () => {
 
 // Supabase/PostgREST devuelve como máximo 1000 filas por consulta: se pagina hasta agotar resultados
 const fetchAllRows = async (buildQuery, pageSize = 1000) => {
-    let all = [];
+    const all = [];
     let from = 0;
     for (;;) {
         const { data, error } = await buildQuery().range(from, from + pageSize - 1);
         if (error) throw error;
         const rows = data || [];
-        all = all.concat(rows);
+        all.push(...rows);
         if (rows.length < pageSize) break;
         from += pageSize;
     }
     return all;
 };
 
-// Un .in() con cientos de IDs excede el largo de URL permitido: se consulta en tandas
+// Un .in() con cientos de IDs excede el largo de URL permitido: se consulta en tandas con concurrencia acotada
 const fetchInBatches = async (table, select, column, ids, batchSize = 150) => {
-    let all = [];
+    const CONCURRENCY = 4;
+    const chunks = [];
     for (let i = 0; i < ids.length; i += batchSize) {
-        const chunk = ids.slice(i, i + batchSize);
-        const rows = await fetchAllRows(() => supabase.from(table).select(select).in(column, chunk));
-        all = all.concat(rows);
+        chunks.push(ids.slice(i, i + batchSize));
+    }
+
+    const all = [];
+    for (let i = 0; i < chunks.length; i += CONCURRENCY) {
+        const batch = chunks.slice(i, i + CONCURRENCY);
+        const results = await Promise.all(
+            batch.map(chunk =>
+                fetchAllRows(() => supabase.from(table).select(select).in(column, chunk))
+            )
+        );
+        for (const rows of results) {
+            all.push(...rows);
+        }
     }
     return all;
 };
@@ -659,7 +729,10 @@ export const getConteoComprasProductos = async (days = 30) => {
             .gte('Fecha', startDate.toISOString())
             .order('compra_id', { ascending: true }));
 
-        const compraIds = comprasData.map(c => c.compra_id).filter(Boolean);
+        const compraIds = [];
+        for (const c of comprasData) {
+            if (c.compra_id) compraIds.push(c.compra_id);
+        }
         if (compraIds.length === 0) return {};
 
         const detallesData = await fetchInBatches('compras_detalles', 'producto, compra_id', 'compra_id', compraIds);
@@ -696,7 +769,10 @@ export const getVentasProductosPeriodo = async (days = 30) => {
             .gte('fecha', startDate.toISOString())
             .order('venta_id', { ascending: true }));
 
-        const ventaIds = ventasData.map(v => v.venta_id).filter(Boolean);
+        const ventaIds = [];
+        for (const v of ventasData) {
+            if (v.venta_id) ventaIds.push(v.venta_id);
+        }
         if (ventaIds.length === 0) return {};
 
         const detallesData = await fetchInBatches('ventas_detalles', 'venta_id, producto, cantidad, subtotal', 'venta_id', ventaIds);
@@ -770,6 +846,106 @@ export const getLotesComprasProductos = async () => {
     });
 
     return result;
+};
+
+const isMissingRpcError = (error) => Boolean(
+    error && (
+        error.code === '42883' ||
+        error.code === 'PGRST202' ||
+        String(error.message || '').includes('Could not find the function')
+    )
+);
+
+const normalizeVentasMap = (raw) => {
+    if (!raw || typeof raw !== 'object') return {};
+    const out = {};
+    if (Array.isArray(raw)) {
+        for (const item of raw) {
+            const normName = (item?.producto || item?.nombre || '').toLowerCase().trim();
+            if (!normName) continue;
+            out[normName] = {
+                unidades: Number(item.unidades || 0),
+                ingresos: Number(item.ingresos || 0),
+                ventasCount: Number(item.ventasCount ?? item.ventas_count ?? 0)
+            };
+        }
+        return out;
+    }
+    for (const [k, v] of Object.entries(raw)) {
+        const normName = k.toLowerCase().trim();
+        out[normName] = {
+            unidades: Number(v?.unidades || 0),
+            ingresos: Number(v?.ingresos || 0),
+            ventasCount: Number(v?.ventasCount ?? v?.ventas_count ?? 0)
+        };
+    }
+    return out;
+};
+
+const normalizeScalarMap = (raw, fallback = 0) => {
+    if (!raw || typeof raw !== 'object') return {};
+    const out = {};
+    if (Array.isArray(raw)) {
+        for (const item of raw) {
+            const normName = (item?.producto || item?.nombre || '').toLowerCase().trim();
+            if (!normName) continue;
+            out[normName] = Number(item.count ?? item.lote ?? item.valor ?? fallback);
+        }
+        return out;
+    }
+    for (const [k, v] of Object.entries(raw)) {
+        out[k.toLowerCase().trim()] = Number(v ?? fallback);
+    }
+    return out;
+};
+
+export const getReporteSeccionesDatos = async (days = 30) => {
+    if (isDemo()) {
+        return {
+            ventasPeriodo: {},
+            ventas7d: {},
+            ventas30d: {},
+            conteoCompras: {},
+            lotesCompras: {}
+        };
+    }
+
+    const { data, error } = await supabase.rpc('fn_reporte_secciones_datos', { p_days: days });
+    if (!error && data && typeof data === 'object' && !Array.isArray(data)) {
+        return {
+            ventasPeriodo: normalizeVentasMap(data.ventas_periodo ?? data.ventasPeriodo),
+            ventas7d: normalizeVentasMap(data.ventas_7d ?? data.ventas7d),
+            ventas30d: normalizeVentasMap(data.ventas_30d ?? data.ventas30d),
+            conteoCompras: normalizeScalarMap(data.conteo_compras ?? data.conteoCompras, 0),
+            lotesCompras: normalizeScalarMap(data.lotes_compras ?? data.lotesCompras, 1)
+        };
+    }
+
+    if (error && !isMissingRpcError(error)) {
+        console.error('Error en fn_reporte_secciones_datos:', error);
+        throw error;
+    }
+
+    // Fallback si la RPC aún no existe en Supabase
+    const ventasPeriodoPromise = getVentasProductosPeriodo(days);
+    const ventas7dPromise = days === 7 ? ventasPeriodoPromise : getVentasProductosPeriodo(7);
+    const ventas30dPromise = days === 30 ? ventasPeriodoPromise : getVentasProductosPeriodo(30);
+
+    const [ventasPeriodo, ventas7d, ventas30d, conteoCompras, lotesCompras] = await Promise.all([
+        ventasPeriodoPromise,
+        ventas7dPromise,
+        ventas30dPromise,
+        getConteoComprasProductos(days),
+        getLotesComprasProductos()
+    ]);
+
+    return {
+        ventasPeriodo,
+        ventas7d,
+        ventas30d,
+        conteoCompras,
+        lotesCompras
+    };
 };
 
 // --- BANDEJA DE ENTRADA Y TRIAGE DE PRODUCTOS ---
@@ -890,6 +1066,43 @@ export const actualizarCategoriaLote = async (productoIds, categoria, subcategor
     }
 };
 
+const buildCategoriasResult = (rows = []) => {
+    const catsSet = new Set(CATEGORIAS_LIST);
+    const subsSetsByCat = {};
+    Object.keys(SUBCATEGORIAS_BY_CATEGORIA).forEach(k => {
+        subsSetsByCat[k] = new Set(SUBCATEGORIAS_BY_CATEGORIA[k]);
+    });
+
+    for (const item of rows) {
+        const cat = typeof item?.categoria === 'string' ? item.categoria.trim() : '';
+        if (!cat) continue;
+        catsSet.add(cat);
+        if (!subsSetsByCat[cat]) {
+            subsSetsByCat[cat] = new Set();
+        }
+        if (Array.isArray(item.subcategorias)) {
+            for (const rawSub of item.subcategorias) {
+                const sub = typeof rawSub === 'string' ? rawSub.trim() : '';
+                if (sub) subsSetsByCat[cat].add(sub);
+            }
+        } else {
+            const sub = typeof item?.subcategoria === 'string' ? item.subcategoria.trim() : '';
+            if (sub) subsSetsByCat[cat].add(sub);
+        }
+    }
+
+    const categorias = Array.from(catsSet).sort((a, b) => a.localeCompare(b));
+    const subcategoriasPorCategoria = {};
+    for (const cat of Object.keys(subsSetsByCat)) {
+        subcategoriasPorCategoria[cat] = Array.from(subsSetsByCat[cat]).sort((a, b) => a.localeCompare(b));
+    }
+
+    return {
+        categorias,
+        subcategoriasPorCategoria
+    };
+};
+
 export const getCategoriasDisponibles = async () => {
     if (isDemo()) {
         return {
@@ -898,6 +1111,11 @@ export const getCategoriasDisponibles = async () => {
         };
     }
     try {
+        const { data: rpcData, error: rpcError } = await supabase.rpc('fn_get_categorias_disponibles');
+        if (!rpcError && Array.isArray(rpcData)) {
+            return buildCategoriasResult(rpcData);
+        }
+
         const { data, error } = await supabase
             .from('productos_base')
             .select('categoria, subcategoria')
@@ -911,37 +1129,7 @@ export const getCategoriasDisponibles = async () => {
             };
         }
 
-        const catsSet = new Set(CATEGORIAS_LIST);
-        const subsByCat = {};
-        Object.keys(SUBCATEGORIAS_BY_CATEGORIA).forEach(k => {
-            subsByCat[k] = [...SUBCATEGORIAS_BY_CATEGORIA[k]];
-        });
-
-        (data || []).forEach(item => {
-            if (item.categoria && item.categoria.trim()) {
-                const cat = item.categoria.trim();
-                catsSet.add(cat);
-                if (!subsByCat[cat]) {
-                    subsByCat[cat] = [];
-                }
-                if (item.subcategoria && item.subcategoria.trim()) {
-                    const sub = item.subcategoria.trim();
-                    if (!subsByCat[cat].includes(sub)) {
-                        subsByCat[cat].push(sub);
-                    }
-                }
-            }
-        });
-
-        const sortedCats = Array.from(catsSet).sort((a, b) => a.localeCompare(b));
-        Object.keys(subsByCat).forEach(c => {
-            subsByCat[c].sort((a, b) => a.localeCompare(b));
-        });
-
-        return {
-            categorias: sortedCats,
-            subcategoriasPorCategoria: subsByCat
-        };
+        return buildCategoriasResult(data || []);
     } catch (err) {
         console.error('Error in getCategoriasDisponibles:', err);
         return {
@@ -955,23 +1143,53 @@ export const clasificarProductosBatch = async (items = []) => {
     if (isDemo()) throw new Error('Acción deshabilitada en el modo Demo');
     if (!items.length) return { success: true, count: 0 };
 
-    const nowIso = new Date().toISOString();
-    const promises = items.map(item =>
-        supabase
-            .from('productos_base')
-            .update({
-                categoria: item.categoria || null,
-                subcategoria: item.subcategoria || null,
-                fecha_actualizacion: nowIso
-            })
-            .eq('producto_id', item.producto_id)
-    );
+    const rpcItems = items.map(i => ({
+        producto_id: i.producto_id,
+        categoria: i.categoria || null,
+        subcategoria: i.subcategoria || null
+    }));
 
-    const results = await Promise.all(promises);
-    const errors = results.filter(r => r.error);
-    if (errors.length > 0) {
-        console.error('Errores en clasificación por lote:', errors);
-        throw new Error(`Error en ${errors.length} productos durante la clasificación por lote`);
+    const { data: rpcData, error: rpcError } = await supabase.rpc('fn_clasificar_productos_lote', {
+        p_items: rpcItems
+    });
+
+    if (!rpcError) {
+        return rpcData || { success: true, count: items.length };
+    }
+
+    if (!isMissingRpcError(rpcError)) {
+        console.error('Error en fn_clasificar_productos_lote:', rpcError);
+        throw rpcError;
+    }
+
+    // Fallback en tandas acotadas si la RPC aún no existe en Supabase
+    const BATCH_SIZE = 15;
+    const nowIso = new Date().toISOString();
+    let totalErrors = 0;
+
+    for (let i = 0; i < items.length; i += BATCH_SIZE) {
+        const chunk = items.slice(i, i + BATCH_SIZE);
+        const results = await Promise.all(
+            chunk.map(item =>
+                supabase
+                    .from('productos_base')
+                    .update({
+                        categoria: item.categoria || null,
+                        subcategoria: item.subcategoria || null,
+                        fecha_actualizacion: nowIso
+                    })
+                    .eq('producto_id', item.producto_id)
+            )
+        );
+        const chunkErrors = results.filter(r => r.error);
+        if (chunkErrors.length > 0) {
+            console.error('Errores en clasificación por lote:', chunkErrors);
+            totalErrors += chunkErrors.length;
+        }
+    }
+
+    if (totalErrors > 0) {
+        throw new Error(`Error en ${totalErrors} productos durante la clasificación por lote`);
     }
 
     return { success: true, count: items.length };

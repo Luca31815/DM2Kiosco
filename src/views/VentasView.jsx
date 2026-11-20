@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback } from 'react'
 import DataTable from '../components/DataTable'
-import { useVentas, useVentasDetalles, useMovimientosDinero, useMovimientosStock } from '../hooks/useData'
+import { useVentas, useVentasDetalles, useMovimientosDinero, useMovimientosStock, invalidateVentas, invalidateProductos } from '../hooks/useData'
 import { 
     Loader2, 
     Edit2, 
@@ -11,19 +11,55 @@ import {
     Trash2, 
     Plus, 
     Package, 
-    Receipt, 
     CreditCard, 
-    Users, 
     ShoppingCart 
 } from 'lucide-react'
 import * as api from '../services/api'
 import { useSWRConfig } from 'swr'
 import ProductAutocomplete from '../components/ProductAutocomplete'
 import ClientAutocomplete from '../components/ClientAutocomplete'
-import { LazyMotion, domAnimation, m } from 'framer-motion'
+import { m } from 'framer-motion'
 import { toast } from 'react-hot-toast'
 import { useIsMobile } from '../hooks/useIsMobile'
 import { supabase } from '../lib/supabase'
+
+const dateTimeFormatter = new Intl.DateTimeFormat('es-AR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+})
+
+const dateFormatter = new Intl.DateTimeFormat('es-AR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+})
+
+const TABLE_MIN_WIDTH_STYLE = { minWidth: '700px' }
+
+const WSP_BOX_STYLE = {
+    background: 'rgba(59, 130, 246, 0.08)',
+    border: '1px solid rgba(59, 130, 246, 0.25)',
+    borderRadius: '10px',
+    padding: '10px 14px',
+    marginBottom: '14px',
+    fontSize: '0.82rem',
+    color: 'var(--text-secondary)',
+    lineHeight: 1.45
+}
+
+const WSP_HEADER_STYLE = {
+    fontWeight: 600,
+    color: '#60a5fa',
+    marginBottom: '4px',
+    fontSize: '0.75rem',
+    textTransform: 'uppercase',
+    letterSpacing: '0.04em'
+}
+
+const WSP_TEXT_STYLE = { userSelect: 'all', whiteSpace: 'pre-wrap' }
 
 const ExpandedRow = ({ row, onEditSale }) => {
     const { data: details, loading: loadingDetails } = useVentasDetalles(row.venta_id)
@@ -68,8 +104,8 @@ const ExpandedRow = ({ row, onEditSale }) => {
             mutate(['ventas_detalles', row.venta_id])
             mutate(['movimientos_dinero', row.venta_id])
             mutate(['stock_movimientos', row.venta_id])
-            mutate(['ventas'])
-            mutate(key => Array.isArray(key) && key[0] === 'productos')
+            invalidateVentas()
+            invalidateProductos()
             setEditingId(null)
             toast.success('Venta actualizada correctamente')
         } catch (error) {
@@ -80,12 +116,11 @@ const ExpandedRow = ({ row, onEditSale }) => {
     }
 
     return (
-        <LazyMotion features={domAnimation}>
-            <m.div
-                initial={{ opacity: 0, scale: 0.98 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="space-y-6"
-            >
+        <m.div
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="space-y-6"
+        >
                 <div className="glass-panel p-6 rounded-2xl bg-white/5 border-white/5">
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                         <div className="flex items-center gap-3">
@@ -112,7 +147,7 @@ const ExpandedRow = ({ row, onEditSale }) => {
                     </div>
 
                     <div className="overflow-x-auto scroll-touch rounded-xl border border-white/5">
-                        <table className="w-full text-sm text-left" style={{ minWidth: '700px' }}>
+                        <table className="w-full text-sm text-left" style={TABLE_MIN_WIDTH_STYLE}>
                             <thead className="text-[10px] font-black uppercase tracking-widest text-slate-500 bg-white/5">
                                 <tr>
                                     <th className="px-6 py-3">Producto</th>
@@ -212,7 +247,7 @@ const ExpandedRow = ({ row, onEditSale }) => {
                                     <tr><td colSpan="3" className="px-4 py-4 text-center text-slate-500 italic">Sin movimientos registrados</td></tr>
                                 ) : dinero.map((m) => (
                                     <tr key={m.movimiento_id}>
-                                        <td className="px-4 py-2 text-slate-400 font-medium">{new Date(m.fecha).toLocaleDateString()}</td>
+                                        <td className="px-4 py-2 text-slate-400 font-medium">{m.fecha ? dateFormatter.format(new Date(m.fecha)) : '-'}</td>
                                         <td className="px-4 py-2 font-bold text-slate-300">{m.metodo}</td>
                                         <td className="px-4 py-2 text-right font-black text-white">${m.monto}</td>
                                     </tr>
@@ -243,8 +278,7 @@ const ExpandedRow = ({ row, onEditSale }) => {
                         </table>
                     </div>
                 </div>
-            </m.div>
-        </LazyMotion>
+        </m.div>
     )
 }
 
@@ -285,14 +319,16 @@ const VentasView = () => {
         let pagos = existingPagos;
 
         try {
-            if (!details) {
-                const { data } = await supabase.from('ventas_detalles').select('*').eq('venta_id', sale.venta_id);
-                details = data || [];
-            }
-            if (!pagos) {
-                const { data } = await supabase.from('movimientos_dinero').select('*').eq('referencia_id', sale.venta_id);
-                pagos = data || [];
-            }
+            const [detailsRes, pagosRes] = await Promise.all([
+                !details
+                    ? supabase.from('ventas_detalles').select('*').eq('venta_id', sale.venta_id)
+                    : Promise.resolve({ data: details }),
+                !pagos
+                    ? supabase.from('movimientos_dinero').select('*').eq('referencia_id', sale.venta_id)
+                    : Promise.resolve({ data: pagos })
+            ]);
+            details = detailsRes.data || [];
+            pagos = pagosRes.data || [];
         } catch (err) {
             console.error('Error fetching details for sale edit:', err);
             details = details || [];
@@ -346,7 +382,7 @@ const VentasView = () => {
 
     const columns = useMemo(() => [
         { key: 'venta_id', label: 'ID', width: 'w-40', render: (val) => <span className="font-black text-slate-500 truncate block">#{val}</span> },
-        { key: 'fecha', label: 'Fecha', width: 'w-56', render: (val) => <span className="font-semibold text-slate-400">{val ? new Date(val).toLocaleString() : '-'}</span> },
+        { key: 'fecha', label: 'Fecha', width: 'w-56', render: (val) => <span className="font-semibold text-slate-400">{val ? dateTimeFormatter.format(new Date(val)) : '-'}</span> },
         { key: 'cliente', label: 'Cliente', width: 'w-1/4', wrap: true, render: (val) => <span className="font-bold text-slate-200">{val || 'N/A'}</span> },
         { key: 'total_venta', label: 'Total', width: 'w-32', render: (val) => <span className="font-black text-blue-400 text-lg tabular-nums">${val?.toLocaleString() || '0'}</span> },
         { key: 'notas', label: 'Notas', width: 'w-1/3', wrap: true, render: (val) => <span className="text-xs italic text-slate-500">{val || '-'}</span> },
@@ -559,7 +595,7 @@ const VentasView = () => {
     const currentCalculatedTotal = useMemo(() => {
         if (!editingSale?.details) return 0;
         return editingSale.details.reduce((sum, d) => sum + (Number(d.subtotal) || 0), 0);
-    }, [editingSale?.details]);
+    }, [editingSale]);
 
     // [DASH-3 Frontend] Payload exacto hacia corregir_operacion_v20
     const handleSaveEdit = async () => {
@@ -630,11 +666,11 @@ const VentasView = () => {
 
         try {
             await api.corregirOperacion(payload);
-            mutate(['ventas']);
+            invalidateVentas();
             mutate(['ventas_detalles', editingSale.venta_id]);
             mutate(['movimientos_dinero', editingSale.venta_id]);
             mutate(['stock_movimientos', editingSale.venta_id]);
-            mutate(key => Array.isArray(key) && key[0] === 'productos');
+            invalidateProductos();
 
             toast.success('Venta corregida con éxito', { id: toastId });
             setEditingSale(null);
@@ -687,6 +723,11 @@ const VentasView = () => {
         )
     }
 
+    const renderExpandedRow = useCallback(
+        (row) => <ExpandedRow row={row} onEditSale={startEditing} />,
+        [startEditing]
+    )
+
     return (
         <div className="space-y-6">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
@@ -708,7 +749,7 @@ const VentasView = () => {
                 searchColumn={filterColumn}
                 onSearchColumnChange={(col) => { setFilterColumn(col); setPage(1); }}
                 renderSearchInput={renderSearchInput}
-                renderExpandedRow={(row) => <ExpandedRow row={row} onEditSale={(r, d, m) => startEditing(r, d, m)} />}
+                renderExpandedRow={renderExpandedRow}
                 rowKey="venta_id"
                 serverSide={true}
                 totalCount={count}
@@ -755,20 +796,11 @@ const VentasView = () => {
                         <div className="p-6 overflow-y-auto space-y-6 flex-1">
                             {/* [DASH-4] Visor del Mensaje Original de WhatsApp */}
                             {editingSale.mensajeOriginalWsp && (
-                                <div style={{
-                                    background: 'rgba(59, 130, 246, 0.08)',
-                                    border: '1px solid rgba(59, 130, 246, 0.25)',
-                                    borderRadius: '10px',
-                                    padding: '10px 14px',
-                                    marginBottom: '14px',
-                                    fontSize: '0.82rem',
-                                    color: 'var(--text-secondary)',
-                                    lineHeight: 1.45
-                                }}>
-                                    <div style={{ fontWeight: 600, color: '#60a5fa', marginBottom: '4px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                                <div style={WSP_BOX_STYLE}>
+                                    <div style={WSP_HEADER_STYLE}>
                                         💬 Mensaje original de WhatsApp
                                     </div>
-                                    <div style={{ userSelect: 'all', whiteSpace: 'pre-wrap' }}>
+                                    <div style={WSP_TEXT_STYLE}>
                                         {editingSale.mensajeOriginalWsp}
                                     </div>
                                 </div>

@@ -1,7 +1,7 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { Calendar, Search, Filter, RefreshCw, X, Activity, Layers } from 'lucide-react'
 import { PERIOD_PRESETS, sanitizeComparadorFilters } from '../../services/comparadorApi'
-import { FAMILIAS_CANONICAS } from '../../utils/triageClassifier'
+import { FAMILIAS_CANONICAS } from '../../utils/familiasCatalog'
 
 const QUADRANT_LABELS = {
     Q1_ALL_EMPTY: 'Q1: Todo el Kiosco',
@@ -10,7 +10,7 @@ const QUADRANT_LABELS = {
     Q4_CAT_AND_SEARCH: 'Q4: Categoría + Búsqueda'
 }
 
-const ComparadorHeaderControls = ({
+const ComparadorHeaderControls = React.memo(({
     presetId,
     onSelectPreset,
     inicioA,
@@ -22,19 +22,29 @@ const ComparadorHeaderControls = ({
     onToggleNormalize,
     categoria,
     onChangeCategoria,
-    searchInput,
-    onChangeSearchInput,
+    searchInput = '',
     onApplySearch,
     onClearFilters,
     onRefresh,
     loading,
     meta
 }) => {
-    const { quadrant } = sanitizeComparadorFilters({ categoria, search: searchInput })
+    const [draftSearch, setDraftSearch] = useState(searchInput)
+
+    useEffect(() => {
+        setDraftSearch(searchInput)
+    }, [searchInput])
+
+    const { quadrant } = sanitizeComparadorFilters({ categoria, search: draftSearch })
 
     const handleFormSubmit = (e) => {
         e.preventDefault()
-        onApplySearch()
+        onApplySearch(draftSearch)
+    }
+
+    const handleClearAll = () => {
+        setDraftSearch('')
+        onClearFilters()
     }
 
     return (
@@ -189,16 +199,16 @@ const ComparadorHeaderControls = ({
                         type="text"
                         aria-label="Buscar producto o rubro en el comparador"
                         placeholder="Filtrar por producto o palabra clave (ej. Coca, Marlboro, Alfajor)..."
-                        value={searchInput}
-                        onChange={(e) => onChangeSearchInput(e.target.value)}
+                        value={draftSearch}
+                        onChange={(e) => setDraftSearch(e.target.value)}
                         className="bg-transparent text-xs font-medium text-slate-200 placeholder-slate-500 focus:outline-none w-full"
                     />
-                    {searchInput && (
+                    {draftSearch && (
                         <button
                             type="button"
                             aria-label="Limpiar texto de búsqueda"
                             onClick={() => {
-                                onChangeSearchInput('')
+                                setDraftSearch('')
                                 onApplySearch('')
                             }}
                             className="text-slate-400 hover:text-slate-200 p-0.5"
@@ -216,10 +226,10 @@ const ComparadorHeaderControls = ({
                         Aplicar
                     </button>
 
-                    {(categoria || searchInput) && (
+                    {(categoria || draftSearch || searchInput) && (
                         <button
                             type="button"
-                            onClick={onClearFilters}
+                            onClick={handleClearAll}
                             className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs border border-white/10 transition-all cursor-pointer"
                         >
                             Limpiar
@@ -234,6 +244,8 @@ const ComparadorHeaderControls = ({
             </form>
         </div>
     )
-}
+})
+
+ComparadorHeaderControls.displayName = 'ComparadorHeaderControls'
 
 export default ComparadorHeaderControls

@@ -1,8 +1,7 @@
 import React, { useMemo, useState } from 'react'
+import useSWR from 'swr'
 import {
     PieChart,
-    TrendingUp,
-    DollarSign,
     Package,
     Sparkles,
     ShoppingBag,
@@ -14,14 +13,13 @@ import {
     Candy,
     Milk,
     Popcorn,
-    HelpCircle,
     ChevronDown,
-    ChevronUp,
-    Percent
+    ChevronUp
 } from 'lucide-react'
-import { useReporteVentasPeriodico, useProductos } from '../../hooks/useData'
+import { useReporteVentasPeriodico } from '../../hooks/useData'
+import * as api from '../../services/api'
 import { getPeriodDateRange } from './reportesHelpers'
-import { FAMILIAS_CANONICAS, inferCategoryAndSubcategory } from '../../utils/triageClassifier'
+import { inferCategoryAndSubcategory } from '../../utils/triageClassifier'
 
 // Mapa de íconos por nombre de categoría
 const CATEGORY_ICONS = {
@@ -67,8 +65,22 @@ export default function PeriodCategoryPerformance({ item, type }) {
         pageSize: 500
     })
 
-    // Mapa del catálogo para categorizar con precisión
-    const { data: rawProducts } = useProductos({ pageSize: 5000 })
+    const uniqueProductNames = useMemo(() => {
+        if (!rawSales || !rawSales.length) return []
+        const names = new Set()
+        for (const row of rawSales) {
+            const name = (row.producto || '').trim()
+            if (name) names.add(name)
+        }
+        return Array.from(names).sort()
+    }, [rawSales])
+
+    // Mapa ligero del catálogo solo para los productos vendidos en el periodo
+    const { data: rawProducts } = useSWR(
+        uniqueProductNames.length > 0 ? ['productos_categorias_por_nombres', uniqueProductNames] : null,
+        () => api.getProductosCategoriasPorNombres(uniqueProductNames),
+        { revalidateOnFocus: false, dedupingInterval: 60000 }
+    )
 
     const productCategoryMap = useMemo(() => {
         const map = new Map()

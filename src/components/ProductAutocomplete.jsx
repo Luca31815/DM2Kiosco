@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import * as api from '../services/api'
 import { Loader2 } from 'lucide-react'
+import { useDebouncedValue } from '../hooks/useDebouncedValue'
 
 const ProductAutocomplete = ({ value, onChange, placeholder = 'Buscar producto...', className = '' }) => {
     const [inputValue, setInputValue] = useState(value || '')
@@ -11,28 +12,24 @@ const ProductAutocomplete = ({ value, onChange, placeholder = 'Buscar producto..
         setInputValue(value || '')
     }
     const [showSuggestions, setShowSuggestions] = useState(false)
-    const [debouncedQuery, setDebouncedQuery] = useState('')
     const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 })
-    const wrapperRef = useRef(null)
-    const inputRef = useRef(null)
-
-    // Debounce logic
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            setDebouncedQuery(inputValue)
-        }, 400)
-        return () => clearTimeout(timer)
-    }, [inputValue])
-
     const [suggestions, setSuggestions] = useState([])
     const [loading, setLoading] = useState(false)
+    const wrapperRef = useRef(null)
+    const inputRef = useRef(null)
+    const menuRef = useRef(null)
 
-    // Fetch suggestions using trigram similarity
+    const debouncedQuery = useDebouncedValue(inputValue, 400)
+
+    // Fetch suggestions using trigram similarity only when dropdown is open
     useEffect(() => {
         let isMounted = true
         const fetchSuggestions = async () => {
-            if (!debouncedQuery || debouncedQuery.length < 2) {
-                if (isMounted) setSuggestions([])
+            if (!showSuggestions || !debouncedQuery || debouncedQuery.trim().length < 2) {
+                if (isMounted) {
+                    setSuggestions([])
+                    setLoading(false)
+                }
                 return
             }
             setLoading(true)
@@ -48,10 +45,10 @@ const ProductAutocomplete = ({ value, onChange, placeholder = 'Buscar producto..
 
         fetchSuggestions()
         return () => { isMounted = false }
-    }, [debouncedQuery])
+    }, [debouncedQuery, showSuggestions])
 
     // Update position for portal
-    const updatePosition = () => {
+    const updatePosition = useCallback(() => {
         if (inputRef.current) {
             const rect = inputRef.current.getBoundingClientRect()
             setCoords({
@@ -60,42 +57,62 @@ const ProductAutocomplete = ({ value, onChange, placeholder = 'Buscar producto..
                 width: rect.width
             })
         }
-    }
+    }, [])
 
-    // Handle clicks outside to close suggestions
+    // Attach outside-click, scroll (capture), and resize listeners ONLY when open, throttled with rAF
     useEffect(() => {
+        if (!showSuggestions) return
+
+        let rafId = null
+        const scheduleUpdate = () => {
+            if (rafId !== null) return
+            rafId = window.requestAnimationFrame(() => {
+                rafId = null
+                updatePosition()
+            })
+        }
+
         const handleClickOutside = (event) => {
-            if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
+            const inWrapper = wrapperRef.current && wrapperRef.current.contains(event.target)
+            const inMenu = menuRef.current && menuRef.current.contains(event.target)
+            if (!inWrapper && !inMenu) {
                 setShowSuggestions(false)
             }
         }
+
+        scheduleUpdate()
         document.addEventListener('mousedown', handleClickOutside)
-        window.addEventListener('scroll', updatePosition, true)
-        window.addEventListener('resize', updatePosition)
+        window.addEventListener('scroll', scheduleUpdate, { capture: true, passive: true })
+        window.addEventListener('resize', scheduleUpdate, { passive: true })
+
         return () => {
+            if (rafId !== null) {
+                window.cancelAnimationFrame(rafId)
+            }
             document.removeEventListener('mousedown', handleClickOutside)
-            window.removeEventListener('scroll', updatePosition, true)
-            window.removeEventListener('resize', updatePosition)
+            window.removeEventListener('scroll', scheduleUpdate, { capture: true })
+            window.removeEventListener('resize', scheduleUpdate)
         }
-    }, [])
+    }, [showSuggestions, updatePosition])
 
     const handleSelect = (e, name) => {
         e.preventDefault() // Evitar pérdida de foco
         setInputValue(name)
-        onChange(name)
+        onChange?.(name)
         setShowSuggestions(false)
     }
 
     const handleInputChange = (e) => {
         const newValue = e.target.value
         setInputValue(newValue)
-        onChange(newValue)
+        onChange?.(newValue)
         setShowSuggestions(true)
         updatePosition()
     }
 
     const suggestionsMenu = showSuggestions && inputValue.length > 0 && suggestions.length > 0 && (
         <ul
+            ref={menuRef}
             className="fixed z-[9999] bg-gray-800 border border-gray-700 rounded shadow-2xl max-h-60 overflow-y-auto divide-y divide-gray-700 scrollbar-thin scrollbar-thumb-gray-600"
             style={{
                 top: `${coords.top}px`,
@@ -135,7 +152,7 @@ const ProductAutocomplete = ({ value, onChange, placeholder = 'Buscar producto..
             <input
                 ref={inputRef}
                 type="text"
-                aria-label={placeholder || "Buscar producto"}
+                aria-label={placeholder || 'Buscar producto'}
                 className={`bg-gray-800 border border-gray-600 rounded px-2 py-1 w-full text-white focus:ring-1 focus:ring-blue-500 outline-none ${className}`}
                 placeholder={placeholder}
                 value={inputValue}

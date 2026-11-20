@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
 
 const AuthContext = createContext();
@@ -14,8 +14,8 @@ export const AuthProvider = ({ children }) => {
     // Modo demo activo automáticamente cuando no existe sesión autenticada
     const isDemoMode = !session;
 
-    const openLoginModal = React.useCallback(() => setIsLoginModalOpen(true), []);
-    const closeLoginModal = React.useCallback(() => setIsLoginModalOpen(false), []);
+    const openLoginModal = useCallback(() => setIsLoginModalOpen(true), []);
+    const closeLoginModal = useCallback(() => setIsLoginModalOpen(false), []);
 
     useEffect(() => {
         supabase.auth.getSession().then(({ data: { session } }) => {
@@ -41,7 +41,7 @@ export const AuthProvider = ({ children }) => {
         };
     }, []);
 
-    const signInWithPassword = async (email, password) => {
+    const signInWithPassword = useCallback(async (email, password) => {
         setLoading(true);
         try {
             const { data, error } = await supabase.auth.signInWithPassword({
@@ -54,9 +54,9 @@ export const AuthProvider = ({ children }) => {
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
-    const signOut = async () => {
+    const signOut = useCallback(async () => {
         setLoading(true);
         try {
             const { error } = await supabase.auth.signOut();
@@ -64,9 +64,9 @@ export const AuthProvider = ({ children }) => {
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
-    const contextValue = React.useMemo(
+    const contextValue = useMemo(
         () => ({
             session,
             user,
@@ -78,7 +78,7 @@ export const AuthProvider = ({ children }) => {
             signInWithPassword,
             signOut
         }),
-        [session, user, loading, isDemoMode, isLoginModalOpen, openLoginModal, closeLoginModal]
+        [session, user, loading, isDemoMode, isLoginModalOpen, openLoginModal, closeLoginModal, signInWithPassword, signOut]
     );
 
     return (

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react'
+import React, { useMemo, useState, useCallback } from 'react'
 import {
     ResponsiveContainer,
     ScatterChart,
@@ -11,8 +11,13 @@ import {
     ReferenceLine,
     Cell
 } from 'recharts'
-import { PackageSearch, AlertOctagon, Receipt, X, TrendingUp, Calendar } from 'lucide-react'
+import { PackageSearch, AlertOctagon, Receipt, X, TrendingUp, Calendar, ChevronLeft, ChevronRight } from 'lucide-react'
 import { formatCurrency, formatNumber, formatPct, getCategoryMeta, getDeltaColorClass } from './comparadorFormatters'
+
+const PAGE_SIZE = 30
+const SCATTER_MARGIN = { top: 10, right: 20, bottom: 10, left: 0 }
+const SCATTER_TICK = { fill: '#94a3b8', fontSize: 11 }
+const SCATTER_Z_RANGE = [50, 350]
 
 const ELASTICITY_BADGES = {
     ELASTICA_CAIDA: {
@@ -66,7 +71,7 @@ const ScatterTooltip = ({ active, payload }) => {
     )
 }
 
-const CategoriaPreciosDrilldown = ({
+const CategoriaPreciosDrilldown = React.memo(({
     categoria,
     drilldownData,
     loading,
@@ -81,6 +86,24 @@ const CategoriaPreciosDrilldown = ({
         if (onlyQuiebres) return list.filter((p) => p.tuvo_quiebre_stock_b)
         return list
     }, [drilldownData, onlyQuiebres])
+
+    const filterKey = `${categoria}|${onlyQuiebres}|${productos.length}`
+    const [pageState, setPageState] = useState({ key: filterKey, page: 1 })
+    const page = pageState.key === filterKey ? pageState.page : 1
+    const setPage = useCallback((updater) => {
+        setPageState((prev) => {
+            const current = prev.key === filterKey ? prev.page : 1
+            const next = typeof updater === 'function' ? updater(current) : updater
+            return { key: filterKey, page: next }
+        })
+    }, [filterKey])
+
+    const totalPages = Math.max(1, Math.ceil(productos.length / PAGE_SIZE))
+    const safePage = Math.min(page, totalPages)
+    const paginatedProductos = useMemo(() => {
+        const start = (safePage - 1) * PAGE_SIZE
+        return productos.slice(start, start + PAGE_SIZE)
+    }, [productos, safePage])
 
     const scatterPoints = useMemo(() => {
         const result = []
@@ -199,28 +222,28 @@ const CategoriaPreciosDrilldown = ({
                                 Mapa de Elasticidad: Δ% Precio (Eje X) vs Δ% Unidades (Eje Y)
                             </div>
                             <div className="h-60 w-full">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <ScatterChart margin={{ top: 10, right: 20, bottom: 10, left: 0 }}>
+                                <ResponsiveContainer width="100%" height="100%" debounce={100}>
+                                    <ScatterChart margin={SCATTER_MARGIN}>
                                         <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
                                         <XAxis
                                             type="number"
                                             dataKey="x"
                                             name="Δ% Precio"
                                             unit="%"
-                                            tick={{ fill: '#94a3b8', fontSize: 11 }}
+                                            tick={SCATTER_TICK}
                                         />
                                         <YAxis
                                             type="number"
                                             dataKey="y"
                                             name="Δ% Unidades"
                                             unit="%"
-                                            tick={{ fill: '#94a3b8', fontSize: 11 }}
+                                            tick={SCATTER_TICK}
                                         />
-                                        <ZAxis type="number" dataKey="z" range={[50, 350]} />
+                                        <ZAxis type="number" dataKey="z" range={SCATTER_Z_RANGE} />
                                         <Tooltip content={<ScatterTooltip />} />
                                         <ReferenceLine x={0} stroke="#475569" />
                                         <ReferenceLine y={0} stroke="#475569" />
-                                        <Scatter data={scatterPoints}>
+                                        <Scatter data={scatterPoints} isAnimationActive={false}>
                                             {scatterPoints.map((entry) => {
                                                 const badge = ELASTICITY_BADGES[entry.elasticidad_etiqueta] || ELASTICITY_BADGES.SIN_CAMBIO_PRECIO
                                                 return <Cell key={entry.producto} fill={badge.color} />
@@ -248,7 +271,7 @@ const CategoriaPreciosDrilldown = ({
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-800/60 text-xs">
-                                {productos.map((prod) => {
+                                {paginatedProductos.map((prod) => {
                                     const elBadge = ELASTICITY_BADGES[prod.elasticidad_etiqueta] || ELASTICITY_BADGES.SIN_CAMBIO_PRECIO
                                     const fechaAumento = prod.fecha_ultimo_aumento
                                         ? String(prod.fecha_ultimo_aumento).slice(0, 10)
@@ -340,10 +363,43 @@ const CategoriaPreciosDrilldown = ({
                             </tbody>
                         </table>
                     </div>
+
+                    {productos.length > PAGE_SIZE && (
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-slate-800/80 text-xs text-slate-400">
+                            <span>
+                                Mostrando {(safePage - 1) * PAGE_SIZE + 1}–{Math.min(safePage * PAGE_SIZE, productos.length)} de {productos.length} productos
+                            </span>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    type="button"
+                                    disabled={safePage <= 1}
+                                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-white/10 disabled:opacity-40 cursor-pointer"
+                                >
+                                    <ChevronLeft className="h-3.5 w-3.5" />
+                                    <span>Anterior</span>
+                                </button>
+                                <span className="font-bold text-slate-300 tabular-nums px-2">
+                                    Página {safePage} de {totalPages}
+                                </span>
+                                <button
+                                    type="button"
+                                    disabled={safePage >= totalPages}
+                                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-white/10 disabled:opacity-40 cursor-pointer"
+                                >
+                                    <span>Siguiente</span>
+                                    <ChevronRight className="h-3.5 w-3.5" />
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </>
             )}
         </div>
     )
-}
+})
+
+CategoriaPreciosDrilldown.displayName = 'CategoriaPreciosDrilldown'
 
 export default CategoriaPreciosDrilldown

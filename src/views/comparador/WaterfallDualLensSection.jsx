@@ -63,7 +63,16 @@ const PeriodCompareTooltip = ({ active, payload, label }) => {
     )
 }
 
-const WaterfallDualLensSection = ({
+const WATERFALL_MARGIN = { top: 12, right: 16, left: 8, bottom: 8 }
+const COMPARE_MARGIN = { top: 8, right: 12, left: 4, bottom: 4 }
+const WATERFALL_X_TICK = { fill: '#94a3b8', fontSize: 11, fontWeight: 600 }
+const AXIS_TICK = { fill: '#94a3b8', fontSize: 11 }
+const WATERFALL_BAR_RADIUS = [6, 6, 6, 6]
+const COMPARE_BAR_RADIUS = [4, 4, 0, 0]
+const LEGEND_STYLE = { fontSize: 11 }
+const yAxisCurrencyTickFormatter = (v) => formatCurrency(v, true)
+
+const WaterfallDualLensSection = React.memo(({
     descomposicionGlobal,
     franjasHorarias,
     diasSemana
@@ -131,21 +140,21 @@ const WaterfallDualLensSection = ({
                     </div>
 
                     <div className="h-72 w-full">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={waterfallData} margin={{ top: 12, right: 16, left: 8, bottom: 8 }}>
+                        <ResponsiveContainer width="100%" height="100%" debounce={100}>
+                            <BarChart data={waterfallData} margin={WATERFALL_MARGIN}>
                                 <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
                                 <XAxis
                                     dataKey="name"
-                                    tick={{ fill: '#94a3b8', fontSize: 11, fontWeight: 600 }}
+                                    tick={WATERFALL_X_TICK}
                                     interval={0}
                                 />
                                 <YAxis
-                                    tick={{ fill: '#94a3b8', fontSize: 11 }}
-                                    tickFormatter={(v) => formatCurrency(v, true)}
+                                    tick={AXIS_TICK}
+                                    tickFormatter={yAxisCurrencyTickFormatter}
                                 />
                                 <Tooltip content={<WaterfallTooltip />} />
                                 <ReferenceLine y={0} stroke="#475569" />
-                                <Bar dataKey="range" radius={[6, 6, 6, 6]}>
+                                <Bar dataKey="range" radius={WATERFALL_BAR_RADIUS} isAnimationActive={false}>
                                     {waterfallData.map((entry) => (
                                         <Cell key={entry.id} fill={entry.fill} />
                                     ))}
@@ -264,15 +273,15 @@ const WaterfallDualLensSection = ({
                         </h4>
                     </div>
                     <div className="h-56 w-full">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={franjasHorarias || []} margin={{ top: 8, right: 12, left: 4, bottom: 4 }}>
+                        <ResponsiveContainer width="100%" height="100%" debounce={100}>
+                            <BarChart data={franjasHorarias || []} margin={COMPARE_MARGIN}>
                                 <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                                <XAxis dataKey="franja" tick={{ fill: '#94a3b8', fontSize: 11 }} />
-                                <YAxis tick={{ fill: '#94a3b8', fontSize: 11 }} tickFormatter={(v) => formatCurrency(v, true)} />
+                                <XAxis dataKey="franja" tick={AXIS_TICK} />
+                                <YAxis tick={AXIS_TICK} tickFormatter={yAxisCurrencyTickFormatter} />
                                 <Tooltip content={<PeriodCompareTooltip />} />
-                                <Legend wrapperStyle={{ fontSize: 11 }} />
-                                <Bar dataKey="facturacion_a" name="Período A" fill="#64748b" radius={[4, 4, 0, 0]} />
-                                <Bar dataKey="facturacion_b" name="Período B" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                                <Legend wrapperStyle={LEGEND_STYLE} />
+                                <Bar dataKey="facturacion_a" name="Período A" fill="#64748b" radius={COMPARE_BAR_RADIUS} isAnimationActive={false} />
+                                <Bar dataKey="facturacion_b" name="Período B" fill="#3b82f6" radius={COMPARE_BAR_RADIUS} isAnimationActive={false} />
                             </BarChart>
                         </ResponsiveContainer>
                     </div>
@@ -286,15 +295,15 @@ const WaterfallDualLensSection = ({
                         </h4>
                     </div>
                     <div className="h-56 w-full">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={diasSemana || []} margin={{ top: 8, right: 12, left: 4, bottom: 4 }}>
+                        <ResponsiveContainer width="100%" height="100%" debounce={100}>
+                            <BarChart data={diasSemana || []} margin={COMPARE_MARGIN}>
                                 <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                                <XAxis dataKey="dia_nombre" tick={{ fill: '#94a3b8', fontSize: 11 }} />
-                                <YAxis tick={{ fill: '#94a3b8', fontSize: 11 }} tickFormatter={(v) => formatCurrency(v, true)} />
+                                <XAxis dataKey="dia_nombre" tick={AXIS_TICK} />
+                                <YAxis tick={AXIS_TICK} tickFormatter={yAxisCurrencyTickFormatter} />
                                 <Tooltip content={<PeriodCompareTooltip />} />
-                                <Legend wrapperStyle={{ fontSize: 11 }} />
-                                <Bar dataKey="facturacion_a" name="Período A" fill="#64748b" radius={[4, 4, 0, 0]} />
-                                <Bar dataKey="facturacion_b" name="Período B" fill="#6366f1" radius={[4, 4, 0, 0]} />
+                                <Legend wrapperStyle={LEGEND_STYLE} />
+                                <Bar dataKey="facturacion_a" name="Período A" fill="#64748b" radius={COMPARE_BAR_RADIUS} isAnimationActive={false} />
+                                <Bar dataKey="facturacion_b" name="Período B" fill="#6366f1" radius={COMPARE_BAR_RADIUS} isAnimationActive={false} />
                             </BarChart>
                         </ResponsiveContainer>
                     </div>
@@ -302,6 +311,8 @@ const WaterfallDualLensSection = ({
             </div>
         </div>
     )
-}
+})
+
+WaterfallDualLensSection.displayName = 'WaterfallDualLensSection'
 
 export default WaterfallDualLensSection

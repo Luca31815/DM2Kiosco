@@ -1,14 +1,38 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { Link } from 'react-router-dom'
+import { useSWRConfig } from 'swr'
 import Sidebar from './Sidebar'
 import { Menu, RefreshCw, Clock, LogOut, LogIn, Eye, Wallet } from 'lucide-react'
 import { Toaster } from 'react-hot-toast'
 import { useAuth } from '../context/AuthContext'
 import { useIsMobile } from '../hooks/useIsMobile'
+import { prefetchRoute } from '../routes/lazyViews'
+
+const TOAST_OPTIONS = {
+    style: {
+        background: '#1e293b',
+        color: '#f1f5f9',
+        border: '1px solid rgba(255,255,255,0.07)',
+        borderRadius: '12px',
+        fontSize: '13px',
+        fontWeight: '600',
+        backdropFilter: 'blur(12px)',
+        boxShadow: '0 20px 40px rgba(0,0,0,0.4)'
+    },
+    success: {
+        iconTheme: { primary: '#22c55e', secondary: '#0f172a' }
+    },
+    error: {
+        iconTheme: { primary: '#ef4444', secondary: '#0f172a' }
+    }
+}
 
 const Layout = ({ children }) => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false)
     const isMobile = useIsMobile()
+
+    const openSidebar = useCallback(() => setIsSidebarOpen(true), [])
+    const closeSidebar = useCallback(() => setIsSidebarOpen(false), [])
 
     return (
         <div className="flex bg-slate-950 min-h-screen relative overflow-hidden font-outfit">
@@ -19,31 +43,14 @@ const Layout = ({ children }) => {
 
             <Toaster
                 position="top-right"
-                toastOptions={{
-                    style: {
-                        background: '#1e293b',
-                        color: '#f1f5f9',
-                        border: '1px solid rgba(255,255,255,0.07)',
-                        borderRadius: '12px',
-                        fontSize: '13px',
-                        fontWeight: '600',
-                        backdropFilter: 'blur(12px)',
-                        boxShadow: '0 20px 40px rgba(0,0,0,0.4)'
-                    },
-                    success: {
-                        iconTheme: { primary: '#22c55e', secondary: '#0f172a' }
-                    },
-                    error: {
-                        iconTheme: { primary: '#ef4444', secondary: '#0f172a' }
-                    }
-                }}
+                toastOptions={TOAST_OPTIONS}
             />
 
-            <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+            <Sidebar isOpen={isSidebarOpen} onClose={closeSidebar} />
 
             <main className="flex-1 flex flex-col min-w-0 relative z-10">
                 {/* Enhanced Top Bar */}
-                <TopBar onMenuClick={() => setIsSidebarOpen(true)} />
+                <TopBar onMenuClick={openSidebar} />
 
                 <div className="p-4 md:p-8 pt-24 md:pt-28 overflow-y-auto overflow-x-hidden custom-scrollbar">
                     <div className="max-w-7xl mx-auto pb-24 md:pb-16">
@@ -87,14 +94,27 @@ const TopBar = React.memo(({ onMenuClick }) => {
     const [refreshing, setRefreshing] = useState(false)
     const isMobile = useIsMobile()
     const { session, openLoginModal, signOut } = useAuth()
+    const { mutate } = useSWRConfig()
+    const isMountedRef = useRef(true)
 
-    const handleRefresh = useCallback(() => {
-        setRefreshing(true)
-        setTimeout(() => {
-            setRefreshing(false)
-            window.location.reload()
-        }, 600)
+    useEffect(() => {
+        isMountedRef.current = true
+        return () => {
+            isMountedRef.current = false
+        }
     }, [])
+
+    const handleRefresh = useCallback(async () => {
+        if (refreshing) return
+        setRefreshing(true)
+        try {
+            await mutate(() => true, undefined, { revalidate: true })
+        } finally {
+            if (isMountedRef.current) {
+                setRefreshing(false)
+            }
+        }
+    }, [mutate, refreshing])
 
     return (
         <div className="fixed top-0 left-0 right-0 z-30 h-16 shrink-0 select-none">
@@ -108,7 +128,7 @@ const TopBar = React.memo(({ onMenuClick }) => {
                         id="sidebar-toggle"
                         onClick={onMenuClick}
                         aria-label="Abrir menú de navegación"
-                        className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/8 transition-all active:scale-95"
+                        className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/8 transition-colors active:scale-95"
                     >
                         <Menu className="h-5 w-5" />
                     </button>
@@ -123,7 +143,9 @@ const TopBar = React.memo(({ onMenuClick }) => {
                     <Link
                         to="/finanzas"
                         title="Ir a DM2 Finanzas & Metas"
-                        className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/25 text-emerald-300 font-bold text-xs transition-all active:scale-95"
+                        onMouseEnter={() => prefetchRoute('/finanzas')}
+                        onFocus={() => prefetchRoute('/finanzas')}
+                        className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/25 text-emerald-300 font-bold text-xs transition-colors active:scale-95"
                     >
                         <Wallet className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
                         <span>Finanzas</span>
@@ -146,8 +168,9 @@ const TopBar = React.memo(({ onMenuClick }) => {
                     <button type="button"
                         id="refresh-btn"
                         onClick={handleRefresh}
+                        disabled={refreshing}
                         title="Recargar datos"
-                        className={`p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/8 transition-all active:scale-95 ${refreshing ? 'text-blue-400' : ''}`}
+                        className={`p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/8 transition-colors active:scale-95 ${refreshing ? 'text-blue-400' : ''}`}
                     >
                         <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
                     </button>
@@ -158,7 +181,7 @@ const TopBar = React.memo(({ onMenuClick }) => {
                             id="logout-btn"
                             onClick={signOut}
                             title="Cerrar Sesión"
-                            className="p-2 rounded-xl text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 transition-all active:scale-95"
+                            className="p-2 rounded-xl text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 transition-colors active:scale-95"
                         >
                             <LogOut className="h-4 w-4" />
                         </button>
@@ -167,7 +190,7 @@ const TopBar = React.memo(({ onMenuClick }) => {
                             id="login-btn"
                             onClick={openLoginModal}
                             title="Iniciar Sesión"
-                            className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs shadow-md shadow-blue-500/20 transition-all active:scale-95 cursor-pointer"
+                            className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs shadow-md shadow-blue-500/20 transition-colors active:scale-95 cursor-pointer"
                         >
                             <LogIn className="h-3.5 w-3.5" />
                             <span className="hidden sm:inline">Iniciar Sesión</span>
@@ -206,8 +229,8 @@ const LogoTrigger = () => {
     }
 
     return (
-        <div 
-            onClick={handleClick} 
+        <div
+            onClick={handleClick}
             role="button"
             tabIndex={0}
             aria-label="Autorizar dispositivo"
@@ -252,12 +275,12 @@ const AuthBadge = () => {
                 tabIndex={0}
                 aria-label="Iniciar sesión para acceder al sistema real"
                 onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && openLoginModal()}
-                className="fixed bottom-20 sm:bottom-4 right-4 z-40 px-3.5 py-2 rounded-2xl border border-amber-500/20 text-xs font-bold transition-all active:scale-95 shadow-xl backdrop-blur-xl bg-slate-900/90 text-amber-300 hover:bg-slate-900 hover:border-amber-500/40 group flex items-center gap-2.5 cursor-pointer"
+                className="fixed bottom-20 sm:bottom-4 right-4 z-40 px-3.5 py-2 rounded-2xl border border-amber-500/20 text-xs font-bold transition-colors active:scale-95 shadow-xl backdrop-blur-xl bg-slate-900/90 text-amber-300 hover:bg-slate-900 hover:border-amber-500/40 group flex items-center gap-2.5 cursor-pointer"
             >
                 <div className="h-2 w-2 rounded-full animate-pulse bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.8)]" />
                 <span className="hidden sm:inline">Vista Previa (Datos Ficticios)</span>
                 <span className="sm:hidden">Vista Previa</span>
-                <span className="px-2 py-0.5 rounded-lg bg-blue-600/30 border border-blue-500/30 text-blue-300 text-[10px] font-extrabold uppercase ml-1 group-hover:bg-blue-600 group-hover:text-white transition-all">
+                <span className="px-2 py-0.5 rounded-lg bg-blue-600/30 border border-blue-500/30 text-blue-300 text-[10px] font-extrabold uppercase ml-1 group-hover:bg-blue-600 group-hover:text-white transition-colors">
                     Iniciar Sesión
                 </span>
             </div>
@@ -271,7 +294,7 @@ const AuthBadge = () => {
             tabIndex={0}
             aria-label="Bloquear sistema"
             onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && handleLock()}
-            className="fixed bottom-20 sm:bottom-4 right-4 z-50 px-3 py-1.5 rounded-full border border-emerald-500/20 text-[10px] font-bold uppercase tracking-wider cursor-pointer transition-all active:scale-95 shadow-lg backdrop-blur-md bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 group"
+            className="fixed bottom-20 sm:bottom-4 right-4 z-50 px-3 py-1.5 rounded-full border border-emerald-500/20 text-[10px] font-bold uppercase tracking-wider cursor-pointer transition-colors active:scale-95 shadow-lg backdrop-blur-md bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 group"
         >
             <div className="flex items-center gap-2">
                 <div className="h-1.5 w-1.5 rounded-full animate-pulse bg-emerald-400 shadow-[0_0_4px_rgba(52,211,153,0.8)]" />
@@ -283,4 +306,3 @@ const AuthBadge = () => {
 }
 
 export default Layout
-

@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
-import { useReservasDetalles, useMovimientosDinero, useMovimientosStock } from '../../hooks/useData'
-import { Loader2, Edit2, Check, X, Calendar, Package, CreditCard, ChevronRight, Trash2 } from 'lucide-react'
+import { useReservasDetalles, useMovimientosDinero, useMovimientosStock, invalidateReservas, invalidateProductos } from '../../hooks/useData'
+import { Loader2, Edit2, Check, X, Calendar, Package } from 'lucide-react'
 import * as api from '../../services/api'
 import { useSWRConfig } from 'swr'
 import ProductAutocomplete from '../ProductAutocomplete'
@@ -55,8 +55,8 @@ export const ReservasExpandedRow = ({ row }) => {
             mutate(['reservas_detalles', row.reserva_id])
             mutate(['movimientos_dinero', row.reserva_id])
             mutate(['stock_movimientos', row.reserva_id])
-            mutate(['reservas'])
-            mutate(key => Array.isArray(key) && key[0] === 'productos')
+            invalidateReservas()
+            invalidateProductos()
             setEditingId(null)
             toast.success('Reserva actualizada correctamente', { id: loadingToast })
         } catch (error) {
@@ -79,7 +79,7 @@ export const ReservasExpandedRow = ({ row }) => {
                 }]
             })
             mutate(['movimientos_dinero', row.reserva_id])
-            mutate(['reservas'])
+            invalidateReservas()
             setEditingPaymentId(null)
             toast.success('Pago actualizado correctamente', { id: loadingToast })
         } catch (error) {
@@ -103,7 +103,7 @@ export const ReservasExpandedRow = ({ row }) => {
                 }]
             })
             mutate(['movimientos_dinero', row.reserva_id])
-            mutate(['reservas'])
+            invalidateReservas()
             setEditingPaymentId(null)
             toast.success('Pago eliminado correctamente', { id: loadingToast })
         } catch (error) {
@@ -120,8 +120,8 @@ export const ReservasExpandedRow = ({ row }) => {
         try {
             await api.entregarReserva(row.reserva_id)
             mutate(['stock_movimientos', row.reserva_id])
-            mutate(['reservas'])
-            mutate(key => Array.isArray(key) && key[0] === 'productos')
+            invalidateReservas()
+            invalidateProductos()
             toast.success('Reserva marcada como entregada correctamente', { id: loadingToast })
         } catch (error) {
             toast.error('Error al entregar: ' + (error.message || 'Error desconocido'), { id: loadingToast })

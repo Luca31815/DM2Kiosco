@@ -3,7 +3,7 @@ import { ClipboardCheck, Download, Trash2, ShieldAlert, Sparkles } from 'lucide-
 import toast from 'react-hot-toast'
 import { formatCurrency, formatNumber } from '../comparador/comparadorFormatters'
 
-const ListaRemarcacionPanel = ({
+const ListaRemarcacionPanel = React.memo(({
     remarcacionItems,
     gananciaAdicionalTotal,
     onRemoveItem,
@@ -152,6 +152,8 @@ const ListaRemarcacionPanel = ({
             </div>
         </div>
     )
-}
+})
+
+ListaRemarcacionPanel.displayName = 'ListaRemarcacionPanel'
 
 export default ListaRemarcacionPanel

@@ -89,9 +89,13 @@ ${suspiciousGroups}`;
         if (aiParsed.duplicates) aiParsed = aiParsed.duplicates;
         if (!Array.isArray(aiParsed)) aiParsed = [];
 
+        const productById = new Map(
+            allProducts.map(p => [String(p.producto_id || p.id), p])
+        );
+
         const mappedAiResults = aiParsed.flatMap(res => {
-            const p1 = allProducts.find(p => (p.producto_id || p.id) == res.idKeep)
-            const p2 = allProducts.find(p => (p.producto_id || p.id) == res.idDelete)
+            const p1 = productById.get(String(res.idKeep))
+            const p2 = productById.get(String(res.idDelete))
             if (!p1 || !p2) return [];
             return [{ p1, p2, reason: `[Auditoría IA] ${res.reason || 'Detección Semántica'}` }]
         });

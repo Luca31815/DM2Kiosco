@@ -17,7 +17,7 @@ const CAUSA_CONFIG = {
     }
 }
 
-const CalidadDatosBanner = ({
+const CalidadDatosBanner = React.memo(({
     calidadDatos,
     descomposicionGlobal,
     meta,
@@ -125,6 +125,8 @@ const CalidadDatosBanner = ({
             </div>
         </div>
     )
-}
+})
+
+CalidadDatosBanner.displayName = 'CalidadDatosBanner'
 
 export default CalidadDatosBanner

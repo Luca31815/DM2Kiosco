@@ -2,7 +2,6 @@ import React, { useMemo } from 'react'
 import { Package, Sparkles } from 'lucide-react'
 import { useReporteVentasPeriodico } from '../../hooks/useData'
 import { getPeriodDateRange } from './reportesHelpers'
-import { MiniStat } from './ReportesKPI'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PeriodTopProducts — Top productos del periodo con barra de progreso
@@ -18,7 +17,7 @@ export const PeriodTopProducts = ({ item, type }) => {
         dateRange,
         sortColumn: 'ganancia_total',
         sortOrder: 'desc',
-        pageSize: 50
+        pageSize: 500
     })
 
     const aggregatedData = useMemo(() => {

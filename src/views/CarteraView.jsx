@@ -1,26 +1,9 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import useSWR, { useSWRConfig } from 'swr'
 import * as api from '../services/api'
-import { AnimatePresence } from 'framer-motion'
-import { 
-    Wallet, 
-    CreditCard, 
-    ArrowUpRight, 
-    ArrowDownLeft, 
-    AlertCircle, 
-    Trash2, 
-    RefreshCw, 
-    Pencil, 
-    Check, 
-    X, 
-    Calendar, 
-    Search, 
-    ArrowRight, 
-    ShieldCheck,
-    Coins,
-    CheckCircle2
-} from 'lucide-react'
+import { RefreshCw } from 'lucide-react'
 import { toast } from 'react-hot-toast'
+import { useDebouncedValue } from '../hooks/useDebouncedValue'
 import { CarteraRulesPanel } from './cartera/CarteraRulesPanel'
 import { CarteraDetailsGrid } from './cartera/CarteraDetailsGrid'
 import { CarteraCronAuditPanel } from './cartera/CarteraCronAuditPanel'
@@ -28,6 +11,7 @@ import { CarteraMovementsPanel } from './cartera/CarteraMovementsPanel'
 import { CarteraSummaryCards } from './cartera/CarteraSummaryCards'
 
 const currencyFormatter = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' })
+const EMPTY_ARRAY = []
 
 // Helper to format currency
 const formatCurrency = (val) => {
@@ -56,6 +40,7 @@ const CarteraView = () => {
     const [page, setPage] = useState(1)
     const pageSize = 15
     const [searchVal, setSearchVal] = useState('')
+    const debouncedSearchVal = useDebouncedValue(searchVal, 300)
     const sortColumn = 'fecha'
     const sortOrder = 'desc'
 
@@ -75,23 +60,26 @@ const CarteraView = () => {
     )
 
     const { data: movementsData, isLoading: loadingMovements } = useSWR(
-        ['movimientos_dinero_paginados', page, sortColumn, sortOrder, searchVal],
+        ['movimientos_dinero_paginados', page, sortColumn, sortOrder, debouncedSearchVal],
         () => api.fetchTableData('movimientos_dinero', {
             page,
             pageSize,
             sortColumn,
             sortOrder,
             filterColumn: 'metodo',
-            filterValue: searchVal
+            filterValue: debouncedSearchVal
         })
     )
 
-    const movements = movementsData?.data || []
+    const movements = movementsData?.data || EMPTY_ARRAY
     const movementsCount = movementsData?.count || 0
     const totalPages = Math.ceil(movementsCount / pageSize)
 
     // Derived lists
-    const uniqueMethods = cartera ? cartera.map(c => c.metodo) : []
+    const uniqueMethods = useMemo(
+        () => (cartera ? cartera.map(c => c.metodo) : EMPTY_ARRAY),
+        [cartera]
+    )
 
     // ── Handlers ──
     const handleEditStart = (mov) => {
@@ -113,7 +101,7 @@ const CarteraView = () => {
             toast.success('Método de pago actualizado')
             setEditingMovId(null)
             mutate('cartera_actual')
-            mutate(['movimientos_dinero_paginados', page, sortColumn, sortOrder, searchVal])
+            mutate(['movimientos_dinero_paginados', page, sortColumn, sortOrder, debouncedSearchVal])
         } catch (error) {
             toast.error('Error al guardar cambio: ' + error.message)
         }
@@ -151,7 +139,7 @@ const CarteraView = () => {
             // Mutate lists
             mutate('reemplazos_metodos_pago')
             mutate('cartera_actual')
-            mutate(['movimientos_dinero_paginados', page, sortColumn, sortOrder, searchVal])
+            mutate(['movimientos_dinero_paginados', page, sortColumn, sortOrder, debouncedSearchVal])
         } catch (error) {
             toast.error('Error al crear regla: ' + error.message)
         }
@@ -178,7 +166,7 @@ const CarteraView = () => {
             if (result.movimientos_actualizados > 0) {
                 toast.success(`Auditoría completa: se corrigieron ${result.movimientos_actualizados} registros obsoletos!`)
                 mutate('cartera_actual')
-                mutate(['movimientos_dinero_paginados', page, sortColumn, sortOrder, searchVal])
+                mutate(['movimientos_dinero_paginados', page, sortColumn, sortOrder, debouncedSearchVal])
             } else {
                 toast.success('Auditoría completa: no se encontraron transacciones obsoletas.')
             }
@@ -190,10 +178,20 @@ const CarteraView = () => {
     }
 
     // Consolidated calculations for summary cards
-    const totalEfectivo = cartera?.find(c => c.metodo.toLowerCase() === 'efectivo' || c.metodo.toLowerCase() === 'caja')?.balance_neto || 
-                          cartera?.find(c => c.metodo === 'Efectivo')?.balance_neto || 0
+    const totalEfectivo = useMemo(() => {
+        if (!cartera) return 0
+        const found = cartera.find(c => {
+            const m = (c.metodo || '').toLowerCase()
+            return m === 'efectivo' || m === 'caja'
+        })
+        return parseFloat(found?.balance_neto) || 0
+    }, [cartera])
 
-    const totalCartera = cartera?.reduce((sum, item) => sum + (parseFloat(item.balance_neto) || 0), 0) || 0
+    const totalCartera = useMemo(() => {
+        if (!cartera) return 0
+        return cartera.reduce((sum, item) => sum + (parseFloat(item.balance_neto) || 0), 0)
+    }, [cartera])
+
     const totalDigital = totalCartera - totalEfectivo
 
     return (
@@ -211,7 +209,7 @@ const CarteraView = () => {
                         onClick={() => {
                             mutate('cartera_actual')
                             mutate('reemplazos_metodos_pago')
-                            mutate(['movimientos_dinero_paginados', page, sortColumn, sortOrder, searchVal])
+                            mutate(['movimientos_dinero_paginados', page, sortColumn, sortOrder, debouncedSearchVal])
                             toast.success('Datos actualizados')
                         }}
                         className="p-2.5 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white rounded-xl border border-white/5 transition-all active:scale-95 flex items-center gap-2 font-bold text-xs"
@@ -294,4 +292,4 @@ const CarteraView = () => {
     )
 }
 
-export default CarteraView;
+export default CarteraView

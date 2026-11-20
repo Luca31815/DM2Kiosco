@@ -10,10 +10,18 @@ const slots = [
 const HeatmapMode = React.memo(({ data }) => {
     const maxVal = Math.max(...data.flatMap(row => slots.map(s => Number(row[s.key] || 0))), 1)
 
-    const getColor = (val) => {
-        if (val === 0) return 'bg-slate-900/40 text-slate-700'
+    const getCellFormatting = (val) => {
+        if (val === 0) {
+            return {
+                className: 'bg-slate-900/40 text-slate-700 border-transparent',
+                style: undefined
+            }
+        }
         const opacity = Math.max(0.3, val / maxVal)
-        return `bg-purple-600 shadow-[0_0_20px_rgba(147,51,234,${opacity * 0.4})] text-white border-purple-400/30`
+        return {
+            className: 'bg-purple-600 text-white border-purple-400/30',
+            style: { boxShadow: `0 0 20px rgba(147, 51, 234, ${(opacity * 0.4).toFixed(3)})` }
+        }
     }
 
     return (
@@ -33,10 +41,12 @@ const HeatmapMode = React.memo(({ data }) => {
                             </div>
                             {slots.map(s => {
                                 const val = Number(row[s.key] || 0)
+                                const cell = getCellFormatting(val)
                                 return (
                                     <div
                                         key={s.key}
-                                        className={`h-20 rounded-2xl flex flex-col justify-center items-center font-black text-2xl border ${getColor(val)}`}
+                                        style={cell.style}
+                                        className={`h-20 rounded-2xl flex flex-col justify-center items-center font-black text-2xl border ${cell.className}`}
                                     >
                                         {val}
                                         <span className="text-[9px] opacity-60 uppercase mt-1 tracking-widest">vnts</span>

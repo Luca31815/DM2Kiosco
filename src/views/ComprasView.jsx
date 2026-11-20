@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback } from 'react'
 import DataTable from '../components/DataTable'
-import { useCompras, useComprasDetalles, useMovimientosDinero, useMovimientosStock } from '../hooks/useData'
+import { useCompras, useComprasDetalles, useMovimientosDinero, useMovimientosStock, invalidateCompras, invalidateProductos } from '../hooks/useData'
 import { 
     Loader2, 
     Edit2, 
@@ -13,15 +13,48 @@ import {
     Users, 
     Scissors, 
     Trash2, 
-    Plus, 
-    MessageSquare,
-    AlertCircle 
+    Plus
 } from 'lucide-react'
 import * as api from '../services/api'
 import { useSWRConfig } from 'swr'
 import ProductAutocomplete from '../components/ProductAutocomplete'
 import { toast } from 'react-hot-toast'
 import { supabase } from '../lib/supabase'
+
+const dateFormatter = new Intl.DateTimeFormat('es-AR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+})
+
+const timeFormatter = new Intl.DateTimeFormat('es-AR', {
+    hour: '2-digit',
+    minute: '2-digit'
+})
+
+const TABLE_MIN_WIDTH_STYLE = { minWidth: '700px' }
+
+const WSP_BOX_STYLE = {
+    background: 'rgba(59, 130, 246, 0.08)',
+    border: '1px solid rgba(59, 130, 246, 0.25)',
+    borderRadius: '10px',
+    padding: '10px 14px',
+    marginBottom: '14px',
+    fontSize: '0.82rem',
+    color: 'var(--text-secondary)',
+    lineHeight: 1.45
+}
+
+const WSP_HEADER_STYLE = {
+    fontWeight: 600,
+    color: '#60a5fa',
+    marginBottom: '4px',
+    fontSize: '0.75rem',
+    textTransform: 'uppercase',
+    letterSpacing: '0.04em'
+}
+
+const WSP_TEXT_STYLE = { userSelect: 'all', whiteSpace: 'pre-wrap' }
 
 const ExpandedRow = ({ row, onEditPurchase }) => {
     const { data: details, loading: loadingDetails } = useComprasDetalles(row.compra_id)
@@ -61,7 +94,7 @@ const ExpandedRow = ({ row, onEditPurchase }) => {
                 id_final: row.compra_id,
                 nuevo_proveedor: supplierName
             })
-            mutate(['compras'])
+            invalidateCompras()
             mutate(['movimientos_dinero', row.compra_id])
             setEditingSupplier(false)
             toast.success('Proveedor actualizado', { id: loadingToast })
@@ -88,8 +121,8 @@ const ExpandedRow = ({ row, onEditPurchase }) => {
             mutate(['compras_detalles', row.compra_id])
             mutate(['movimientos_dinero', row.compra_id])
             mutate(['stock_movimientos', row.compra_id])
-            mutate(['compras'])
-            mutate(key => Array.isArray(key) && key[0] === 'productos')
+            invalidateCompras()
+            invalidateProductos()
             setEditingId(null)
             toast.success('Compra actualizada correctamente', { id: loadingToast })
         } catch (error) {
@@ -180,7 +213,7 @@ const ExpandedRow = ({ row, onEditPurchase }) => {
                     </div>
 
                     <div className="overflow-x-auto scroll-touch rounded-xl border border-white/5 bg-slate-950/20">
-                        <table className="w-full text-sm text-left" style={{ minWidth: '700px' }}>
+                        <table className="w-full text-sm text-left" style={TABLE_MIN_WIDTH_STYLE}>
                             <thead className="bg-white/5 text-[10px] font-black uppercase tracking-widest text-slate-600">
                                 <tr>
                                     <th className="px-4 py-3">Producto</th>
@@ -283,7 +316,7 @@ const ExpandedRow = ({ row, onEditPurchase }) => {
                                 <div key={m.movimiento_id} className="flex justify-between items-center py-2.5 first:pt-0 last:pb-0">
                                     <div className="flex flex-col">
                                         <span className="text-xs font-bold text-slate-300 uppercase tracking-tighter">{m.metodo}</span>
-                                        <span className="text-[10px] text-slate-600">{new Date(m.fecha).toLocaleDateString()}</span>
+                                        <span className="text-[10px] text-slate-600">{m.fecha ? dateFormatter.format(new Date(m.fecha)) : '-'}</span>
                                     </div>
                                     <span className="text-sm font-black text-emerald-400 tabular-nums">${m.monto}</span>
                                 </div>
@@ -350,14 +383,16 @@ const ComprasView = () => {
         let pagos = existingPagos;
 
         try {
-            if (!details) {
-                const { data } = await supabase.from('compras_detalles').select('*').eq('compra_id', purchase.compra_id);
-                details = data || [];
-            }
-            if (!pagos) {
-                const { data } = await supabase.from('movimientos_dinero').select('*').eq('referencia_id', purchase.compra_id);
-                pagos = data || [];
-            }
+            const [detailsRes, pagosRes] = await Promise.all([
+                !details
+                    ? supabase.from('compras_detalles').select('*').eq('compra_id', purchase.compra_id)
+                    : Promise.resolve({ data: details }),
+                !pagos
+                    ? supabase.from('movimientos_dinero').select('*').eq('referencia_id', purchase.compra_id)
+                    : Promise.resolve({ data: pagos })
+            ]);
+            details = detailsRes.data || [];
+            pagos = pagosRes.data || [];
         } catch (err) {
             console.error('Error fetching details for purchase edit:', err);
             details = details || [];
@@ -417,8 +452,8 @@ const ComprasView = () => {
                 const date = new Date(val)
                 return (
                     <div className="flex flex-col">
-                        <span className="font-bold text-slate-300">{date.toLocaleDateString()}</span>
-                        <span className="text-[10px] text-slate-500">{date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}hs</span>
+                        <span className="font-bold text-slate-300">{dateFormatter.format(date)}</span>
+                        <span className="text-[10px] text-slate-500">{timeFormatter.format(date)}hs</span>
                     </div>
                 )
             }
@@ -635,7 +670,7 @@ const ComprasView = () => {
     const currentCalculatedTotal = useMemo(() => {
         if (!editingPurchase?.details) return 0;
         return editingPurchase.details.reduce((sum, d) => sum + (Number(d.subtotal) || 0), 0);
-    }, [editingPurchase?.details]);
+    }, [editingPurchase]);
 
     // [DASH-3 Frontend] Payload exacto hacia corregir_operacion_v20
     const handleSaveEdit = async () => {
@@ -706,11 +741,11 @@ const ComprasView = () => {
 
         try {
             await api.corregirOperacion(payload);
-            mutate(['compras']);
+            invalidateCompras();
             mutate(['compras_detalles', editingPurchase.compra_id]);
             mutate(['movimientos_dinero', editingPurchase.compra_id]);
             mutate(['stock_movimientos', editingPurchase.compra_id]);
-            mutate(key => Array.isArray(key) && key[0] === 'productos');
+            invalidateProductos();
 
             toast.success('Compra corregida con éxito', { id: toastId });
             setEditingPurchase(null);
@@ -749,6 +784,11 @@ const ComprasView = () => {
         )
     }
 
+    const renderExpandedRow = useCallback(
+        (row) => <ExpandedRow row={row} onEditPurchase={startEditing} />,
+        [startEditing]
+    )
+
     return (
         <div className="space-y-6">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -775,7 +815,7 @@ const ComprasView = () => {
                 searchColumn={filterColumn}
                 onSearchColumnChange={(col) => { setFilterColumn(col); setPage(1); }}
                 renderSearchInput={renderSearchInput}
-                renderExpandedRow={(row) => <ExpandedRow row={row} onEditPurchase={(r, d, m) => startEditing(r, d, m)} />}
+                renderExpandedRow={renderExpandedRow}
                 rowKey="compra_id"
                 serverSide={true}
                 totalCount={count}
@@ -822,20 +862,11 @@ const ComprasView = () => {
                         <div className="p-6 overflow-y-auto space-y-6 flex-1">
                             {/* [DASH-4] Visor del Mensaje Original de WhatsApp */}
                             {editingPurchase.mensajeOriginalWsp && (
-                                <div style={{
-                                    background: 'rgba(59, 130, 246, 0.08)',
-                                    border: '1px solid rgba(59, 130, 246, 0.25)',
-                                    borderRadius: '10px',
-                                    padding: '10px 14px',
-                                    marginBottom: '14px',
-                                    fontSize: '0.82rem',
-                                    color: 'var(--text-secondary)',
-                                    lineHeight: 1.45
-                                }}>
-                                    <div style={{ fontWeight: 600, color: '#60a5fa', marginBottom: '4px', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                                <div style={WSP_BOX_STYLE}>
+                                    <div style={WSP_HEADER_STYLE}>
                                         💬 Mensaje original de WhatsApp
                                     </div>
-                                    <div style={{ userSelect: 'all', whiteSpace: 'pre-wrap' }}>
+                                    <div style={WSP_TEXT_STYLE}>
                                         {editingPurchase.mensajeOriginalWsp}
                                     </div>
                                 </div>

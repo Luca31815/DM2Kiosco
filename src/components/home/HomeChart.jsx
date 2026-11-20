@@ -1,5 +1,25 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useCallback } from 'react'
+import {
+    XAxis,
+    YAxis,
+    CartesianGrid,
+    Tooltip,
+    ResponsiveContainer,
+    ComposedChart,
+    Area,
+    Bar,
+    ReferenceLine,
+} from 'recharts'
 import { useIsMobile } from '../../hooks/useIsMobile'
+
+const CHART_MARGIN = { top: 5, right: 5, left: 0, bottom: 0 }
+const X_TICK = { fill: '#475569', fontSize: 10, fontWeight: 700 }
+const Y_TICK = { fill: '#475569', fontSize: 10, fontWeight: 700 }
+const Y_RIGHT_TICK = { fill: '#334155', fontSize: 9, fontWeight: 700 }
+const ACTIVE_DOT = { r: 4, fill: '#3b82f6', stroke: '#fff', strokeWidth: 2 }
+const REF_LABEL = { value: 'Prom.', fill: '#6366f1', fontSize: 9, fontWeight: 700, position: 'insideTopLeft' }
+const BAR_RADIUS = [3, 3, 0, 0]
+const yTickFormatter = (v) => `$${v >= 1000 ? (v / 1000).toFixed(0) + 'k' : v}`
 
 // ── Period Selector ──────────────────────────────────────────────────────────
 export const PeriodButton = React.memo(({ label, active, period, onClick }) => {
@@ -43,19 +63,8 @@ const CustomTooltip = ({ active, payload, label }) => {
 // ── Evolution Chart Card ──────────────────────────────────────────────────────
 export const HomeChart = React.memo(({ chartData, chartPeriod, setChartPeriod }) => {
     const isMobile = useIsMobile()
-    const [Recharts, setRecharts] = useState(null)
 
     const handlePeriodChange = useCallback((p) => setChartPeriod(p), [setChartPeriod])
-
-    useEffect(() => {
-        import('recharts').then(setRecharts)
-    }, [])
-
-    if (!Recharts) return (
-        <div className="bg-slate-900 p-6 rounded-2xl border border-white/5 shadow-xl animate-pulse h-[360px]" />
-    )
-
-    const { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ComposedChart, Area, Bar, ReferenceLine } = Recharts
 
     return (
         <div className="bg-slate-900 p-6 rounded-2xl border border-white/5 shadow-xl animate-fade-in-up animation-delay-200">
@@ -73,7 +82,7 @@ export const HomeChart = React.memo(({ chartData, chartPeriod, setChartPeriod })
 
             <div className="h-[280px] w-full">
                 <ResponsiveContainer width="100%" height="100%" debounce={isMobile ? 250 : 50}>
-                    <ComposedChart data={chartData.points} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
+                    <ComposedChart data={chartData.points} margin={CHART_MARGIN}>
                         <defs>
                             <linearGradient id="gradIngresos" x1="0" y1="0" x2="0" y2="1">
                                 <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
@@ -84,7 +93,7 @@ export const HomeChart = React.memo(({ chartData, chartPeriod, setChartPeriod })
                         <XAxis
                             dataKey="date"
                             stroke="transparent"
-                            tick={{ fill: '#475569', fontSize: 10, fontWeight: 700 }}
+                            tick={X_TICK}
                             tickLine={false}
                             axisLine={false}
                             minTickGap={24}
@@ -93,17 +102,17 @@ export const HomeChart = React.memo(({ chartData, chartPeriod, setChartPeriod })
                             yAxisId="ingresos"
                             orientation="left"
                             stroke="transparent"
-                            tick={{ fill: '#475569', fontSize: 10, fontWeight: 700 }}
+                            tick={Y_TICK}
                             tickLine={false}
                             axisLine={false}
-                            tickFormatter={(v) => `$${v >= 1000 ? (v / 1000).toFixed(0) + 'k' : v}`}
+                            tickFormatter={yTickFormatter}
                             width={48}
                         />
                         <YAxis
                             yAxisId="ventas"
                             orientation="right"
                             stroke="transparent"
-                            tick={{ fill: '#334155', fontSize: 9, fontWeight: 700 }}
+                            tick={Y_RIGHT_TICK}
                             tickLine={false}
                             axisLine={false}
                             width={28}
@@ -116,7 +125,7 @@ export const HomeChart = React.memo(({ chartData, chartPeriod, setChartPeriod })
                                 stroke="#6366f1"
                                 strokeDasharray="4 4"
                                 strokeWidth={1.5}
-                                label={{ value: 'Prom.', fill: '#6366f1', fontSize: 9, fontWeight: 700, position: 'insideTopLeft' }}
+                                label={REF_LABEL}
                             />
                         )}
                         <Bar
@@ -124,8 +133,8 @@ export const HomeChart = React.memo(({ chartData, chartPeriod, setChartPeriod })
                             dataKey="ventas"
                             name="Transacciones"
                             fill="rgba(99, 102, 241, 0.15)"
-                            radius={[3, 3, 0, 0]}
-                            isAnimationActive={!isMobile}
+                            radius={BAR_RADIUS}
+                            isAnimationActive={false}
                         />
                         <Area
                             yAxisId="ingresos"
@@ -137,8 +146,8 @@ export const HomeChart = React.memo(({ chartData, chartPeriod, setChartPeriod })
                             fillOpacity={1}
                             fill="url(#gradIngresos)"
                             dot={false}
-                            activeDot={{ r: 4, fill: '#3b82f6', stroke: '#fff', strokeWidth: 2 }}
-                            isAnimationActive={!isMobile}
+                            activeDot={ACTIVE_DOT}
+                            isAnimationActive={false}
                         />
                     </ComposedChart>
                 </ResponsiveContainer>

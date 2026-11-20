@@ -37,6 +37,11 @@ function getVisualsForCategory(catName) {
   return COLOR_PALETTE[idx]
 }
 
+const PREPOSITION_WORDS = new Set(['y', 'e', 'o', 'u', 'de', 'del', 'la', 'las', 'el', 'los'])
+const WEEKEND_CATEGORY_KEYWORDS = ['cerveza', 'bebida', 'cigarrillo', 'tabaco', 'snack', 'alfajor', 'golosina']
+const CATEGORY_META_CACHE = new Map()
+const COMPILED_RULES_CACHE = new WeakMap()
+
 /**
  * Convierte un nombre en formato "TITULO O TODO MAYUSCULA" a Title Case legible
  */
@@ -46,7 +51,7 @@ function toDisplayTitle(str) {
     .toLowerCase()
     .split(' ')
     .map(word => {
-      if (['y', 'e', 'o', 'u', 'de', 'del', 'la', 'las', 'el', 'los'].includes(word)) return word
+      if (PREPOSITION_WORDS.has(word)) return word
       return word.charAt(0).toUpperCase() + word.slice(1)
     })
     .join(' ')
@@ -63,10 +68,47 @@ export function normalizeText(text) {
     .replace(/[\u0300-\u036f]/g, "")
 }
 
-/**
- * Clasifica un producto dinámicamente según la categoría real que viene de la base de datos
- */
-export function categorizeProduct(productInput, customRules = []) {
+const getCategoryMetadata = (catStr, normCat) => {
+  const cached = CATEGORY_META_CACHE.get(catStr)
+  if (cached) return cached
+  const visuals = getVisualsForCategory(catStr)
+  const meta = {
+    id: normCat,
+    name: toDisplayTitle(catStr),
+    rawCategory: catStr,
+    color: visuals.color,
+    iconName: visuals.iconName
+  }
+  if (CATEGORY_META_CACHE.size < 200) {
+    CATEGORY_META_CACHE.set(catStr, meta)
+  }
+  return meta
+}
+
+const compileCustomRules = (customRules) => {
+  if (!Array.isArray(customRules) || customRules.length === 0) return []
+  const cached = COMPILED_RULES_CACHE.get(customRules)
+  if (cached) return cached
+
+  const compiled = []
+  for (const rule of customRules) {
+    if (!rule || !String(rule.id).startsWith('custom_')) continue
+    const regexes = []
+    for (const kw of (rule.keywords || [])) {
+      const normKw = normalizeText(kw)
+      if (!normKw) continue
+      const escaped = normKw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      regexes.push(new RegExp(`(?:^|\\s|\\b)${escaped}(?:$|\\s|\\b)`, 'i'))
+    }
+    if (regexes.length > 0) {
+      compiled.push({ rule, regexes })
+    }
+  }
+  COMPILED_RULES_CACHE.set(customRules, compiled)
+  return compiled
+}
+
+const categorizeWithCompiledRules = (productInput, compiledRules) => {
   let catStr = ''
   let productName = ''
 
@@ -77,18 +119,13 @@ export function categorizeProduct(productInput, customRules = []) {
     productName = String(productInput || '')
   }
 
-  const normCat = normalizeText(catStr).trim()
-
   // 1. Reglas personalizadas creadas en pantalla por el usuario (si existieran)
-  if (Array.isArray(customRules)) {
-    const userRules = customRules.filter(r => String(r.id).startsWith('custom_'))
+  if (compiledRules.length > 0) {
     const normName = normalizeText(productName)
-    for (const rule of userRules) {
-      for (const kw of (rule.keywords || [])) {
-        const normKw = normalizeText(kw)
-        if (!normKw) continue
-        const regex = new RegExp(`(?:^|\\s|\\b)${normKw}(?:$|\\s|\\b)`, 'i')
-        if (regex.test(normName)) {
+    for (let i = 0; i < compiledRules.length; i++) {
+      const { rule, regexes } = compiledRules[i]
+      for (let j = 0; j < regexes.length; j++) {
+        if (regexes[j].test(normName)) {
           return rule
         }
       }
@@ -96,15 +133,9 @@ export function categorizeProduct(productInput, customRules = []) {
   }
 
   // 2. Si tiene categoría en la base de datos, la usa directamente
+  const normCat = normalizeText(catStr).trim()
   if (normCat && normCat !== 'SIN_CATEGORIA') {
-    const visuals = getVisualsForCategory(catStr)
-    return {
-      id: normCat,
-      name: toDisplayTitle(catStr),
-      rawCategory: catStr,
-      color: visuals.color,
-      iconName: visuals.iconName
-    }
+    return getCategoryMetadata(catStr, normCat)
   }
 
   // 3. Sin categoría / Pendiente
@@ -114,6 +145,14 @@ export function categorizeProduct(productInput, customRules = []) {
     color: '#94a3b8',
     iconName: 'HelpCircle'
   }
+}
+
+/**
+ * Clasifica un producto dinámicamente según la categoría real que viene de la base de datos
+ */
+export function categorizeProduct(productInput, customRules = []) {
+  const compiledRules = compileCustomRules(customRules)
+  return categorizeWithCompiledRules(productInput, compiledRules)
 }
 
 
@@ -128,6 +167,7 @@ export function aggregateBySections(products = [], options = {}) {
     lotesMap = {}
   } = options
 
+  const compiledRules = compileCustomRules(customRules)
   const sectionMap = {}
 
   // Inicializar sección por defecto para productos sin categoría
@@ -171,7 +211,7 @@ export function aggregateBySections(products = [], options = {}) {
 
   products.forEach(p => {
     const rawNombre = p.producto || p.nombre || 'Producto sin nombre'
-    const section = categorizeProduct(p, customRules)
+    const section = categorizeWithCompiledRules(p, compiledRules)
 
     // Si la sección no existe en el mapa (nueva categoría descubierta en la DB), inicializarla dinámicamente
     if (!sectionMap[section.id]) {
@@ -229,7 +269,7 @@ export function aggregateBySections(products = [], options = {}) {
     let ventasDiarias = (v7d > 0 && v30d > 0) ? (0.6 * v7d + 0.4 * v30d) : (periodDays > 0 ? (unidadesVendidas / periodDays) : 0)
 
     // 2. Factor Fin de Semana (+20%) para rubros de alta rotación fin de semana
-    const isWeekendCategory = ['cerveza', 'bebida', 'cigarrillo', 'tabaco', 'snack', 'alfajor', 'golosina'].some(k => secIdLower.includes(k))
+    const isWeekendCategory = WEEKEND_CATEGORY_KEYWORDS.some(k => secIdLower.includes(k))
     if (isWeekendCategory && ventasDiarias > 0) {
       ventasDiarias *= 1.20
     }

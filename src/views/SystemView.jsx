@@ -2,9 +2,7 @@ import React, { useState, useMemo, useCallback } from 'react'
 import useSWR from 'swr'
 import { getAuditLogs, getN8nErrors, getPredictiveStock, rollbackLog, getAISummaries } from '../services/api'
 import DataTable from '../components/DataTable'
-import { LazyMotion, domAnimation, m, AnimatePresence } from 'framer-motion'
-import { ShieldCheck, Activity, PackageSearch, AlertCircle, Clock, Database, Terminal, User, Cpu, ArrowRight, Code2, RotateCcw, Sparkles } from 'lucide-react'
-import ReactMarkdown from 'react-markdown'
+import { ShieldCheck, Activity, PackageSearch, Terminal, User, Cpu, ArrowRight, Code2, RotateCcw, Sparkles } from 'lucide-react'
 import { DailyAISummary } from '../components/system/DailyAISummary'
 import { SystemViewFooter } from '../components/system/SystemViewFooter'
 import { SystemIATab } from './system/SystemIATab'
@@ -39,11 +37,11 @@ const getChanges = (oldVal, newVal) => {
     return changes
 }
 
-const RenderChanges = ({ oldVal, newVal }) => {
+const RenderChanges = ({ oldVal, newVal, precomputedChanges }) => {
     if (!newVal) return null
     if (!oldVal) return <span className="text-green-400 font-bold italic">Registro Nuevo</span>
 
-    const changes = getChanges(oldVal, newVal)
+    const changes = precomputedChanges || getChanges(oldVal, newVal)
 
     if (changes.length === 0) return null // Si solo hubo ruido de fecha, no mostrar fila de cambios
     if (changes.length > 2) return <span className="text-blue-400 font-bold">{changes.length} campos modificados</span>
@@ -109,18 +107,18 @@ const SystemView = () => {
 
     // Fetchers
     const { data: auditLogs, isLoading: loadingAudit } = useSWR(
-        activeTab === 'audit' ? ['auditLogs', sortConfig, filterValue] : null,
-        () => getAuditLogs({ sortColumn: sortConfig.column, sortOrder: sortConfig.order, filter: filterValue })
+        activeTab === 'audit' ? ['auditLogs', sortConfig.column, sortConfig.order] : null,
+        () => getAuditLogs({ sortColumn: sortConfig.column, sortOrder: sortConfig.order })
     )
 
     const { data: n8nErrors, isLoading: loadingN8n } = useSWR(
-        activeTab === 'n8n' ? ['n8nErrors', sortConfig, filterValue] : null,
-        () => getN8nErrors({ sortColumn: sortConfig.column, sortOrder: sortConfig.order, filter: filterValue })
+        activeTab === 'n8n' ? ['n8nErrors', sortConfig.column, sortConfig.order] : null,
+        () => getN8nErrors({ sortColumn: sortConfig.column, sortOrder: sortConfig.order })
     )
 
     const { data: stockPredictions, isLoading: loadingStock } = useSWR(
-        activeTab === 'stock' ? ['stockPredictions', filterValue] : null,
-        () => getPredictiveStock({ filter: filterValue })
+        activeTab === 'stock' ? ['stockPredictions'] : null,
+        () => getPredictiveStock()
     )
 
     const { data: aiSummaries, isLoading: loadingAI } = useSWR(
@@ -128,8 +126,60 @@ const SystemView = () => {
         () => getAISummaries({ tipo: summaryType, pageSize: 12 })
     )
 
+    const handleSort = useCallback((col) => {
+        setSortConfig(s => ({
+            column: col,
+            order: s.column === col && s.order === 'asc' ? 'desc' : 'asc'
+        }))
+    }, [])
 
-    const handleRollback = async (id) => {
+    const handleTabChange = useCallback((tabId) => {
+        setActiveTab(tabId)
+        setFilterValue('')
+    }, [])
+
+    const significantAuditLogs = useMemo(() => {
+        const rows = auditLogs?.data || []
+        const result = []
+        for (const row of rows) {
+            const changes = getChanges(row.valor_anterior, row.valor_nuevo)
+            if (changes.length > 0 || row.accion !== 'UPDATE') {
+                result.push({ ...row, _changes: changes })
+            }
+        }
+        return result
+    }, [auditLogs])
+
+    const filteredAuditLogs = useMemo(() => {
+        const needle = filterValue.trim().toLowerCase()
+        if (!needle) return significantAuditLogs
+        return significantAuditLogs.filter(row =>
+            row.nombre_tabla?.toLowerCase().includes(needle) ||
+            row.accion?.toLowerCase().includes(needle) ||
+            row.usuario?.toLowerCase().includes(needle) ||
+            row.query_context?.toLowerCase().includes(needle)
+        )
+    }, [significantAuditLogs, filterValue])
+
+    const filteredN8nErrors = useMemo(() => {
+        const rows = n8nErrors?.data || []
+        const needle = filterValue.trim().toLowerCase()
+        if (!needle) return rows
+        return rows.filter(row =>
+            row.workflow_nombre?.toLowerCase().includes(needle) ||
+            row.nodo_nombre?.toLowerCase().includes(needle) ||
+            row.mensaje_error?.toLowerCase().includes(needle)
+        )
+    }, [n8nErrors, filterValue])
+
+    const filteredStockPredictions = useMemo(() => {
+        const rows = stockPredictions?.data || []
+        const needle = filterValue.trim().toLowerCase()
+        if (!needle) return rows
+        return rows.filter(row => row.nombre?.toLowerCase().includes(needle))
+    }, [stockPredictions, filterValue])
+
+    const handleRollback = useCallback(async (id) => {
         if (!confirm('¿Seguro que querés deshacer este cambio?')) return
         setRollbackStatus({ id, status: 'loading' })
         try {
@@ -145,7 +195,7 @@ const SystemView = () => {
             alert('Falló el rollback: ' + err.message)
             setRollbackStatus({ id: null, status: 'error' })
         }
-    }
+    }, [])
 
     const tabs = SYSTEM_TABS
 
@@ -160,7 +210,7 @@ const SystemView = () => {
             )
         },
         {
-            key: 'resumen', label: 'Cambios', render: (_, row) => <RenderChanges oldVal={row.valor_anterior} newVal={row.valor_nuevo} />
+            key: 'resumen', label: 'Cambios', render: (_, row) => <RenderChanges oldVal={row.valor_anterior} newVal={row.valor_nuevo} precomputedChanges={row._changes} />
         },
         {
             key: 'usuario', label: 'Origen', render: (val, row) => (
@@ -197,7 +247,7 @@ const SystemView = () => {
                 </button>
             )
         }
-    ], [rollbackStatus])
+    ], [rollbackStatus, handleRollback])
 
     const stockColumns = useMemo(() => [
         { key: 'nombre', label: 'Producto', width: 'w-1/3', wrap: true },
@@ -245,127 +295,113 @@ const SystemView = () => {
         </div>
     ), [])
 
-    return (
-        <LazyMotion features={domAnimation}>
-            <m.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="p-4 sm:p-6 space-y-6"
-            >
-                <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-                    <div className="space-y-1">
-                        <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white flex items-center gap-3">
-                            <Activity className="h-7 w-7 sm:h-8 sm:w-8 text-blue-500 shrink-0" />
-                            <span className="bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-500">Centro de Control</span>
-                        </h1>
-                        <p className="text-slate-400 font-medium text-sm">Observabilidad técnica y predicciones comerciales</p>
-                    </div>
+    const renderExpandedN8n = useCallback((row) => (
+        <div className="space-y-4 font-mono text-xs">
+            <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl">
+                <div className="text-red-400 font-black mb-2 uppercase tracking-widest text-[10px]">Detalle del Error</div>
+                {row.mensaje_error}
+            </div>
+            <div className="space-y-2">
+                <div className="text-slate-500 uppercase tracking-widest font-black text-[10px]">Payload Context</div>
+                <pre className="bg-slate-950/50 p-3 rounded-xl border border-white/5 overflow-x-auto text-blue-300">
+                    {JSON.stringify(row.payload_error, null, 2)}
+                </pre>
+            </div>
+        </div>
+    ), [])
 
-                    <div className="flex bg-white/5 p-1 rounded-2xl border border-white/5 backdrop-blur-xl shrink-0 overflow-x-auto scroll-touch max-w-full">
-                        {tabs.map(tab => (
-                            <button type="button"
+    return (
+        <div className="p-4 sm:p-6 space-y-6 animate-fade-in">
+            <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                <div className="space-y-1">
+                    <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white flex items-center gap-3">
+                        <Activity className="h-7 w-7 sm:h-8 sm:w-8 text-blue-500 shrink-0" />
+                        <span className="bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-500">Centro de Control</span>
+                    </h1>
+                    <p className="text-slate-400 font-medium text-sm">Observabilidad técnica y predicciones comerciales</p>
+                </div>
+
+                <div className="flex bg-white/5 p-1 rounded-2xl border border-white/5 backdrop-blur-xl shrink-0 overflow-x-auto scroll-touch max-w-full">
+                    {tabs.map(tab => {
+                        const isActive = activeTab === tab.id
+                        return (
+                            <button
+                                type="button"
                                 key={tab.id}
-                                onClick={() => setActiveTab(tab.id)}
-                                className={`flex items-center gap-2 px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all relative shrink-0 ${activeTab === tab.id ? 'text-white' : 'text-slate-500 hover:text-slate-300'
-                                    }`}
+                                onClick={() => handleTabChange(tab.id)}
+                                className={`flex items-center gap-2 px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-colors relative shrink-0 border ${
+                                    isActive
+                                        ? `${tab.bg} ${tab.border} text-white`
+                                        : 'border-transparent text-slate-500 hover:text-slate-300'
+                                }`}
                             >
-                                {activeTab === tab.id && (
-                                    <m.div
-                                        layoutId="active-tab-bg"
-                                        className={`absolute inset-0 ${tab.bg} rounded-xl border ${tab.border} -z-10`}
-                                    />
-                                )}
-                                <tab.icon className={`h-4 w-4 ${activeTab === tab.id ? tab.color : 'text-slate-500'} shrink-0`} />
+                                <tab.icon className={`h-4 w-4 ${isActive ? tab.color : 'text-slate-500'} shrink-0`} />
                                 <span>{tab.label}</span>
                             </button>
-                        ))}
-                    </div>
-                </header>
+                        )
+                    })}
+                </div>
+            </header>
 
-                <AnimatePresence mode="wait">
-                    <m.div
-                        key={activeTab}
-                        initial={{ opacity: 0, x: 20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -20 }}
-                        transition={{ duration: 0.2 }}
-                    >
-                    {activeTab === 'ia' && (
-                        <SystemIATab
-                            summaryType={summaryType}
-                            setSummaryType={setSummaryType}
-                            aiSummaries={aiSummaries}
-                            loadingAI={loadingAI}
-                            formatDate={formatDate}
-                        />
-                    )}
+            <div key={activeTab} className="animate-fade-in">
+                {activeTab === 'ia' && (
+                    <SystemIATab
+                        summaryType={summaryType}
+                        setSummaryType={setSummaryType}
+                        aiSummaries={aiSummaries}
+                        loadingAI={loadingAI}
+                        formatDate={formatDate}
+                    />
+                )}
 
-                    {activeTab === 'audit' && (
-                        <div className="space-y-6">
-                            <DailyAISummary data={aiSummaries?.data} isLoading={loadingAI} />
-                            <DataTable
-                                data={(auditLogs?.data || []).filter(row => {
-                                    const changes = getChanges(row.valor_anterior, row.valor_nuevo)
-                                    // Si no hay cambios significativos Y no es INSERT/DELETE, ocultar
-                                    return changes.length > 0 || row.accion !== 'UPDATE'
-                                })}
-                                columns={auditColumns}
-                                isLoading={loadingAudit}
-                                sortConfig={sortConfig}
-                                onSort={setSortConfig}
-                                filterValue={filterValue}
-                                onFilterChange={setFilterValue}
-                                expandableRow={renderExpandedAudit}
-                                minWidth="900px"
-                            />
-                        </div>
-                    )}
-                    {activeTab === 'stock' && (
+                {activeTab === 'audit' && (
+                    <div className="space-y-6">
+                        <DailyAISummary data={aiSummaries?.data} isLoading={loadingAI} />
                         <DataTable
-                            data={stockPredictions?.data || []}
-                            columns={stockColumns}
-                            isLoading={loadingStock}
-                            onFilter={setFilterValue}
-                            rowKey="nombre"
-                            compact
-                            minWidth="750px"
-                        />
-                    )}
-                    {activeTab === 'n8n' && (
-                        <DataTable
-                            data={n8nErrors?.data || []}
-                            columns={n8nColumns}
-                            isLoading={loadingN8n}
-                            onSort={(col) => setSortConfig(s => ({ column: col, order: s.column === col && s.order === 'asc' ? 'desc' : 'asc' }))}
+                            data={filteredAuditLogs}
+                            columns={auditColumns}
+                            isLoading={loadingAudit}
                             sortColumn={sortConfig.column}
                             sortOrder={sortConfig.order}
+                            onSort={handleSort}
                             onFilter={setFilterValue}
+                            renderExpandedRow={renderExpandedAudit}
                             rowKey="id"
-                            compact
-                            minWidth="850px"
-                            renderExpandedRow={(row) => (
-                                <div className="space-y-4 font-mono text-xs">
-                                    <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl">
-                                        <div className="text-red-400 font-black mb-2 uppercase tracking-widest text-[10px]">Detalle del Error</div>
-                                        {row.mensaje_error}
-                                    </div>
-                                    <div className="space-y-2">
-                                        <div className="text-slate-500 uppercase tracking-widest font-black text-[10px]">Payload Context</div>
-                                        <pre className="bg-slate-950/50 p-3 rounded-xl border border-white/5 overflow-x-auto text-blue-300">
-                                            {JSON.stringify(row.payload_error, null, 2)}
-                                        </pre>
-                                    </div>
-                                </div>
-                            )}
+                            minWidth="900px"
                         />
-                    )}
-                </m.div>
-            </AnimatePresence>
+                    </div>
+                )}
+                {activeTab === 'stock' && (
+                    <DataTable
+                        data={filteredStockPredictions}
+                        columns={stockColumns}
+                        isLoading={loadingStock}
+                        onFilter={setFilterValue}
+                        rowKey="nombre"
+                        compact
+                        minWidth="750px"
+                    />
+                )}
+                {activeTab === 'n8n' && (
+                    <DataTable
+                        data={filteredN8nErrors}
+                        columns={n8nColumns}
+                        isLoading={loadingN8n}
+                        onSort={handleSort}
+                        sortColumn={sortConfig.column}
+                        sortOrder={sortConfig.order}
+                        onFilter={setFilterValue}
+                        rowKey="id"
+                        compact
+                        minWidth="850px"
+                        renderExpandedRow={renderExpandedN8n}
+                    />
+                )}
+            </div>
 
             <SystemViewFooter />
-        </m.div>
-    </LazyMotion>
-)
+        </div>
+    )
 }
 
 export default SystemView

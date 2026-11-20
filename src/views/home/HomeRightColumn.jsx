@@ -1,12 +1,14 @@
 import React from 'react'
 import { Wallet, ChevronRight, CheckCircle2, BrainCircuit, Eye, Zap } from 'lucide-react'
 
-export const HomeRightColumn = ({
-    reservas = [],
+const EMPTY_ARRAY = []
+
+export const HomeRightColumn = React.memo(({
+    reservas = EMPTY_ARRAY,
     saldoReservas,
     goToReservas,
     loadingDuplicados,
-    duplicados = [],
+    duplicados = EMPTY_ARRAY,
     goToDuplicados,
     goToAnalisis
 }) => {
@@ -149,4 +151,5 @@ export const HomeRightColumn = ({
             </div>
         </div>
     )
-}
+})
+HomeRightColumn.displayName = 'HomeRightColumn'

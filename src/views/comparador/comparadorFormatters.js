@@ -1,31 +1,68 @@
-import { FAMILIAS_CANONICAS } from '../../utils/triageClassifier'
+import { FAMILIAS_CANONICAS } from '../../utils/familiasCatalog'
 
-export const formatCurrency = (val, compact = false) => {
-    const n = Number(val) || 0
-    if (compact && Math.abs(n) >= 1_000_000) {
-        return `$${(n / 1_000_000).toLocaleString('es-AR', { minimumFractionDigits: 1, maximumFractionDigits: 2 })}M`
-    }
-    if (compact && Math.abs(n) >= 10_000) {
-        return `$${(n / 1_000).toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 1 })}k`
-    }
-    return `$${n.toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
-}
+const intFormatter = new Intl.NumberFormat('es-AR', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+})
+const compactMFormatter = new Intl.NumberFormat('es-AR', {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 2
+})
+const compactKFormatter = new Intl.NumberFormat('es-AR', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 1
+})
+const dec1Formatter = new Intl.NumberFormat('es-AR', {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1
+})
+const dec2Formatter = new Intl.NumberFormat('es-AR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+})
 
-export const formatNumber = (val, decimals = 0) => {
-    const n = Number(val) || 0
-    return n.toLocaleString('es-AR', {
+const getDecimalFormatter = (decimals) => {
+    if (decimals === 0) return intFormatter
+    if (decimals === 1) return dec1Formatter
+    if (decimals === 2) return dec2Formatter
+    return new Intl.NumberFormat('es-AR', {
         minimumFractionDigits: decimals,
         maximumFractionDigits: decimals
     })
 }
 
+const FAMILIAS_MAP = new Map(
+    FAMILIAS_CANONICAS.map((f) => [
+        f.id.toUpperCase(),
+        {
+            id: f.id,
+            label: f.label,
+            badgeColor: f.badgeColor,
+            color: f.color
+        }
+    ])
+)
+
+export const formatCurrency = (val, compact = false) => {
+    const n = Number(val) || 0
+    if (compact && Math.abs(n) >= 1_000_000) {
+        return `$${compactMFormatter.format(n / 1_000_000)}M`
+    }
+    if (compact && Math.abs(n) >= 10_000) {
+        return `$${compactKFormatter.format(n / 1_000)}k`
+    }
+    return `$${intFormatter.format(n)}`
+}
+
+export const formatNumber = (val, decimals = 0) => {
+    const n = Number(val) || 0
+    return getDecimalFormatter(decimals).format(n)
+}
+
 export const formatPct = (val, includeSign = true, decimals = 1) => {
     const n = Number(val) || 0
     const sign = includeSign && n > 0 ? '+' : ''
-    return `${sign}${n.toLocaleString('es-AR', {
-        minimumFractionDigits: decimals,
-        maximumFractionDigits: decimals
-    })}%`
+    return `${sign}${getDecimalFormatter(decimals).format(n)}%`
 }
 
 export const getDeltaColorClass = (val) => {
@@ -37,15 +74,8 @@ export const getDeltaColorClass = (val) => {
 
 export const getCategoryMeta = (categoriaName) => {
     const clean = String(categoriaName || 'SIN_CATEGORIA').trim().toUpperCase()
-    const match = FAMILIAS_CANONICAS.find((f) => f.id.toUpperCase() === clean)
-    if (match) {
-        return {
-            id: match.id,
-            label: match.label,
-            badgeColor: match.badgeColor,
-            color: match.color
-        }
-    }
+    const match = FAMILIAS_MAP.get(clean)
+    if (match) return match
     return {
         id: clean,
         label: clean === 'SIN_CATEGORIA' ? 'Sin Categoría' : clean,

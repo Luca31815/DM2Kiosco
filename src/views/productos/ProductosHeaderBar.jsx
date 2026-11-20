@@ -1,7 +1,11 @@
 import React, { useMemo } from 'react'
 import { Package, Loader2, DollarSign, FileText, PackagePlus, Trash2, Bookmark, Filter, CheckSquare, CheckCheck, X, FolderEdit } from 'lucide-react'
 
-export const ProductosHeaderBar = ({
+const EMPTY_CATS = []
+const EMPTY_SUBCATS = {}
+const EMPTY_SET = new Set()
+
+export const ProductosHeaderBar = React.memo(({
     handleSyncPrecios,
     handleExportPDF,
     handleSyncFaltantes,
@@ -12,12 +16,12 @@ export const ProductosHeaderBar = ({
     setSelectedCategoria,
     selectedSubcategoria = '',
     setSelectedSubcategoria,
-    categorias = [],
-    subcategoriasPorCategoria = {},
+    categorias = EMPTY_CATS,
+    subcategoriasPorCategoria = EMPTY_SUBCATS,
     loadingCategorias: _loadingCategorias = false,
     isSelectionMode = false,
     setIsSelectionMode,
-    selectedProductIds = new Set(),
+    selectedProductIds = EMPTY_SET,
     handleSelectAllFiltered,
     handleDeselectAll,
     handleExportSelectedPDF,
@@ -224,4 +228,5 @@ export const ProductosHeaderBar = ({
             )}
         </div>
     )
-}
+})
+ProductosHeaderBar.displayName = 'ProductosHeaderBar'

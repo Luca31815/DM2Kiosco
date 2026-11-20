@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useMemo } from 'react'
-import { X, Search, AlertTriangle, CheckCircle2, Trash2, Loader2, Info, Filter, RefreshCcw, Check, Sparkles } from 'lucide-react'
+import React, { useState, useEffect, useMemo, useCallback } from 'react'
+import { X, Search, AlertTriangle, Info, Check, Sparkles } from 'lucide-react'
 import * as api from '../services/api'
-import { LazyMotion, domAnimation, m, AnimatePresence } from 'framer-motion'
+import { m, AnimatePresence } from 'framer-motion'
 import { toast } from 'react-hot-toast'
 import { SynonymModalTable } from './synonyms/SynonymModalTable'
 
@@ -13,7 +13,7 @@ const SynonymManagerModal = ({ isOpen, onClose }) => {
     const [filter, setFilter] = useState('')
     const [view, setView] = useState('all') // 'all' | 'conflicts'
 
-    const loadData = React.useCallback(async () => {
+    const loadData = useCallback(async () => {
         setLoading(true)
         try {
             const [all, conf] = await Promise.all([
@@ -37,7 +37,7 @@ const SynonymManagerModal = ({ isOpen, onClose }) => {
         init()
     }, [isOpen, loadData])
 
-    const handleDelete = async (alias) => {
+    const handleDelete = useCallback(async (alias) => {
         try {
             await api.borrarSinonimo(alias)
             setSynonyms(s => s.filter(item => item.alias !== alias))
@@ -46,9 +46,9 @@ const SynonymManagerModal = ({ isOpen, onClose }) => {
         } catch {
             toast.error('Error al eliminar')
         }
-    }
+    }, [])
 
-    const handleResolve = async (conflict, skipConfirm = false) => {
+    const handleResolve = useCallback(async (conflict, skipConfirm = false) => {
         setResolvingId(conflict.alias)
         try {
             if (conflict.tipo_conflicto === 'COLISION') {
@@ -97,17 +97,27 @@ const SynonymManagerModal = ({ isOpen, onClose }) => {
         } finally {
             setResolvingId(null)
         }
-    }
+    }, [loadData])
+
+    const conflictMap = useMemo(() => {
+        const map = new Map()
+        for (let i = 0; i < conflicts.length; i++) {
+            map.set(conflicts[i].alias, conflicts[i])
+        }
+        return map
+    }, [conflicts])
 
     const filtered = useMemo(() => {
+        const normalizedFilter = filter.toLowerCase().trim()
         return synonyms.filter(s => {
-            const matchesSearch = s.alias.toLowerCase().includes(filter.toLowerCase()) || 
-                                  s.nombre_oficial.toLowerCase().includes(filter.toLowerCase())
-            const isConflict = conflicts.some(c => c.alias === s.alias)
-            if (view === 'conflicts') return matchesSearch && isConflict
-            return matchesSearch
+            const matchesSearch = !normalizedFilter ||
+                (s.alias && s.alias.toLowerCase().includes(normalizedFilter)) ||
+                (s.nombre_oficial && s.nombre_oficial.toLowerCase().includes(normalizedFilter))
+            if (!matchesSearch) return false
+            if (view === 'conflicts') return conflictMap.has(s.alias)
+            return true
         })
-    }, [synonyms, filter, conflicts, view])
+    }, [synonyms, filter, conflictMap, view])
 
     const groupedConflicts = useMemo(() => {
         const map = {}
@@ -128,71 +138,70 @@ const SynonymManagerModal = ({ isOpen, onClose }) => {
     if (!isOpen) return null
 
     return (
-        <LazyMotion features={domAnimation}>
-            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                <m.div 
-                    initial={{ opacity: 0 }} 
-                    animate={{ opacity: 1 }} 
-                    exit={{ opacity: 0 }}
-                    onClick={onClose}
-                    role="button"
-                    tabIndex={0}
-                    aria-label="Cerrar modal"
-                    onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && onClose()}
-                    className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" 
-                />
-                
-                <m.div 
-                    initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                    className="relative w-full max-w-5xl bg-slate-900 border border-white/10 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]"
-                >
-                    {/* Header */}
-                    <div className="p-6 border-b border-white/5 flex justify-between items-center bg-white/[0.02]">
-                        <div className="flex items-center gap-4">
-                            <div className="p-3 bg-blue-500/10 rounded-2xl">
-                                <Sparkles className="h-6 w-6 text-blue-400" />
-                            </div>
-                            <div>
-                                <h3 className="text-xl font-black text-white tracking-tight text-shadow-glow">Diccionario de Inteligencia</h3>
-                                <p className="text-slate-500 text-xs font-medium uppercase tracking-widest">Auditoría y Resolución de Conflictos</p>
-                            </div>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <m.div 
+                initial={{ opacity: 0 }} 
+                animate={{ opacity: 1 }} 
+                exit={{ opacity: 0 }}
+                onClick={onClose}
+                role="button"
+                tabIndex={0}
+                aria-label="Cerrar modal"
+                onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && onClose()}
+                className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" 
+            />
+            
+            <m.div 
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                className="relative w-full max-w-5xl bg-slate-900 border border-white/10 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]"
+            >
+                {/* Header */}
+                <div className="p-6 border-b border-white/5 flex justify-between items-center bg-white/[0.02]">
+                    <div className="flex items-center gap-4">
+                        <div className="p-3 bg-blue-500/10 rounded-2xl">
+                            <Sparkles className="h-6 w-6 text-blue-400" />
                         </div>
-                        <button type="button" onClick={onClose} aria-label="Cerrar" className="p-2 hover:bg-white/10 rounded-xl transition-colors text-slate-400">
-                            <X size={20} />
+                        <div>
+                            <h3 className="text-xl font-black text-white tracking-tight text-shadow-glow">Diccionario de Inteligencia</h3>
+                            <p className="text-slate-500 text-xs font-medium uppercase tracking-widest">Auditoría y Resolución de Conflictos</p>
+                        </div>
+                    </div>
+                    <button type="button" onClick={onClose} aria-label="Cerrar" className="p-2 hover:bg-white/10 rounded-xl transition-colors text-slate-400">
+                        <X size={20} />
+                    </button>
+                </div>
+
+                {/* Tabs & Search */}
+                <div className="p-4 bg-white/[0.01] border-b border-white/5 flex flex-col md:flex-row gap-4">
+                    <div className="flex bg-slate-800/50 p-1 rounded-xl border border-white/5">
+                        <button type="button" 
+                            onClick={() => setView('all')}
+                            className={`px-4 py-2 rounded-lg text-xs font-black transition-colors ${view === 'all' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'text-slate-500 hover:text-slate-300'}`}
+                        >
+                            DICCIONARIO ({synonyms.length})
+                        </button>
+                        <button type="button" 
+                            onClick={() => setView('conflicts')}
+                            className={`px-4 py-2 rounded-lg text-xs font-black transition-colors ${view === 'conflicts' ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/20' : 'text-slate-500 hover:text-slate-300'}`}
+                        >
+                            CONFLICTOS ({conflicts.length})
                         </button>
                     </div>
 
-                    {/* Tabs & Search */}
-                    <div className="p-4 bg-white/[0.01] border-b border-white/5 flex flex-col md:flex-row gap-4">
-                        <div className="flex bg-slate-800/50 p-1 rounded-xl border border-white/5">
-                            <button type="button" 
-                                onClick={() => setView('all')}
-                                className={`px-4 py-2 rounded-lg text-xs font-black transition-all ${view === 'all' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'text-slate-500 hover:text-slate-300'}`}
-                            >
-                                DICCIONARIO ({synonyms.length})
-                            </button>
-                            <button type="button" 
-                                onClick={() => setView('conflicts')}
-                                className={`px-4 py-2 rounded-lg text-xs font-black transition-all ${view === 'conflicts' ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/20' : 'text-slate-500 hover:text-slate-300'}`}
-                            >
-                                CONFLICTOS ({conflicts.length})
-                            </button>
-                        </div>
-
-                        <div className="relative flex-1 group">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 group-focus-within:text-blue-400 transition-colors" />
-                            <input 
-                                type="text"
-                                placeholder="Buscar alias o producto oficial..."
-                                aria-label="Buscar alias o producto oficial"
-                                value={filter}
-                                onChange={(e) => setFilter(e.target.value)}
-                                className="w-full bg-slate-800/40 border border-white/5 rounded-xl pl-11 pr-4 py-2 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/40 transition-all font-medium"
-                            />
-                        </div>
+                    <div className="relative flex-1 group">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 group-focus-within:text-blue-400 transition-colors" />
+                        <input 
+                            type="text"
+                            placeholder="Buscar alias o producto oficial..."
+                            aria-label="Buscar alias o producto oficial"
+                            value={filter}
+                            onChange={(e) => setFilter(e.target.value)}
+                            className="w-full bg-slate-800/40 border border-white/5 rounded-xl pl-11 pr-4 py-2 text-sm text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/40 transition-colors font-medium"
+                        />
                     </div>
+                </div>
 
                 {/* Bulk Actions Bar */}
                 {view === 'conflicts' && !loading && (
@@ -221,7 +230,7 @@ const SynonymManagerModal = ({ isOpen, onClose }) => {
                                              loadData();
                                          }
                                     }}
-                                    className="px-4 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-900 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-amber-500/20 flex items-center gap-2 active:scale-95"
+                                    className="px-4 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-900 rounded-lg text-[10px] font-black uppercase tracking-widest transition-colors shadow-lg shadow-amber-500/20 flex items-center gap-2 active:scale-95"
                                 >
                                     <Check size={14} strokeWidth={3} />
                                     Resolver Grupo
@@ -236,6 +245,7 @@ const SynonymManagerModal = ({ isOpen, onClose }) => {
                     loading={loading}
                     filtered={filtered}
                     conflicts={conflicts}
+                    conflictMap={conflictMap}
                     resolvingId={resolvingId}
                     handleResolve={handleResolve}
                     handleDelete={handleDelete}
@@ -256,7 +266,6 @@ const SynonymManagerModal = ({ isOpen, onClose }) => {
                 </div>
             </m.div>
         </div>
-        </LazyMotion>
     )
 }
 

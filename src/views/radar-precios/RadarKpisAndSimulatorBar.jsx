@@ -10,7 +10,7 @@ const ROUNDING_OPTIONS = [
 
 const MARKUP_PRESETS = [35, 45, 50, 60, 80]
 
-const RadarKpisAndSimulatorBar = ({
+const RadarKpisAndSimulatorBar = React.memo(({
     resumen,
     gananciaAdicionalTotal,
     cantidadSimulados,
@@ -195,6 +195,8 @@ const RadarKpisAndSimulatorBar = ({
             </div>
         </div>
     )
-}
+})
+
+RadarKpisAndSimulatorBar.displayName = 'RadarKpisAndSimulatorBar'
 
 export default RadarKpisAndSimulatorBar

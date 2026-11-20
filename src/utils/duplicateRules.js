@@ -44,6 +44,24 @@ export const STRICT_SET = new Set(STRICT_ATTRIBUTES);
 
 export const FORMATS = ['GRANDE', 'MEDIANA', 'CHICA', 'CHICO', 'MINI', 'PACK', 'X1', 'X2', 'X3', 'X6', 'X12'];
 
+const splitAttributes = (list) => {
+    const single = [];
+    const multi = [];
+    for (let i = 0; i < list.length; i++) {
+        const attr = list[i];
+        if (attr.includes(' ')) {
+            multi.push(attr);
+        } else {
+            single.push(attr);
+        }
+    }
+    return { single, multi };
+};
+
+const FLAVORS_SPLIT = splitAttributes(FLAVORS);
+const BRANDS_SPLIT = splitAttributes(BRANDS);
+const FORMATS_SPLIT = splitAttributes(FORMATS);
+
 // --- HELPERS DE NORMALIZACIÓN ---
 
 export const normalizeName = (name) => {
@@ -78,23 +96,23 @@ export const getQuantity = (words) => {
     return null;
 };
 
-const findAllAttrs = (nameNormalized, words, list) => {
-    const wordsSet = new Set(words);
+const findAllAttrs = (nameNormalized, wordsSet, { single, multi }) => {
     const result = [];
-    for (let i = 0; i < list.length; i++) {
-        const attr = list[i];
-        if (attr.split(' ').length > 1) {
-            if (nameNormalized.split(attr).length > 1) result.push(attr);
-        } else if (wordsSet.has(attr)) {
-            result.push(attr);
-        }
+    for (let i = 0; i < multi.length; i++) {
+        if (nameNormalized.includes(multi[i])) result.push(multi[i]);
+    }
+    for (let i = 0; i < single.length; i++) {
+        if (wordsSet.has(single[i])) result.push(single[i]);
     }
     return result;
 };
 
 const getContradiction = (attrs1, attrs2) => {
+    if (attrs1.length === 0 && attrs2.length === 0) return null;
+
     const set1 = new Set(attrs1);
     const set2 = new Set(attrs2);
+
     // A. Contradicción Cruzada (Ambos tienen algo distinto)
     if (attrs1.length > 0 && attrs2.length > 0) {
         const onlyIn1 = attrs1.filter(a => !set2.has(a));
@@ -106,19 +124,16 @@ const getContradiction = (attrs1, attrs2) => {
 
     // B. Contradicción Unilateral de "Atributos Estrictos"
     // Si uno especifica un atributo 'estricto' (ej Zero) y el otro no dice NADA, son distintos.
-    const strict1 = attrs1.filter(a => STRICT_SET.has(a));
-    const strict2 = attrs2.filter(a => STRICT_SET.has(a));
-    const strictSet1 = new Set(strict1);
-    const strictSet2 = new Set(strict2);
-
-    const onlyStrictIn1 = strict1.filter(a => !strictSet2.has(a));
-    const onlyStrictIn2 = strict2.filter(a => !strictSet1.has(a));
-
-    if (onlyStrictIn1.length > 0 && strict2.length === 0) {
+    const onlyStrictIn1 = attrs1.filter(a => STRICT_SET.has(a) && !set2.has(a));
+    const hasStrict2 = attrs2.some(a => STRICT_SET.has(a));
+    if (onlyStrictIn1.length > 0 && !hasStrict2) {
         // P1 tiene algo estricto que P2 ignora totalmente
         return `Diferencia de variedad (${onlyStrictIn1.join('/')})`;
     }
-    if (onlyStrictIn2.length > 0 && strict1.length === 0) {
+
+    const onlyStrictIn2 = attrs2.filter(a => STRICT_SET.has(a) && !set1.has(a));
+    const hasStrict1 = attrs1.some(a => STRICT_SET.has(a));
+    if (onlyStrictIn2.length > 0 && !hasStrict1) {
         // P2 tiene algo estricto que P1 ignora totalmente
         return `Diferencia de variedad (${onlyStrictIn2.join('/')})`;
     }
@@ -141,12 +156,13 @@ export const checkDuplicateStatus = (p1, p2, ignoredPairs = [], learnedSynonyms 
 
     const name1Raw = p1.nombre?.toUpperCase().trim() || "";
     const name2Raw = p2.nombre?.toUpperCase().trim() || "";
-    const id1 = p1.producto_id || p1.id;
-    const id2 = p2.producto_id || p2.id;
+    const id1 = String(p1.producto_id || p1.id);
+    const id2 = String(p2.producto_id || p2.id);
 
     // 0. Verificar si ya fue ignorado por el usuario (soporta separador '|' y '_')
-    const sortedIds = [String(id1), String(id2)].sort();
-    if (ignoredPairs.includes(sortedIds.join('|')) || ignoredPairs.includes(sortedIds.join('_'))) {
+    const keyPipe = id1 <= id2 ? `${id1}|${id2}` : `${id2}|${id1}`;
+    const keyUnderscore = id1 <= id2 ? `${id1}_${id2}` : `${id2}_${id1}`;
+    if (ignoredPairs.includes(keyPipe) || ignoredPairs.includes(keyUnderscore)) {
         return { isDuplicate: false, confidence: 0, reason: "Ignorado por el usuario" };
     }
 
@@ -165,22 +181,24 @@ export const checkDuplicateStatus = (p1, p2, ignoredPairs = [], learnedSynonyms 
     const name2 = normalizeName(p2.nombre);
     const words1 = name1.split(/\s+/);
     const words2 = name2.split(/\s+/);
+    const wordsSet1 = new Set(words1);
+    const wordsSet2 = new Set(words2);
 
     // 3. Sabores y Variedades (Contradicción y Unilateralidad Estricta)
-    const flavors1 = findAllAttrs(name1, words1, FLAVORS);
-    const flavors2 = findAllAttrs(name2, words2, FLAVORS);
+    const flavors1 = findAllAttrs(name1, wordsSet1, FLAVORS_SPLIT);
+    const flavors2 = findAllAttrs(name2, wordsSet2, FLAVORS_SPLIT);
     const flavorConflict = getContradiction(flavors1, flavors2);
     if (flavorConflict) return { isDuplicate: false, reason: `Variedad distinta: ${flavorConflict}` };
 
     // 4. Marcas
-    const brands1 = findAllAttrs(name1, words1, BRANDS);
-    const brands2 = findAllAttrs(name2, words2, BRANDS);
+    const brands1 = findAllAttrs(name1, wordsSet1, BRANDS_SPLIT);
+    const brands2 = findAllAttrs(name2, wordsSet2, BRANDS_SPLIT);
     const brandConflict = getContradiction(brands1, brands2);
     if (brandConflict) return { isDuplicate: false, reason: `Diferente Marca: ${brandConflict}` };
 
     // 5. Formatos
-    const formats1 = findAllAttrs(name1, words1, FORMATS);
-    const formats2 = findAllAttrs(name2, words2, FORMATS);
+    const formats1 = findAllAttrs(name1, wordsSet1, FORMATS_SPLIT);
+    const formats2 = findAllAttrs(name2, wordsSet2, FORMATS_SPLIT);
     const formatConflict = getContradiction(formats1, formats2);
     if (formatConflict) return { isDuplicate: false, reason: `Diferente Formato: ${formatConflict}` };
 

@@ -1,40 +1,21 @@
 import React, { useState, useMemo } from 'react'
-import { useProveedores, useHistorialCompras, useResumenProductosProveedor } from '../hooks/useData'
+import { useProveedores, useHistorialCompras, useResumenProductosProveedor, invalidateProveedores } from '../hooks/useData'
 import { 
     Users, 
     Search, 
     Package, 
-    TrendingUp, 
-    History, 
     ArrowRight, 
     Loader2, 
-    DollarSign, 
-    Calendar,
-    ArrowUpRight,
-    ArrowDownRight,
-    Info,
-    ExternalLink,
     SearchCode,
-    Filter,
-    GitMerge,
-    ChevronDown,
-    AlertTriangle
+    GitMerge
 } from 'lucide-react'
 import ProductAutocomplete from '../components/ProductAutocomplete'
 import * as api from '../services/api'
-import { mutate } from 'swr'
 import { ProveedoresMergeModal } from './proveedores/ProveedoresMergeModal'
 import { ProveedorProductDrawer } from './proveedores/ProveedorProductDrawer'
-import { AnimatePresence } from 'framer-motion'
 
-
-// Helper Component for Close Icon
-const X = ({ size }) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <line x1="18" y1="6" x2="6" y2="18"></line>
-        <line x1="6" y1="6" x2="18" y2="18"></line>
-    </svg>
-)
+const shortDateFormatter = new Intl.DateTimeFormat('es-AR', { day: '2-digit', month: '2-digit' })
+const fullDateFormatter = new Intl.DateTimeFormat('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' })
 
 const ProveedoresView = () => {
     const [selectedSupplier, setSelectedSupplier] = useState(null)
@@ -59,9 +40,10 @@ const ProveedoresView = () => {
     // 3. Filter products by search term
     const filteredProducts = useMemo(() => {
         if (!productosProveedor) return []
-        if (!searchProduct) return productosProveedor
+        const normalizedQuery = searchProduct.trim().toLowerCase()
+        if (!normalizedQuery) return productosProveedor
         return productosProveedor.filter(p => 
-            p.producto.toLowerCase().includes(searchProduct.toLowerCase())
+            p.producto && p.producto.toLowerCase().includes(normalizedQuery)
         )
     }, [productosProveedor, searchProduct])
 
@@ -86,7 +68,7 @@ const ProveedoresView = () => {
                 }
             }
             groups[key].compras.push(h)
-            if (!groups[key].ultimaFecha || new Date(h.fecha) > new Date(groups[key].ultimaFecha)) {
+            if (!groups[key].ultimaFecha || String(h.fecha) > String(groups[key].ultimaFecha)) {
                 groups[key].ultimoCosto = h.costo
                 groups[key].ultimaFecha = h.fecha
             }
@@ -97,9 +79,9 @@ const ProveedoresView = () => {
     const chartData = useMemo(() => {
         if (!comparativaPrecios) return []
         return comparativaPrecios
-            .toSorted((a, b) => new Date(a.fecha) - new Date(b.fecha))
+            .toSorted((a, b) => String(a.fecha || '').localeCompare(String(b.fecha || '')))
             .map(c => ({
-                fecha: new Date(c.fecha).toLocaleDateString(undefined, { day: '2-digit', month: '2-digit' }),
+                fecha: c.fecha ? shortDateFormatter.format(new Date(c.fecha)) : '-',
                 costo: c.costo,
                 proveedor: c.proveedor
             }))
@@ -123,8 +105,7 @@ const ProveedoresView = () => {
             setIsMergeModalOpen(false)
             setTargetSupplierName('')
             setSelectedSupplier(null)
-            mutate('proveedores')
-            mutate('resumen_productos_proveedor')
+            invalidateProveedores()
         } catch (error) {
             alert('Error: ' + error.message)
         } finally {
@@ -214,7 +195,7 @@ const ProveedoresView = () => {
                                     <h2 className="text-3xl font-black text-white tracking-tight">{selectedSupplier.nombre}</h2>
                                 </div>
                                 <p className="text-slate-500 text-sm font-medium">
-                                    Última compra: {new Date(selectedSupplier.ultima_compra).toLocaleDateString()}
+                                    Última compra: {selectedSupplier.ultima_compra ? fullDateFormatter.format(new Date(selectedSupplier.ultima_compra)) : '-'}
                                 </p>
                             </div>
                             <div className="flex flex-wrap gap-4">

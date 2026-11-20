@@ -2,6 +2,15 @@ import React, { useMemo } from 'react'
 import { Edit2, Check, X, Loader2, TrendingUp, TrendingDown, Clock, Timer } from 'lucide-react'
 import ProductAutocomplete from '../../components/ProductAutocomplete'
 
+const EMPTY_CATS = []
+const EMPTY_SUBCATS = {}
+const EMPTY_SET = new Set()
+const dateFormatter = new Intl.DateTimeFormat('es-AR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+})
+
 export const useProductosColumns = ({
     editingId,
     setEditingId,
@@ -10,10 +19,10 @@ export const useProductosColumns = ({
     isSaving,
     handleSave,
     handleEditStart,
-    categorias = [],
-    subcategoriasPorCategoria = {},
+    categorias = EMPTY_CATS,
+    subcategoriasPorCategoria = EMPTY_SUBCATS,
     isSelectionMode = false,
-    selectedProductIds = new Set(),
+    selectedProductIds = EMPTY_SET,
     toggleSelectProduct,
     toggleSelectVisible,
     allVisibleSelected = false
@@ -223,7 +232,7 @@ export const useProductosColumns = ({
             render: (val) => val ? (
                 <div className="flex items-center gap-1.5 text-slate-500 text-xs font-medium">
                     <Clock className="h-3 w-3" />
-                    {new Date(val).toLocaleDateString()}
+                    {dateFormatter.format(new Date(val))}
                 </div>
             ) : <span className="text-slate-700">-</span>
         },

@@ -1,10 +1,9 @@
-import React, { useState, useMemo } from 'react'
-import { AlertCircle, Tag, Search, EyeOff, CheckCircle2, Loader2, Sparkles, Copy, Trash2 } from 'lucide-react'
-import { useSWRConfig } from 'swr'
+import React, { useState, useMemo, useCallback } from 'react'
+import { Search, EyeOff, CheckCircle2 } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import * as api from '../services/api'
-import { useProductosDuplicadosTrigram, useProductos, useProductosSinonimos } from '../hooks/useData'
-import { checkDuplicateStatus, FLAVORS, BRANDS, FORMATS } from '../utils/duplicateRules'
+import { useProductosDuplicadosTrigram, useProductosSinonimos, invalidateProductos } from '../hooks/useData'
+import { checkDuplicateStatus } from '../utils/duplicateRules'
 import { DuplicadosHeaderBar } from './duplicados/DuplicadosHeaderBar'
 import { DuplicateCard, ConflictCard } from './duplicados/DuplicadosCards'
 import { performAiScan } from './duplicados/aiScanService'
@@ -15,11 +14,7 @@ const itemVariants = {
 }
 
 const DuplicadosView = () => {
-    const { mutate } = useSWRConfig()
     const { data: duplicadosSQL, loading: sqlLoading, ignoreDuplicate: ignoreSQL, ignoredPairs } = useProductosDuplicadosTrigram()
-    // allProducts is fetched internally by useProductosDuplicadosTrigram (pageSize: 5000)
-    // We still need it here for the AI scan feature
-    const { data: allProducts } = useProductos({ pageSize: 5000 })
     const { data: learnedSynonyms } = useProductosSinonimos()
     const [searchTerm, setSearchTerm] = useState('')
     const [mergingId, setMergingId] = useState(null)
@@ -53,7 +48,17 @@ const DuplicadosView = () => {
         return { duplicados: valid, conflictos: uniqueConflicts };
     }, [duplicadosSQL, aiDuplicates, ignoredPairs, learnedSynonyms]);
 
-    const handleAiScan = () => performAiScan(allProducts, setAiDuplicates, setIsAiScanning);
+    const handleAiScan = useCallback(async () => {
+        setIsAiScanning(true);
+        try {
+            const res = await api.getProductos({ page: 1, pageSize: 1000 });
+            const productsList = Array.isArray(res) ? res : (res?.data || []);
+            await performAiScan(productsList, setAiDuplicates, setIsAiScanning);
+        } catch (err) {
+            toast.error(`Error al obtener productos para escaneo IA: ${err.message || 'Desconocido'}`);
+            setIsAiScanning(false);
+        }
+    }, []);
 
     const handleMergeSelection = async (d) => {
         const id1 = String(d.p1.producto_id || d.p1.id || '');
@@ -101,7 +106,7 @@ const DuplicadosView = () => {
                 toast.success('Fusión completada con éxito', { id: loadingToast })
                 
                 // Actualizar listas locales
-                mutate(key => Array.isArray(key) && key[0] === 'productos')
+                invalidateProductos()
                 
                 setAiDuplicates(prev => prev.filter(item => {
                     const currentId1 = String(item.p1.producto_id || item.p1.id);
@@ -153,7 +158,7 @@ Producto 2: [${d.p2.producto_id || d.p2.id}] ${d.p2.nombre} ($${d.p2.ultimo_prec
             if (result.success) {
                 if (result.count > 0) {
                     toast.success(`¡Limpieza completada! Se eliminaron ${result.count} productos que no tenían uso.`, { id: loadingToast, duration: 5000 });
-                    mutate(key => Array.isArray(key) && key[0] === 'productos');
+                    invalidateProductos();
                 } else {
                     toast.success('No se encontraron productos huérfanos para eliminar. ¡Tu catálogo está impecable!', { id: loadingToast, duration: 5000 });
                 }
@@ -165,18 +170,26 @@ Producto 2: [${d.p2.producto_id || d.p2.id}] ${d.p2.nombre} ($${d.p2.ultimo_prec
         }
     }
 
-    const filteredDuplicados = useMemo(() => duplicados.filter(d => {
-        const name1 = d.p1?.nombre || '';
-        const name2 = d.p2?.nombre || '';
-        return name1.toLowerCase().includes(searchTerm.toLowerCase()) ||
-               name2.toLowerCase().includes(searchTerm.toLowerCase())
-    }), [duplicados, searchTerm])
+    const filteredDuplicados = useMemo(() => {
+        const needle = searchTerm.trim().toLowerCase()
+        if (!needle) return duplicados
+        return duplicados.filter(d => {
+            const name1 = d.p1?.nombre || ''
+            const name2 = d.p2?.nombre || ''
+            return name1.toLowerCase().includes(needle) ||
+                   name2.toLowerCase().includes(needle)
+        })
+    }, [duplicados, searchTerm])
 
-    const filteredConflictos = useMemo(() => conflictos.filter(c => {
-        const n1 = c.p1.nombre.toLowerCase();
-        const n2 = c.p2.nombre.toLowerCase();
-        return n1.includes(searchTerm.toLowerCase()) || n2.includes(searchTerm.toLowerCase());
-    }), [conflictos, searchTerm])
+    const filteredConflictos = useMemo(() => {
+        const needle = searchTerm.trim().toLowerCase()
+        if (!needle) return conflictos
+        return conflictos.filter(c => {
+            const n1 = (c.p1?.nombre || '').toLowerCase()
+            const n2 = (c.p2?.nombre || '').toLowerCase()
+            return n1.includes(needle) || n2.includes(needle)
+        })
+    }, [conflictos, searchTerm])
 
 
 

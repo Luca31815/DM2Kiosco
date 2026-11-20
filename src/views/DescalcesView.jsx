@@ -1,5 +1,4 @@
-import React, { useState, useMemo } from 'react'
-import { AnimatePresence } from 'framer-motion'
+import React, { useState, useMemo, useDeferredValue, useCallback } from 'react'
 import {
     AlertTriangle, Coins, ShieldCheck, RefreshCcw,
     ChevronDown, ChevronUp, Calendar, User, Info,
@@ -17,29 +16,33 @@ import OperationDetails from './descalces/OperationDetails'
 const DescalcesView = () => {
     const { data: rawDescalces, loading, error, mutate } = useDescalcesPagos()
     const [searchTerm, setSearchTerm] = useState('')
+    const deferredSearchTerm = useDeferredValue(searchTerm)
     const [tipoFilter, setTipoFilter] = useState('TODOS')
     const [activeTab, setActiveTab] = useState('todas')
     const [auditing, setAuditing] = useState(false)
     const [expandedIds, setExpandedIds] = useState(new Set())
 
-    const toggleExpand = (id) => {
-        const next = new Set(expandedIds)
-        if (next.has(id)) { next.delete(id) } else { next.add(id) }
-        setExpandedIds(next)
-    }
+    const toggleExpand = useCallback((id) => {
+        setExpandedIds(prev => {
+            const next = new Set(prev)
+            if (next.has(id)) { next.delete(id) } else { next.add(id) }
+            return next
+        })
+    }, [])
 
     // Filtrado de descalces
     const descalces = useMemo(() => {
         if (!rawDescalces) return []
+        const needle = deferredSearchTerm.trim().toLowerCase()
         return rawDescalces.filter(d => {
-            const matchesSearch =
-                d.operacion_id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                d.entidad?.toLowerCase().includes(searchTerm.toLowerCase())
+            const matchesSearch = !needle ||
+                d.operacion_id?.toLowerCase().includes(needle) ||
+                d.entidad?.toLowerCase().includes(needle)
             const matchesTipo = tipoFilter === 'TODOS' || d.tipo_operacion === tipoFilter
             const matchesTab = activeTab === 'todas' || d.cantidad_pagos !== 1
             return matchesSearch && matchesTipo && matchesTab
         })
-    }, [rawDescalces, searchTerm, tipoFilter, activeTab])
+    }, [rawDescalces, deferredSearchTerm, tipoFilter, activeTab])
 
     // Estadísticas globales
     const stats = useMemo(() => {
@@ -128,7 +131,7 @@ const DescalcesView = () => {
                         <div className="absolute top-0 right-0 p-8 opacity-[0.03] text-slate-200 pointer-events-none group-hover:scale-110 transition-transform duration-300">
                             <Icon className="w-24 h-24" />
                         </div>
-                        <span className="text-xs text-slate-450 uppercase font-semibold tracking-wider block">{label}</span>
+                        <span className="text-xs text-slate-400 uppercase font-semibold tracking-wider block">{label}</span>
                         <span className={`text-2xl sm:text-3xl font-mono font-bold ${color} mt-2 block`}>{value}</span>
                     </div>
                 ))}
@@ -138,14 +141,14 @@ const DescalcesView = () => {
             <div className="flex flex-col sm:flex-row border-b border-slate-800 gap-1 sm:gap-0">
                 <button type="button"
                     onClick={() => setActiveTab('todas')}
-                    className={`px-5 py-3 text-sm font-semibold tracking-wide border-b-2 text-center sm:text-left transition-all ${activeTab === 'todas' ? 'border-violet-500 text-violet-400 bg-violet-500/[0.02]' : 'border-transparent text-slate-450 hover:text-slate-200'}`}
+                    className={`px-5 py-3 text-sm font-semibold tracking-wide border-b-2 text-center sm:text-left transition-colors ${activeTab === 'todas' ? 'border-violet-500 text-violet-400 bg-violet-500/[0.02]' : 'border-transparent text-slate-400 hover:text-slate-200'}`}
                 >
                     Todas las Inconsistencias
                     {!loading && stats.total > 0 && <span className="ml-2 px-1.5 py-0.5 rounded-full text-[10px] bg-slate-800 text-slate-300 font-bold">{stats.total}</span>}
                 </button>
                 <button type="button"
                     onClick={() => setActiveTab('revisar')}
-                    className={`px-5 py-3 text-sm font-semibold tracking-wide border-b-2 text-center sm:text-left transition-all ${activeTab === 'revisar' ? 'border-rose-500 text-rose-450 bg-rose-500/[0.02]' : 'border-transparent text-slate-450 hover:text-slate-200'}`}
+                    className={`px-5 py-3 text-sm font-semibold tracking-wide border-b-2 text-center sm:text-left transition-colors ${activeTab === 'revisar' ? 'border-rose-500 text-rose-400 bg-rose-500/[0.02]' : 'border-transparent text-slate-400 hover:text-slate-200'}`}
                 >
                     Revisión Manual Obligatoria (No Curables)
                     {!loading && stats.manualesCount > 0 && <span className="ml-2 px-1.5 py-0.5 rounded-full text-[10px] bg-rose-500/10 text-rose-400 font-bold border border-rose-500/20">{stats.manualesCount}</span>}
@@ -168,7 +171,7 @@ const DescalcesView = () => {
                     <span className="text-xs text-slate-500 whitespace-nowrap">Filtrar Tipo:</span>
                     <div className="flex bg-slate-950 p-1 rounded-xl border border-slate-800">
                         {['TODOS', 'VENTA', 'COMPRA'].map((t) => (
-                            <button type="button" key={t} onClick={() => setTipoFilter(t)} className={`px-4 py-1.5 text-xs font-medium rounded-lg transition-all ${tipoFilter === t ? 'bg-slate-800 text-slate-100 shadow-inner' : 'text-slate-450 hover:text-slate-200'}`}>{t}</button>
+                            <button type="button" key={t} onClick={() => setTipoFilter(t)} className={`px-4 py-1.5 text-xs font-medium rounded-lg transition-colors ${tipoFilter === t ? 'bg-slate-800 text-slate-100 shadow-inner' : 'text-slate-400 hover:text-slate-200'}`}>{t}</button>
                         ))}
                     </div>
                 </div>
@@ -195,98 +198,84 @@ const DescalcesView = () => {
                     </div>
                 ) : (
                     <div className="space-y-3">
-                        <AnimatePresence>
-                            {descalces.map((d) => {
-                                const isExpanded = expandedIds.has(d.operacion_id)
-                                const isVenta = d.tipo_operacion === 'VENTA'
-                                const hasPagoMismatch = d.diferencia_cabecera_pagos !== 0
-                                const hasDetalleMismatch = d.diferencia_cabecera_detalles !== 0
+                        {descalces.map((d) => {
+                            const isExpanded = expandedIds.has(d.operacion_id)
+                            const isVenta = d.tipo_operacion === 'VENTA'
+                            const hasPagoMismatch = d.diferencia_cabecera_pagos !== 0
+                            const hasDetalleMismatch = d.diferencia_cabecera_detalles !== 0
 
-                                return (
-                                    <m.div
-                                        key={d.operacion_id}
-                                        layout
-                                        initial={{ opacity: 0, y: 10 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        exit={{ opacity: 0 }}
-                                        className={`bg-slate-900/20 border rounded-2xl transition-all duration-200 overflow-hidden hover:border-slate-700/60 ${isExpanded ? 'border-slate-750 bg-slate-900/30' : 'border-slate-800/50'}`}
+                            return (
+                                <div
+                                    key={d.operacion_id}
+                                    className={`bg-slate-900/20 border rounded-2xl transition-colors duration-200 overflow-hidden hover:border-slate-700/60 animate-fade-in ${isExpanded ? 'border-slate-700 bg-slate-900/30' : 'border-slate-800/50'}`}
+                                >
+                                    {/* Card Header */}
+                                    <div 
+                                        onClick={() => toggleExpand(d.operacion_id)} 
+                                        role="button"
+                                        tabIndex={0}
+                                        aria-label={`Expandir operación ${d.operacion_id}`}
+                                        onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && toggleExpand(d.operacion_id)}
+                                        className="p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4 cursor-pointer select-none"
                                     >
-                                        {/* Card Header */}
-                                        <div 
-                                            onClick={() => toggleExpand(d.operacion_id)} 
-                                            role="button"
-                                            tabIndex={0}
-                                            aria-label={`Expandir operación ${d.operacion_id}`}
-                                            onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && toggleExpand(d.operacion_id)}
-                                            className="p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4 cursor-pointer select-none"
-                                        >
-                                            <div className="flex items-start space-x-3.5 flex-1 min-w-0">
-                                                <div className={`mt-0.5 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${isVenta ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-sky-500/10 text-sky-400 border border-sky-500/20'}`}>{d.tipo_operacion}</div>
-                                                <div className="space-y-0.5 min-w-0">
-                                                    <div className="flex items-center space-x-2">
-                                                        <span className="font-semibold text-slate-200 truncate">{d.operacion_id}</span>
-                                                        <span className="text-[10px] text-slate-500">•</span>
-                                                        <span className="text-xs text-slate-450 flex items-center">
-                                                            <Calendar className="w-3.5 h-3.5 mr-1" />
-                                                            {new Date(d.fecha_operacion).toLocaleDateString('es-AR', { hour: '2-digit', minute: '2-digit' })}
-                                                        </span>
-                                                    </div>
-                                                    <div className="flex items-center space-x-1.5 text-xs text-slate-400">
-                                                        <User className="w-3.5 h-3.5 text-slate-500" />
-                                                        <span className="truncate">{d.entidad || 'Consumidor Final'}</span>
-                                                    </div>
+                                        <div className="flex items-start space-x-3.5 flex-1 min-w-0">
+                                            <div className={`mt-0.5 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${isVenta ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-sky-500/10 text-sky-400 border border-sky-500/20'}`}>{d.tipo_operacion}</div>
+                                            <div className="space-y-0.5 min-w-0">
+                                                <div className="flex items-center space-x-2">
+                                                    <span className="font-semibold text-slate-200 truncate">{d.operacion_id}</span>
+                                                    <span className="text-[10px] text-slate-500">•</span>
+                                                    <span className="text-xs text-slate-400 flex items-center">
+                                                        <Calendar className="w-3.5 h-3.5 mr-1" />
+                                                        {new Date(d.fecha_operacion).toLocaleDateString('es-AR', { hour: '2-digit', minute: '2-digit' })}
+                                                    </span>
                                                 </div>
-                                            </div>
-
-                                            <div className="grid grid-cols-3 gap-6 lg:gap-8 pr-2">
-                                                <div className="text-right">
-                                                    <span className="text-[10px] text-slate-500 block uppercase tracking-wider font-semibold">Cabecera</span>
-                                                    <span className="text-sm font-mono font-bold text-slate-200 block mt-0.5">${Number(d.monto_cabecera).toLocaleString('es-AR', { minimumFractionDigits: 2 })}</span>
-                                                </div>
-                                                <div className="text-right">
-                                                    <span className="text-[10px] text-slate-500 block uppercase tracking-wider font-semibold">Detalles</span>
-                                                    <span className={`text-sm font-mono font-bold block mt-0.5 ${hasDetalleMismatch ? 'text-amber-400 font-semibold' : 'text-slate-350'}`}>${Number(d.monto_detalles).toLocaleString('es-AR', { minimumFractionDigits: 2 })}</span>
-                                                </div>
-                                                <div className="text-right">
-                                                    <span className="text-[10px] text-slate-500 block uppercase tracking-wider font-semibold">Caja (Pagos)</span>
-                                                    <span className={`text-sm font-mono font-bold block mt-0.5 ${hasPagoMismatch ? 'text-rose-400 font-semibold' : 'text-slate-350'}`}>${Number(d.monto_pagos).toLocaleString('es-AR', { minimumFractionDigits: 2 })}</span>
-                                                </div>
-                                            </div>
-
-                                            <div className="flex items-center justify-between lg:justify-end gap-3.5 border-t border-slate-800/40 lg:border-t-0 pt-3 lg:pt-0">
-                                                <div className="flex flex-wrap gap-2">
-                                                    {hasPagoMismatch && <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-rose-500/10 text-rose-400 border border-rose-500/20"><TrendingDown className="w-3 h-3 mr-1" />Caja: ${Math.abs(d.diferencia_cabecera_pagos).toLocaleString('es-AR', { minimumFractionDigits: 2 })}</span>}
-                                                    {hasDetalleMismatch && <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">Detalle: ${Math.abs(d.diferencia_cabecera_detalles).toLocaleString('es-AR', { minimumFractionDigits: 2 })}</span>}
-                                                </div>
-                                                <div className="text-slate-450 hover:text-slate-200 transition-colors">
-                                                    {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                                                <div className="flex items-center space-x-1.5 text-xs text-slate-400">
+                                                    <User className="w-3.5 h-3.5 text-slate-500" />
+                                                    <span className="truncate">{d.entidad || 'Consumidor Final'}</span>
                                                 </div>
                                             </div>
                                         </div>
 
-                                        {/* Detalle Expandible */}
-                                        <AnimatePresence>
-                                            {isExpanded && (
-                                                <m.div
-                                                    initial={{ scaleY: 0, opacity: 0 }}
-                                                    animate={{ scaleY: 1, opacity: 1 }}
-                                                    exit={{ scaleY: 0, opacity: 0 }}
-                                                    style={{ originY: 0 }}
-                                                    transition={{ duration: 0.2 }}
-                                                >
-                                                    <OperationDetails
-                                                        operacionId={d.operacion_id}
-                                                        tipoOperacion={d.tipo_operacion}
-                                                        cabeceraOriginal={d.monto_cabecera}
-                                                        onRefresh={() => mutate()}
-                                                    />
-                                                </m.div>
-                                            )}
-                                        </AnimatePresence>
-                                    </m.div>
-                                )
-                            })}
-                        </AnimatePresence>
+                                        <div className="grid grid-cols-3 gap-6 lg:gap-8 pr-2">
+                                            <div className="text-right">
+                                                <span className="text-[10px] text-slate-500 block uppercase tracking-wider font-semibold">Cabecera</span>
+                                                <span className="text-sm font-mono font-bold text-slate-200 block mt-0.5">${Number(d.monto_cabecera).toLocaleString('es-AR', { minimumFractionDigits: 2 })}</span>
+                                            </div>
+                                            <div className="text-right">
+                                                <span className="text-[10px] text-slate-500 block uppercase tracking-wider font-semibold">Detalles</span>
+                                                <span className={`text-sm font-mono font-bold block mt-0.5 ${hasDetalleMismatch ? 'text-amber-400 font-semibold' : 'text-slate-300'}`}>${Number(d.monto_detalles).toLocaleString('es-AR', { minimumFractionDigits: 2 })}</span>
+                                            </div>
+                                            <div className="text-right">
+                                                <span className="text-[10px] text-slate-500 block uppercase tracking-wider font-semibold">Caja (Pagos)</span>
+                                                <span className={`text-sm font-mono font-bold block mt-0.5 ${hasPagoMismatch ? 'text-rose-400 font-semibold' : 'text-slate-300'}`}>${Number(d.monto_pagos).toLocaleString('es-AR', { minimumFractionDigits: 2 })}</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex items-center justify-between lg:justify-end gap-3.5 border-t border-slate-800/40 lg:border-t-0 pt-3 lg:pt-0">
+                                            <div className="flex flex-wrap gap-2">
+                                                {hasPagoMismatch && <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-rose-500/10 text-rose-400 border border-rose-500/20"><TrendingDown className="w-3 h-3 mr-1" />Caja: ${Math.abs(d.diferencia_cabecera_pagos).toLocaleString('es-AR', { minimumFractionDigits: 2 })}</span>}
+                                                {hasDetalleMismatch && <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">Detalle: ${Math.abs(d.diferencia_cabecera_detalles).toLocaleString('es-AR', { minimumFractionDigits: 2 })}</span>}
+                                            </div>
+                                            <div className="text-slate-400 hover:text-slate-200 transition-colors">
+                                                {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Detalle Expandible */}
+                                    {isExpanded && (
+                                        <div className="animate-fade-in">
+                                            <OperationDetails
+                                                operacionId={d.operacion_id}
+                                                tipoOperacion={d.tipo_operacion}
+                                                cabeceraOriginal={d.monto_cabecera}
+                                                onRefresh={() => mutate()}
+                                            />
+                                        </div>
+                                    )}
+                                </div>
+                            )
+                        })}
                     </div>
                 )}
             </div>

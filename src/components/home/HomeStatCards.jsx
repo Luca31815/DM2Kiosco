@@ -1,50 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React from 'react'
 import {
-    TrendingUp,
-    TrendingDown,
     ArrowUpRight,
     ArrowDownRight,
     Minus,
 } from 'lucide-react'
-import {
-    ResponsiveContainer,
-    AreaChart,
-    Area,
-} from 'recharts'
 import { colorMap } from './colorMap'
-
-// ── Animated Number Counter ──────────────────────────────────────────────────
-const AnimatedNumber = ({ value, prefix = '', suffix = '', duration = 800 }) => {
-    const [display, setDisplay] = useState(value)
-    const prevRef = useRef(value)
-    const rafRef = useRef(null)
-
-    useEffect(() => {
-        const start = prevRef.current
-        const end = value
-        if (start === end) return
-        const startTime = performance.now()
-        const animate = (now) => {
-            const elapsed = now - startTime
-            const progress = Math.min(elapsed / duration, 1)
-            // Ease out cubic
-            const eased = 1 - Math.pow(1 - progress, 3)
-            const current = start + (end - start) * eased
-            setDisplay(current)
-            if (progress < 1) {
-                rafRef.current = requestAnimationFrame(animate)
-            } else {
-                prevRef.current = end
-            }
-        }
-        rafRef.current = requestAnimationFrame(animate)
-        return () => {
-            if (rafRef.current) cancelAnimationFrame(rafRef.current)
-        }
-    }, [value, duration])
-
-    return <>{prefix}{typeof display === 'number' && !isNaN(display) ? Math.round(display).toLocaleString('es-AR') : display}{suffix}</>
-}
 
 // ── Skeleton Loader ──────────────────────────────────────────────────────────
 export const SkeletonCard = () => (
@@ -98,7 +58,7 @@ export const StatCard = React.memo(({ title, value, icon: Icon, trend, trendValu
 
     return (
         <div
-            className={`bg-slate-900 p-4 sm:p-5 rounded-xl sm:rounded-2xl relative overflow-hidden border border-white/5 shadow-xl transition-all duration-300 hover:-translate-y-1.5 hover:border-white/10 animate-fade-in-up ${c.glow} ${onClick ? 'cursor-pointer' : ''}`}
+            className={`bg-slate-900 p-4 sm:p-5 rounded-xl sm:rounded-2xl relative overflow-hidden border border-white/5 shadow-xl transition-transform transition-colors duration-300 hover:-translate-y-1.5 hover:border-white/10 animate-fade-in-up ${c.glow} ${onClick ? 'cursor-pointer' : ''}`}
             style={{ animationDelay: `${delay}ms` }}
             onClick={onClick}
             role={onClick ? "button" : undefined}

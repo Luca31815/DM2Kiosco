@@ -2,7 +2,7 @@ import React from 'react'
 import { X, Receipt, Calendar, User, ShoppingCart } from 'lucide-react'
 import { formatCurrency, formatNumber } from './comparadorFormatters'
 
-const TicketsDrilldownDrawer = ({
+const TicketsDrilldownDrawer = React.memo(({
     isOpen,
     onClose,
     activePeriod,
@@ -148,6 +148,8 @@ const TicketsDrilldownDrawer = ({
             </div>
         </div>
     )
-}
+})
+
+TicketsDrilldownDrawer.displayName = 'TicketsDrilldownDrawer'
 
 export default TicketsDrilldownDrawer

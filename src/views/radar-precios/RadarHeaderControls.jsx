@@ -1,6 +1,6 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { Clock, Search, Layers, Truck, RefreshCw, X, Lock, Filter } from 'lucide-react'
-import { FAMILIAS_CANONICAS } from '../../utils/triageClassifier'
+import { FAMILIAS_CANONICAS } from '../../utils/familiasCatalog'
 import { sanitizeComparadorFilters } from '../../services/comparadorApi'
 
 const WINDOW_OPTIONS = [
@@ -24,15 +24,14 @@ const SEMAFORO_FILTERS = [
     { id: 'mantener', label: '🟢 Mantener' }
 ]
 
-const RadarHeaderControls = ({
+const RadarHeaderControls = React.memo(({
     dias,
     onChangeDias,
     modo,
     onChangeModo,
     categoria,
     onChangeCategoria,
-    searchInput,
-    onChangeSearchInput,
+    searchInput = '',
     onApplySearch,
     onClearFilters,
     semaforoFilter,
@@ -45,11 +44,22 @@ const RadarHeaderControls = ({
     loading,
     onRefresh
 }) => {
-    const { quadrant } = sanitizeComparadorFilters({ categoria, search: searchInput })
+    const [draftSearch, setDraftSearch] = useState(searchInput)
+
+    useEffect(() => {
+        setDraftSearch(searchInput)
+    }, [searchInput])
+
+    const { quadrant } = sanitizeComparadorFilters({ categoria, search: draftSearch })
 
     const handleSubmit = (e) => {
         e.preventDefault()
-        onApplySearch()
+        onApplySearch(draftSearch)
+    }
+
+    const handleClearAll = () => {
+        setDraftSearch('')
+        onClearFilters()
     }
 
     return (
@@ -180,16 +190,16 @@ const RadarHeaderControls = ({
                         type="text"
                         aria-label="Buscar producto o proveedor en el Radar"
                         placeholder="Buscar por producto, categoría o proveedor (ej. Nova, El Sol, Coca)..."
-                        value={searchInput}
-                        onChange={(e) => onChangeSearchInput(e.target.value)}
+                        value={draftSearch}
+                        onChange={(e) => setDraftSearch(e.target.value)}
                         className="bg-transparent text-xs font-medium text-slate-200 placeholder-slate-500 focus:outline-none w-full"
                     />
-                    {searchInput && (
+                    {draftSearch && (
                         <button
                             type="button"
                             aria-label="Limpiar búsqueda"
                             onClick={() => {
-                                onChangeSearchInput('')
+                                setDraftSearch('')
                                 onApplySearch('')
                             }}
                             className="text-slate-400 hover:text-slate-200 p-0.5"
@@ -224,10 +234,10 @@ const RadarHeaderControls = ({
                     >
                         Buscar
                     </button>
-                    {(categoria || searchInput || semaforoFilter !== 'todos') && (
+                    {(categoria || draftSearch || searchInput || semaforoFilter !== 'todos') && (
                         <button
                             type="button"
-                            onClick={onClearFilters}
+                            onClick={handleClearAll}
                             className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs border border-white/10 cursor-pointer"
                         >
                             Limpiar
@@ -241,6 +251,8 @@ const RadarHeaderControls = ({
             </form>
         </div>
     )
-}
+})
+
+RadarHeaderControls.displayName = 'RadarHeaderControls'
 
 export default RadarHeaderControls

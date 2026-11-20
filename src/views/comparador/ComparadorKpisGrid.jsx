@@ -2,7 +2,7 @@ import React from 'react'
 import { DollarSign, TrendingUp, Users, ShoppingBag, Receipt, UserCheck, ArrowUpRight, ArrowDownRight } from 'lucide-react'
 import { formatCurrency, formatNumber, formatPct, getDeltaColorClass } from './comparadorFormatters'
 
-const ComparadorKpisGrid = ({ kpis, meta, normalizeByActiveDay }) => {
+const ComparadorKpisGrid = React.memo(({ kpis, meta, normalizeByActiveDay }) => {
     if (!kpis) return null
 
     const divA = normalizeByActiveDay ? Math.max(meta?.dias_activos_a || 1, 1) : 1
@@ -142,6 +142,8 @@ const ComparadorKpisGrid = ({ kpis, meta, normalizeByActiveDay }) => {
             })}
         </div>
     )
-}
+})
+
+ComparadorKpisGrid.displayName = 'ComparadorKpisGrid'
 
 export default ComparadorKpisGrid

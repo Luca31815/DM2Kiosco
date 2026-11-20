@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react'
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { CandlestickChart, AlertCircle } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { getRadarPreciosUltimoMes, simularNuevoPrecioVenta } from '../services/comparadorApi'
@@ -15,7 +15,6 @@ const RadarPreciosMesView = () => {
     const [dias, setDias] = useState(30)
     const [modo, setModo] = useState('ambos')
     const [categoria, setCategoria] = useState(null)
-    const [searchInput, setSearchInput] = useState('')
     const [appliedSearch, setAppliedSearch] = useState('')
     const [semaforoFilter, setSemaforoFilter] = useState('todos')
     const [incluirLogistica, setIncluirLogistica] = useState(true)
@@ -34,8 +33,10 @@ const RadarPreciosMesView = () => {
     const [radarData, setRadarData] = useState(null)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
+    const requestIdRef = useRef(0)
 
     const loadRadar = useCallback(async () => {
+        const reqId = ++requestIdRef.current
         setLoading(true)
         setError(null)
         try {
@@ -46,26 +47,37 @@ const RadarPreciosMesView = () => {
                 search: appliedSearch,
                 incluirLogistica: isAuthenticated ? incluirLogistica : false
             })
+            if (reqId !== requestIdRef.current) return
             setRadarData(res)
         } catch (err) {
+            if (reqId !== requestIdRef.current) return
             setError(err?.message || 'Error al cargar el Radar de Costo vs Precio de Venta')
         } finally {
-            setLoading(false)
+            if (reqId === requestIdRef.current) {
+                setLoading(false)
+            }
         }
     }, [dias, modo, categoria, appliedSearch, incluirLogistica, isAuthenticated])
 
     useEffect(() => {
-        loadRadar()
+        let active = true
+        Promise.resolve().then(() => {
+            if (active) loadRadar()
+        })
+        return () => {
+            active = false
+            requestIdRef.current += 1
+        }
     }, [loadRadar])
 
-    const handleSort = (field) => {
+    const handleSort = useCallback((field) => {
         if (sortField === field) {
-            setSortDir((prev) => (prev === 'asc' ? 'desc' : 'asc'))
+            setSortDir((prevDir) => (prevDir === 'asc' ? 'desc' : 'asc'))
         } else {
             setSortField(field)
             setSortDir('desc')
         }
-    }
+    }, [sortField])
 
     const filteredAndSortedItems = useMemo(() => {
         let list = radarData?.items ? [...radarData.items] : []
@@ -108,25 +120,25 @@ const RadarPreciosMesView = () => {
         )
     }, [remarcacionItems])
 
-    const handleToggleSelectProduct = (prodName) => {
+    const handleToggleSelectProduct = useCallback((prodName) => {
         setSelectedMap((prev) => ({
             ...prev,
             [prodName]: !prev[prodName]
         }))
-    }
+    }, [])
 
-    const handleChangeCustomPv = (prodName, newPv) => {
+    const handleChangeCustomPv = useCallback((prodName, newPv) => {
         setCustomPvMap((prev) => ({
             ...prev,
             [prodName]: newPv
         }))
-        setSelectedMap((prev) => ({
+        setSelectedMap((prev) => (prev[prodName] ? prev : {
             ...prev,
             [prodName]: true
         }))
-    }
+    }, [])
 
-    const handleSelectBySemaforo = (allowedSemaforos) => {
+    const handleSelectBySemaforo = useCallback((allowedSemaforos) => {
         const allowedSet = new Set(allowedSemaforos)
         const next = {}
         for (const it of radarData?.items || []) {
@@ -135,19 +147,46 @@ const RadarPreciosMesView = () => {
             }
         }
         setSelectedMap(next)
-    }
+    }, [radarData])
 
-    const handleClearSimulation = () => {
+    const handleSelectUrgentes = useCallback(() => {
+        handleSelectBySemaforo(['urgente'])
+    }, [handleSelectBySemaforo])
+
+    const handleSelectUrgentesYRevisar = useCallback(() => {
+        handleSelectBySemaforo(['urgente', 'revisar'])
+    }, [handleSelectBySemaforo])
+
+    const handleClearSimulation = useCallback(() => {
         setCustomPvMap({})
         setSelectedMap({})
-    }
+    }, [])
 
-    const handleClearFilters = () => {
+    const handleClearFilters = useCallback(() => {
         setCategoria(null)
-        setSearchInput('')
         setAppliedSearch('')
         setSemaforoFilter('todos')
-    }
+    }, [])
+
+    const handleApplySearch = useCallback((override) => {
+        setAppliedSearch(typeof override === 'string' ? override : '')
+    }, [])
+
+    const handleToggleLogistica = useCallback(() => {
+        setIncluirLogistica((v) => !v)
+    }, [])
+
+    const handleRemoveRemarcacionItem = useCallback((prod) => {
+        setSelectedMap((prev) => {
+            const copy = { ...prev }
+            delete copy[prod]
+            return copy
+        })
+    }, [])
+
+    const handleClearRemarcacionList = useCallback(() => {
+        setSelectedMap({})
+    }, [])
 
     return (
         <div className="space-y-6 pb-10">
@@ -174,16 +213,13 @@ const RadarPreciosMesView = () => {
                 onChangeModo={setModo}
                 categoria={categoria}
                 onChangeCategoria={setCategoria}
-                searchInput={searchInput}
-                onChangeSearchInput={setSearchInput}
-                onApplySearch={(override) =>
-                    setAppliedSearch(typeof override === 'string' ? override : searchInput)
-                }
+                searchInput={appliedSearch}
+                onApplySearch={handleApplySearch}
                 onClearFilters={handleClearFilters}
                 semaforoFilter={semaforoFilter}
                 onChangeSemaforoFilter={setSemaforoFilter}
                 incluirLogistica={incluirLogistica}
-                onToggleLogistica={() => setIncluirLogistica((v) => !v)}
+                onToggleLogistica={handleToggleLogistica}
                 isAuthenticated={isAuthenticated}
                 onOpenLogin={openLoginModal}
                 resumen={radarData?.resumen}
@@ -207,8 +243,8 @@ const RadarPreciosMesView = () => {
                 onChangeMarkupObjetivo={setMarkupObjetivoPct}
                 redondeoMultiplo={redondeoMultiplo}
                 onChangeRedondeoMultiplo={setRedondeoMultiplo}
-                onSelectUrgentes={() => handleSelectBySemaforo(['urgente'])}
-                onSelectUrgentesYRevisar={() => handleSelectBySemaforo(['urgente', 'revisar'])}
+                onSelectUrgentes={handleSelectUrgentes}
+                onSelectUrgentesYRevisar={handleSelectUrgentesYRevisar}
                 onClearSimulation={handleClearSimulation}
             />
 
@@ -216,14 +252,8 @@ const RadarPreciosMesView = () => {
             <ListaRemarcacionPanel
                 remarcacionItems={remarcacionItems}
                 gananciaAdicionalTotal={gananciaAdicionalTotal}
-                onRemoveItem={(prod) =>
-                    setSelectedMap((prev) => {
-                        const copy = { ...prev }
-                        delete copy[prod]
-                        return copy
-                    })
-                }
-                onClearList={() => setSelectedMap({})}
+                onRemoveItem={handleRemoveRemarcacionItem}
+                onClearList={handleClearRemarcacionList}
             />
 
             {/* Tabla Pocket-Margin Ordenable */}

@@ -1,7 +1,6 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useCallback } from 'react'
 import DataTable from '../components/DataTable'
 import { useAnalisisHorarios, useHitosViewData } from '../hooks/useData'
-import { Clock, Trophy } from 'lucide-react'
 import { HitosCardsGrid } from './horarios/HitosCardsGrid'
 import { HitosTimelineCell } from './horarios/HitosTimelineCell'
 import HeatmapMode from '../components/HeatmapMode'
@@ -23,7 +22,7 @@ const AnalisisHorariosView = () => {
         filterValue
     })
 
-    const { data: hitosRawData, loading: loadingHitos } = useHitosViewData(page)
+    const { data: hitosRawData, loading: loadingHitos } = useHitosViewData(page, analysisMode === 'hitos')
 
     const processedHorariosData = useMemo(() => {
         if (analysisMode !== 'horarios' || !horariosData) return []
@@ -170,14 +169,14 @@ const AnalisisHorariosView = () => {
     const currentData = analysisMode === 'horarios' ? processedHorariosData : processedHitosData
     const loading = analysisMode === 'horarios' ? loadingHorarios : loadingHitos
 
-    const handleSort = (column) => {
+    const handleSort = useCallback((column) => {
         if (sortColumn === column) {
-            setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
+            setSortOrder((prevOrd) => (prevOrd === 'asc' ? 'desc' : 'asc'))
         } else {
             setSortColumn(column)
             setSortOrder('desc')
         }
-    }
+    }, [sortColumn])
 
     const columns = useMemo(() => {
         if (analysisMode === 'hitos') {

@@ -1,7 +1,9 @@
-import React from 'react'
-import { ArrowUpDown, Truck, Wand2 } from 'lucide-react'
+import React, { useState, useMemo, useCallback } from 'react'
+import { ArrowUpDown, Truck, Wand2, ChevronLeft, ChevronRight } from 'lucide-react'
 import { simularNuevoPrecioVenta } from '../../services/comparadorApi'
 import { formatCurrency, formatNumber, formatPct, getCategoryMeta } from '../comparador/comparadorFormatters'
+
+const PAGE_SIZE = 40
 
 const SEMAFORO_BADGE = {
     urgente: {
@@ -18,7 +20,164 @@ const SEMAFORO_BADGE = {
     }
 }
 
-const RadarPocketMarginTable = ({
+const RadarProductRow = React.memo(({
+    item,
+    isChecked,
+    manualVal,
+    markupObjetivoPct,
+    redondeoMultiplo,
+    onToggleSelectProduct,
+    onChangeCustomPv
+}) => {
+    const catMeta = getCategoryMeta(item.categoria)
+    const sem = SEMAFORO_BADGE[item.semaforo] || SEMAFORO_BADGE.mantener
+
+    const sim = useMemo(() => simularNuevoPrecioVenta({
+        costoRealUnitario: item.costo_real_unitario,
+        pvActual: item.pv_actual,
+        unidadesVendidas: item.unidades_vendidas,
+        pvManual: manualVal,
+        markupObjetivoPct,
+        redondeoMultiplo
+    }), [item.costo_real_unitario, item.pv_actual, item.unidades_vendidas, manualVal, markupObjetivoPct, redondeoMultiplo])
+
+    const fechaCompra = item.fecha_ultima_compra
+        ? String(item.fecha_ultima_compra).slice(0, 10)
+        : 'Sin fecha'
+
+    return (
+        <tr
+            className={`transition-colors ${
+                isChecked ? 'bg-indigo-950/25' : 'hover:bg-slate-800/40'
+            }`}
+        >
+            <td className="py-3 px-3 text-center">
+                <input
+                    type="checkbox"
+                    aria-label={`Seleccionar ${item.producto} para lista de remarcación`}
+                    checked={isChecked}
+                    onChange={() => onToggleSelectProduct(item.producto)}
+                    className="h-4 w-4 rounded border-slate-700 bg-slate-900 text-indigo-500 cursor-pointer"
+                />
+            </td>
+
+            <td className="py-3 px-3">
+                <div className="font-bold text-white">{item.producto}</div>
+                <div className="flex items-center gap-1.5 mt-1">
+                    <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold border ${catMeta.badgeColor}`}>
+                        {catMeta.label}
+                    </span>
+                    <span className="text-[10px] text-slate-400">
+                        Stock: {formatNumber(item.stock_actual)}
+                    </span>
+                </div>
+            </td>
+
+            <td className="py-3 px-3 text-right tabular-nums">
+                <div className="font-bold text-slate-200">
+                    {formatCurrency(item.ultimo_costo_compra)}
+                    {item.delta_costo_pct !== 0 && (
+                        <span className={`ml-1.5 text-[11px] font-black ${item.delta_costo_pct > 0 ? 'text-rose-400' : 'text-emerald-400'}`}>
+                            ({formatPct(item.delta_costo_pct)})
+                        </span>
+                    )}
+                </div>
+                <div className="text-[10px] text-slate-400 truncate max-w-[180px] ml-auto">
+                    {item.ultimo_proveedor} · {fechaCompra}
+                </div>
+            </td>
+
+            <td className="py-3 px-3 text-right tabular-nums">
+                <div className="font-black text-white">
+                    {formatCurrency(item.costo_real_unitario)}
+                </div>
+                <div className="text-[10px] text-emerald-300/90 flex items-center justify-end gap-1">
+                    <Truck className="h-3 w-3" />
+                    <span>+{formatCurrency(item.costo_logistico_unitario)}/u</span>
+                </div>
+            </td>
+
+            <td className="py-3 px-3 text-right tabular-nums">
+                <div className="font-bold text-blue-300">
+                    Lista: {formatCurrency(item.pv_actual)}
+                </div>
+                <div className="text-[11px] text-slate-400">
+                    Cobrado: {formatCurrency(item.pv_promedio_cobrado)}
+                </div>
+            </td>
+
+            <td className="py-3 px-3 text-right tabular-nums">
+                <div className={`font-black ${item.ganancia_unitaria > 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                    {formatCurrency(item.ganancia_unitaria)} /u
+                </div>
+                <div className="text-[11px] text-slate-300">
+                    Markup: <strong>{formatNumber(item.markup_pct, 1)}%</strong> · Margen: <strong>{formatNumber(item.margen_pct, 1)}%</strong>
+                </div>
+            </td>
+
+            <td className="py-3 px-3 text-right tabular-nums font-bold text-slate-200">
+                <div>{formatNumber(item.unidades_vendidas)} u</div>
+                <div className="text-[10px] text-slate-400">
+                    Comp: {formatNumber(item.unidades_compradas)} u
+                </div>
+            </td>
+
+            <td className="py-3 px-3 text-right tabular-nums">
+                <div className={`font-black text-sm ${item.impacto_mensual >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                    {formatCurrency(item.impacto_mensual)}
+                </div>
+                <div className="text-[10px] text-slate-400">
+                    Fact: {formatCurrency(item.facturacion_ventana, true)}
+                </div>
+            </td>
+
+            <td className="py-3 px-3 text-center max-w-[190px]">
+                <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black border ${sem.className}`}>
+                    {sem.label}
+                </span>
+                <div className="text-[10px] text-slate-400 mt-1 line-clamp-2" title={item.motivo_semaforo}>
+                    {item.motivo_semaforo}
+                </div>
+            </td>
+
+            <td className="py-3 px-3 text-right bg-indigo-950/15 tabular-nums">
+                <div className="flex items-center justify-end gap-1.5">
+                    <input
+                        type="number"
+                        min={0}
+                        step={50}
+                        aria-label={`Nuevo precio de venta simulado para ${item.producto}`}
+                        value={manualVal !== undefined ? manualVal : sim.pvPropuesto}
+                        onChange={(e) => onChangeCustomPv(item.producto, e.target.value)}
+                        className="w-24 bg-slate-900 border border-indigo-500/40 rounded-lg px-2 py-1 text-xs font-black text-white text-right focus:outline-none focus:border-indigo-400"
+                    />
+                    {item.pv_sugerido_35 > 0 && (
+                        <button
+                            type="button"
+                            onClick={() => onChangeCustomPv(item.producto, item.pv_sugerido_35)}
+                            title={`Aplicar PV sugerido margen 35% (${formatCurrency(item.pv_sugerido_35)})`}
+                            aria-label={`Usar precio sugerido para ${item.producto}`}
+                            className="p-1.5 rounded-lg bg-indigo-600/25 hover:bg-indigo-600/40 text-indigo-300 border border-indigo-500/30 cursor-pointer"
+                        >
+                            <Wand2 className="h-3.5 w-3.5" />
+                        </button>
+                    )}
+                </div>
+                <div className="text-[10px] text-slate-300 mt-1">
+                    Margen: <strong>{formatNumber(sim.margenNuevoPct, 1)}%</strong> ·{' '}
+                    <span className={sim.gananciaMensualAdicional >= 0 ? 'text-emerald-400 font-bold' : 'text-rose-400 font-bold'}>
+                        {sim.gananciaMensualAdicional >= 0 ? '+' : ''}
+                        {formatCurrency(sim.gananciaMensualAdicional)}/mes
+                    </span>
+                </div>
+            </td>
+        </tr>
+    )
+})
+
+RadarProductRow.displayName = 'RadarProductRow'
+
+const RadarPocketMarginTable = React.memo(({
     items,
     sortField,
     sortDir,
@@ -30,6 +189,24 @@ const RadarPocketMarginTable = ({
     markupObjetivoPct,
     redondeoMultiplo
 }) => {
+    const filterKey = `${items.length}|${sortField}|${sortDir}`
+    const [pageState, setPageState] = useState({ key: filterKey, page: 1 })
+    const page = pageState.key === filterKey ? pageState.page : 1
+    const setPage = useCallback((updater) => {
+        setPageState((prev) => {
+            const current = prev.key === filterKey ? prev.page : 1
+            const next = typeof updater === 'function' ? updater(current) : updater
+            return { key: filterKey, page: next }
+        })
+    }, [filterKey])
+
+    const totalPages = Math.max(1, Math.ceil(items.length / PAGE_SIZE))
+    const safePage = Math.min(page, totalPages)
+    const paginatedItems = useMemo(() => {
+        const start = (safePage - 1) * PAGE_SIZE
+        return items.slice(start, start + PAGE_SIZE)
+    }, [items, safePage])
+
     return (
         <div className="glass-panel rounded-2xl border border-slate-800/80 overflow-hidden">
             <div className="overflow-x-auto custom-scrollbar">
@@ -85,155 +262,18 @@ const RadarPocketMarginTable = ({
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-800/60 text-xs">
-                        {items.map((item) => {
-                            const catMeta = getCategoryMeta(item.categoria)
-                            const sem = SEMAFORO_BADGE[item.semaforo] || SEMAFORO_BADGE.mantener
-                            const isChecked = Boolean(selectedMap[item.producto])
-                            const manualVal = customPvMap[item.producto]
-
-                            const sim = simularNuevoPrecioVenta({
-                                costoRealUnitario: item.costo_real_unitario,
-                                pvActual: item.pv_actual,
-                                unidadesVendidas: item.unidades_vendidas,
-                                pvManual: manualVal,
-                                markupObjetivoPct,
-                                redondeoMultiplo
-                            })
-
-                            const fechaCompra = item.fecha_ultima_compra
-                                ? String(item.fecha_ultima_compra).slice(0, 10)
-                                : 'Sin fecha'
-
-                            return (
-                                <tr
-                                    key={item.producto}
-                                    className={`transition-colors ${
-                                        isChecked ? 'bg-indigo-950/25' : 'hover:bg-slate-800/40'
-                                    }`}
-                                >
-                                    <td className="py-3 px-3 text-center">
-                                        <input
-                                            type="checkbox"
-                                            aria-label={`Seleccionar ${item.producto} para lista de remarcación`}
-                                            checked={isChecked}
-                                            onChange={() => onToggleSelectProduct(item.producto)}
-                                            className="h-4 w-4 rounded border-slate-700 bg-slate-900 text-indigo-500 cursor-pointer"
-                                        />
-                                    </td>
-
-                                    <td className="py-3 px-3">
-                                        <div className="font-bold text-white">{item.producto}</div>
-                                        <div className="flex items-center gap-1.5 mt-1">
-                                            <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold border ${catMeta.badgeColor}`}>
-                                                {catMeta.label}
-                                            </span>
-                                            <span className="text-[10px] text-slate-400">
-                                                Stock: {formatNumber(item.stock_actual)}
-                                            </span>
-                                        </div>
-                                    </td>
-
-                                    <td className="py-3 px-3 text-right tabular-nums">
-                                        <div className="font-bold text-slate-200">
-                                            {formatCurrency(item.ultimo_costo_compra)}
-                                            {item.delta_costo_pct !== 0 && (
-                                                <span className={`ml-1.5 text-[11px] font-black ${item.delta_costo_pct > 0 ? 'text-rose-400' : 'text-emerald-400'}`}>
-                                                    ({formatPct(item.delta_costo_pct)})
-                                                </span>
-                                            )}
-                                        </div>
-                                        <div className="text-[10px] text-slate-400 truncate max-w-[180px] ml-auto">
-                                            {item.ultimo_proveedor} · {fechaCompra}
-                                        </div>
-                                    </td>
-
-                                    <td className="py-3 px-3 text-right tabular-nums">
-                                        <div className="font-black text-white">
-                                            {formatCurrency(item.costo_real_unitario)}
-                                        </div>
-                                        <div className="text-[10px] text-emerald-300/90 flex items-center justify-end gap-1">
-                                            <Truck className="h-3 w-3" />
-                                            <span>+{formatCurrency(item.costo_logistico_unitario)}/u</span>
-                                        </div>
-                                    </td>
-
-                                    <td className="py-3 px-3 text-right tabular-nums">
-                                        <div className="font-bold text-blue-300">
-                                            Lista: {formatCurrency(item.pv_actual)}
-                                        </div>
-                                        <div className="text-[11px] text-slate-400">
-                                            Cobrado: {formatCurrency(item.pv_promedio_cobrado)}
-                                        </div>
-                                    </td>
-
-                                    <td className="py-3 px-3 text-right tabular-nums">
-                                        <div className={`font-black ${item.ganancia_unitaria > 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                                            {formatCurrency(item.ganancia_unitaria)} /u
-                                        </div>
-                                        <div className="text-[11px] text-slate-300">
-                                            Markup: <strong>{formatNumber(item.markup_pct, 1)}%</strong> · Margen: <strong>{formatNumber(item.margen_pct, 1)}%</strong>
-                                        </div>
-                                    </td>
-
-                                    <td className="py-3 px-3 text-right tabular-nums font-bold text-slate-200">
-                                        <div>{formatNumber(item.unidades_vendidas)} u</div>
-                                        <div className="text-[10px] text-slate-400">
-                                            Comp: {formatNumber(item.unidades_compradas)} u
-                                        </div>
-                                    </td>
-
-                                    <td className="py-3 px-3 text-right tabular-nums">
-                                        <div className={`font-black text-sm ${item.impacto_mensual >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                                            {formatCurrency(item.impacto_mensual)}
-                                        </div>
-                                        <div className="text-[10px] text-slate-400">
-                                            Fact: {formatCurrency(item.facturacion_ventana, true)}
-                                        </div>
-                                    </td>
-
-                                    <td className="py-3 px-3 text-center max-w-[190px]">
-                                        <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black border ${sem.className}`}>
-                                            {sem.label}
-                                        </span>
-                                        <div className="text-[10px] text-slate-400 mt-1 line-clamp-2" title={item.motivo_semaforo}>
-                                            {item.motivo_semaforo}
-                                        </div>
-                                    </td>
-
-                                    <td className="py-3 px-3 text-right bg-indigo-950/15 tabular-nums">
-                                        <div className="flex items-center justify-end gap-1.5">
-                                            <input
-                                                type="number"
-                                                min={0}
-                                                step={50}
-                                                aria-label={`Nuevo precio de venta simulado para ${item.producto}`}
-                                                value={manualVal !== undefined ? manualVal : sim.pvPropuesto}
-                                                onChange={(e) => onChangeCustomPv(item.producto, e.target.value)}
-                                                className="w-24 bg-slate-900 border border-indigo-500/40 rounded-lg px-2 py-1 text-xs font-black text-white text-right focus:outline-none focus:border-indigo-400"
-                                            />
-                                            {item.pv_sugerido_35 > 0 && (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => onChangeCustomPv(item.producto, item.pv_sugerido_35)}
-                                                    title={`Aplicar PV sugerido margen 35% (${formatCurrency(item.pv_sugerido_35)})`}
-                                                    aria-label={`Usar precio sugerido para ${item.producto}`}
-                                                    className="p-1.5 rounded-lg bg-indigo-600/25 hover:bg-indigo-600/40 text-indigo-300 border border-indigo-500/30 cursor-pointer"
-                                                >
-                                                    <Wand2 className="h-3.5 w-3.5" />
-                                                </button>
-                                            )}
-                                        </div>
-                                        <div className="text-[10px] text-slate-300 mt-1">
-                                            Margen: <strong>{formatNumber(sim.margenNuevoPct, 1)}%</strong> ·{' '}
-                                            <span className={sim.gananciaMensualAdicional >= 0 ? 'text-emerald-400 font-bold' : 'text-rose-400 font-bold'}>
-                                                {sim.gananciaMensualAdicional >= 0 ? '+' : ''}
-                                                {formatCurrency(sim.gananciaMensualAdicional)}/mes
-                                            </span>
-                                        </div>
-                                    </td>
-                                </tr>
-                            )
-                        })}
+                        {paginatedItems.map((item) => (
+                            <RadarProductRow
+                                key={item.producto}
+                                item={item}
+                                isChecked={Boolean(selectedMap[item.producto])}
+                                manualVal={customPvMap[item.producto]}
+                                markupObjetivoPct={markupObjetivoPct}
+                                redondeoMultiplo={redondeoMultiplo}
+                                onToggleSelectProduct={onToggleSelectProduct}
+                                onChangeCustomPv={onChangeCustomPv}
+                            />
+                        ))}
                         {items.length === 0 && (
                             <tr>
                                 <td colSpan={10} className="py-10 text-center text-slate-400 text-sm">
@@ -244,8 +284,41 @@ const RadarPocketMarginTable = ({
                     </tbody>
                 </table>
             </div>
+
+            {items.length > PAGE_SIZE && (
+                <div className="p-4 border-t border-slate-800/80 bg-slate-950/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-400">
+                    <span>
+                        Mostrando {(safePage - 1) * PAGE_SIZE + 1}–{Math.min(safePage * PAGE_SIZE, items.length)} de {items.length} productos
+                    </span>
+                    <div className="flex items-center gap-2">
+                        <button
+                            type="button"
+                            disabled={safePage <= 1}
+                            onClick={() => setPage((p) => Math.max(1, p - 1))}
+                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-white/10 disabled:opacity-40 cursor-pointer"
+                        >
+                            <ChevronLeft className="h-3.5 w-3.5" />
+                            <span>Anterior</span>
+                        </button>
+                        <span className="font-bold text-slate-300 tabular-nums px-2">
+                            Página {safePage} de {totalPages}
+                        </span>
+                        <button
+                            type="button"
+                            disabled={safePage >= totalPages}
+                            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-white/10 disabled:opacity-40 cursor-pointer"
+                        >
+                            <span>Siguiente</span>
+                            <ChevronRight className="h-3.5 w-3.5" />
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     )
-}
+})
+
+RadarPocketMarginTable.displayName = 'RadarPocketMarginTable'
 
 export default RadarPocketMarginTable
