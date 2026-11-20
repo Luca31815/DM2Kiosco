@@ -1,6 +1,9 @@
+import { useEffect, useState } from 'react'
 import useSWR from 'swr'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
+
+const TRIAGE_ACTIVATION_DELAY_MS = 220
 
 const fetchTriagePendingCount = async () => {
     const { count, error } = await supabase
@@ -17,15 +20,26 @@ const fetchTriagePendingCount = async () => {
 
 export function useTriageBadge(enabled = true) {
     const { isDemoMode } = useAuth()
-    const shouldFetch = Boolean(enabled && !isDemoMode)
+    const [hasActivated, setHasActivated] = useState(false)
+
+    useEffect(() => {
+        if (!enabled || isDemoMode || hasActivated) return
+        const timer = setTimeout(() => {
+            setHasActivated(true)
+        }, TRIAGE_ACTIVATION_DELAY_MS)
+        return () => clearTimeout(timer)
+    }, [enabled, isDemoMode, hasActivated])
+
+    const shouldFetch = Boolean(hasActivated && !isDemoMode)
 
     const { data, error, isLoading } = useSWR(
         shouldFetch ? 'triage_pending_count' : null,
         fetchTriagePendingCount,
         {
             refreshInterval: 180000,
-            dedupingInterval: 30000,
+            dedupingInterval: 60000,
             revalidateOnFocus: false,
+            revalidateIfStale: false,
             shouldRetryOnError: false,
         }
     )

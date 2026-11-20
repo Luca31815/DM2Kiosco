@@ -16,7 +16,6 @@ const TOAST_OPTIONS = {
         borderRadius: '12px',
         fontSize: '13px',
         fontWeight: '600',
-        backdropFilter: 'blur(12px)',
         boxShadow: '0 20px 40px rgba(0,0,0,0.4)'
     },
     success: {
@@ -27,31 +26,55 @@ const TOAST_OPTIONS = {
     }
 }
 
-const Layout = ({ children }) => {
+const RADIAL_GLOW_STYLE = {
+    background: 'radial-gradient(ellipse at top left, rgba(37, 99, 235, 0.08), transparent 70%)'
+}
+
+const TIME_FORMATTER = new Intl.DateTimeFormat('es-AR', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+})
+
+const DATE_FORMATTER = new Intl.DateTimeFormat('es-AR', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short'
+})
+
+const NavigationShell = React.memo(() => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false)
-    const isMobile = useIsMobile()
 
     const openSidebar = useCallback(() => setIsSidebarOpen(true), [])
     const closeSidebar = useCallback(() => setIsSidebarOpen(false), [])
 
     return (
+        <>
+            <Sidebar isOpen={isSidebarOpen} onClose={closeSidebar} />
+            <TopBar onMenuClick={openSidebar} />
+        </>
+    )
+})
+NavigationShell.displayName = 'NavigationShell'
+
+const Layout = ({ children }) => {
+    const isMobile = useIsMobile()
+
+    return (
         <div className="flex bg-slate-950 min-h-screen relative overflow-hidden font-outfit">
             {/* Background grid pattern — desktop only */}
             {!isMobile && <div className="absolute inset-0 z-0 pointer-events-none bg-grid-pattern opacity-100" />}
-            {/* Radial glow top-left — desktop only */}
-            {!isMobile && <div className="absolute top-0 left-0 w-[600px] h-[400px] bg-blue-600/3 rounded-full blur-3xl z-0 pointer-events-none" />}
+            {/* Radial glow top-left sin blur GPU — desktop only */}
+            {!isMobile && <div className="absolute top-0 left-0 w-[600px] h-[400px] z-0 pointer-events-none" style={RADIAL_GLOW_STYLE} />}
 
             <Toaster
                 position="top-right"
                 toastOptions={TOAST_OPTIONS}
             />
 
-            <Sidebar isOpen={isSidebarOpen} onClose={closeSidebar} />
+            <NavigationShell />
 
             <main className="flex-1 flex flex-col min-w-0 relative z-10">
-                {/* Enhanced Top Bar */}
-                <TopBar onMenuClick={openSidebar} />
-
                 <div className="p-4 md:p-8 pt-24 md:pt-28 overflow-y-auto overflow-x-hidden custom-scrollbar">
                     <div className="max-w-7xl mx-auto pb-24 md:pb-16">
                         {children}
@@ -74,8 +97,8 @@ const LiveClock = React.memo(() => {
         return () => clearInterval(timer)
     }, [])
 
-    const timeStr = currentTime.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
-    const dateStr = currentTime.toLocaleDateString('es-AR', { weekday: 'short', day: 'numeric', month: 'short' })
+    const timeStr = TIME_FORMATTER.format(currentTime)
+    const dateStr = DATE_FORMATTER.format(currentTime)
 
     return (
         <div className="hidden md:flex items-center gap-3 px-4 py-1.5 rounded-xl bg-white/3 border border-white/5">
@@ -118,8 +141,8 @@ const TopBar = React.memo(({ onMenuClick }) => {
 
     return (
         <div className="fixed top-0 left-0 right-0 z-30 h-16 shrink-0 select-none">
-            {/* Glass background */}
-            <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-xl border-b border-white/5" />
+            {/* Fondo sólido de alto rendimiento en lugar de backdrop-blur-xl */}
+            <div className="absolute inset-0 bg-slate-950/95 border-b border-white/5" />
 
             <div className="relative flex items-center justify-between h-full px-4 md:px-6">
                 {/* Left: Menu + Logo */}
@@ -154,7 +177,7 @@ const TopBar = React.memo(({ onMenuClick }) => {
                     {/* Mode status badge */}
                     {session ? (
                         <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-500/8 border border-emerald-500/15">
-                            <div className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_6px_rgba(52,211,153,0.8)]" />
+                            <div className="h-1.5 w-1.5 rounded-full bg-emerald-400 ring-2 ring-emerald-400/25" />
                             <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">En Vivo</span>
                         </div>
                     ) : (
@@ -254,7 +277,7 @@ const handleLock = () => {
 }
 
 // ── AuthBadge — useEffect siempre se llama (hooks rule fix) ──────────────────
-const AuthBadge = () => {
+const AuthBadge = React.memo(() => {
     const { isDemoMode, openLoginModal } = useAuth()
 
     // Always call the effect — conditionally execute its body
@@ -275,9 +298,9 @@ const AuthBadge = () => {
                 tabIndex={0}
                 aria-label="Iniciar sesión para acceder al sistema real"
                 onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && openLoginModal()}
-                className="fixed bottom-20 sm:bottom-4 right-4 z-40 px-3.5 py-2 rounded-2xl border border-amber-500/20 text-xs font-bold transition-colors active:scale-95 shadow-xl backdrop-blur-xl bg-slate-900/90 text-amber-300 hover:bg-slate-900 hover:border-amber-500/40 group flex items-center gap-2.5 cursor-pointer"
+                className="fixed bottom-20 sm:bottom-4 right-4 z-40 px-3.5 py-2 rounded-2xl border border-amber-500/20 text-xs font-bold transition-colors active:scale-95 shadow-xl bg-slate-900/95 text-amber-300 hover:bg-slate-900 hover:border-amber-500/40 group flex items-center gap-2.5 cursor-pointer"
             >
-                <div className="h-2 w-2 rounded-full animate-pulse bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.8)]" />
+                <div className="h-2 w-2 rounded-full bg-amber-400 ring-2 ring-amber-400/25" />
                 <span className="hidden sm:inline">Vista Previa (Datos Ficticios)</span>
                 <span className="sm:hidden">Vista Previa</span>
                 <span className="px-2 py-0.5 rounded-lg bg-blue-600/30 border border-blue-500/30 text-blue-300 text-[10px] font-extrabold uppercase ml-1 group-hover:bg-blue-600 group-hover:text-white transition-colors">
@@ -294,15 +317,16 @@ const AuthBadge = () => {
             tabIndex={0}
             aria-label="Bloquear sistema"
             onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && handleLock()}
-            className="fixed bottom-20 sm:bottom-4 right-4 z-50 px-3 py-1.5 rounded-full border border-emerald-500/20 text-[10px] font-bold uppercase tracking-wider cursor-pointer transition-colors active:scale-95 shadow-lg backdrop-blur-md bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 group"
+            className="fixed bottom-20 sm:bottom-4 right-4 z-50 px-3 py-1.5 rounded-full border border-emerald-500/20 text-[10px] font-bold uppercase tracking-wider cursor-pointer transition-colors active:scale-95 shadow-lg bg-emerald-950/90 text-emerald-400 hover:bg-emerald-900/90 group"
         >
             <div className="flex items-center gap-2">
-                <div className="h-1.5 w-1.5 rounded-full animate-pulse bg-emerald-400 shadow-[0_0_4px_rgba(52,211,153,0.8)]" />
+                <div className="h-1.5 w-1.5 rounded-full bg-emerald-400 ring-2 ring-emerald-400/25" />
                 <span>Fijado (Live)</span>
                 <span className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity">| Bloquear</span>
             </div>
         </div>
     )
-}
+})
+AuthBadge.displayName = 'AuthBadge'
 
 export default Layout

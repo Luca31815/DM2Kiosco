@@ -165,13 +165,13 @@
           "title": "Effect re-subscribes on a changing callback",
           "message": "Your effect re-subscribes whenever \"onClose\" changes, even though it's only used inside `addEventListener`.",
           "help": "Wrap the callback with `useEffectEvent(callback)` (React 19+) and call it inside the sub-handler. An Effect Event always sees the latest props and state but isn't a dependency, so the effect won't re-subscribe every time the parent redraws. See https://react.dev/reference/react/useEffectEvent",
-          "line": 94,
+          "line": 173,
           "column": 17,
-          "offset": 3121,
+          "offset": 5975,
           "length": 7,
-          "endLine": 94,
+          "endLine": 173,
           "category": "Bugs",
-          "id": "src/components/Sidebar.jsx::94:17::react-doctor/prefer-use-effect-event::a504782f67ed8eddb6c8a7811a175038b83b453d33ee8294e3356c2200d47740",
+          "id": "src/components/Sidebar.jsx::173:17::react-doctor/prefer-use-effect-event::a504782f67ed8eddb6c8a7811a175038b83b453d33ee8294e3356c2200d47740",
           "normalizedFilePath": "src/components/Sidebar.jsx",
           "tags": [
             "test-noise"
@@ -1876,7 +1876,7 @@
       "analyzedFileCount": 128,
       "complete": true,
       "scannedFileCount": 128,
-      "elapsedMilliseconds": 24128.386900000005
+      "elapsedMilliseconds": 29254.4196
     }
   ],
   "diagnostics": [
@@ -2005,13 +2005,13 @@
       "title": "Effect re-subscribes on a changing callback",
       "message": "Your effect re-subscribes whenever \"onClose\" changes, even though it's only used inside `addEventListener`.",
       "help": "Wrap the callback with `useEffectEvent(callback)` (React 19+) and call it inside the sub-handler. An Effect Event always sees the latest props and state but isn't a dependency, so the effect won't re-subscribe every time the parent redraws. See https://react.dev/reference/react/useEffectEvent",
-      "line": 94,
+      "line": 173,
       "column": 17,
-      "offset": 3121,
+      "offset": 5975,
       "length": 7,
-      "endLine": 94,
+      "endLine": 173,
       "category": "Bugs",
-      "id": "src/components/Sidebar.jsx::94:17::react-doctor/prefer-use-effect-event::a504782f67ed8eddb6c8a7811a175038b83b453d33ee8294e3356c2200d47740",
+      "id": "src/components/Sidebar.jsx::173:17::react-doctor/prefer-use-effect-event::a504782f67ed8eddb6c8a7811a175038b83b453d33ee8294e3356c2200d47740",
       "normalizedFilePath": "src/components/Sidebar.jsx",
       "tags": [
         "test-noise"
@@ -3589,6 +3589,6 @@
     "score": null,
     "scoreLabel": null
   },
-  "elapsedMilliseconds": 24150.5037,
+  "elapsedMilliseconds": 29274.618899999998,
   "error": null
 }

@@ -1,4 +1,4 @@
-import React, { memo, useEffect } from 'react'
+import React, { memo, useCallback, useEffect, useRef } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import {
     LayoutDashboard,
@@ -28,6 +28,9 @@ import {
 import { useAuth } from '../context/AuthContext'
 import { useTriageBadge } from '../hooks/useTriageBadge'
 import { prefetchRoute } from '../routes/lazyViews'
+
+const HOVER_PREFETCH_DELAY_MS = 150
+const FOCUS_PREFETCH_DELAY_MS = 60
 
 const navGroups = [
     {
@@ -77,33 +80,109 @@ const navGroups = [
     }
 ]
 
+const TriageBadge = memo(({ isOpen }) => {
+    const { count: triagePendingCount } = useTriageBadge(isOpen)
+    if (!(triagePendingCount > 0)) return null
+
+    return (
+        <span className="px-2 py-0.5 text-[10px] font-black rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 ring-2 ring-amber-500/20 tabular-nums">
+            {triagePendingCount}
+        </span>
+    )
+})
+TriageBadge.displayName = 'TriageBadge'
+
+const SidebarNavItem = memo(({ link, isActive, triageOpen, onClose, onSchedulePrefetch, onCancelPrefetch }) => {
+    const Icon = link.icon
+
+    return (
+        <Link
+            to={link.to}
+            onClick={onClose}
+            onPointerEnter={(e) => {
+                if (e.pointerType === 'mouse') {
+                    onSchedulePrefetch(link.to, HOVER_PREFETCH_DELAY_MS)
+                }
+            }}
+            onPointerLeave={onCancelPrefetch}
+            onFocus={() => onSchedulePrefetch(link.to, FOCUS_PREFETCH_DELAY_MS)}
+            onBlur={onCancelPrefetch}
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors relative group ${
+                isActive
+                    ? 'bg-blue-600/15 text-blue-400'
+                    : 'hover:bg-white/5 text-slate-400 hover:text-slate-100'
+            }`}
+        >
+            {isActive && (
+                <div className="absolute left-0 w-1 h-5 bg-gradient-to-b from-blue-400 to-indigo-500 rounded-r-full" />
+            )}
+            <div className={`flex-shrink-0 transition-colors ${
+                isActive
+                    ? 'text-blue-400'
+                    : link.alert
+                    ? 'text-amber-500'
+                    : 'text-slate-500 group-hover:text-slate-300'
+            }`}>
+                <Icon className="h-4 w-4" />
+            </div>
+            <span className="font-semibold text-sm flex-1">{link.label}</span>
+            {link.isTriage && <TriageBadge isOpen={triageOpen} />}
+            {link.alert && (
+                <div className="h-2 w-2 rounded-full bg-amber-500 ring-2 ring-amber-500/20" />
+            )}
+        </Link>
+    )
+})
+SidebarNavItem.displayName = 'SidebarNavItem'
+
 const Sidebar = memo(({ isOpen, onClose }) => {
     const location = useLocation()
     const { session, openLoginModal, signOut } = useAuth()
-    const { count: triagePendingCount } = useTriageBadge(isOpen)
+    const prefetchTimerRef = useRef(null)
+
+    const cancelPrefetch = useCallback(() => {
+        if (prefetchTimerRef.current !== null) {
+            clearTimeout(prefetchTimerRef.current)
+            prefetchTimerRef.current = null
+        }
+    }, [])
+
+    const schedulePrefetch = useCallback((pathname, delay = HOVER_PREFETCH_DELAY_MS) => {
+        cancelPrefetch()
+        prefetchTimerRef.current = setTimeout(() => {
+            prefetchTimerRef.current = null
+            prefetchRoute(pathname)
+        }, delay)
+    }, [cancelPrefetch])
 
     useEffect(() => {
-        if (!isOpen) return
+        if (!isOpen) {
+            cancelPrefetch()
+            return
+        }
         const handleKeyDown = (event) => {
             if (event.key === 'Escape') {
                 onClose()
             }
         }
         document.addEventListener('keydown', handleKeyDown)
-        return () => document.removeEventListener('keydown', handleKeyDown)
-    }, [isOpen, onClose])
+        return () => {
+            document.removeEventListener('keydown', handleKeyDown)
+            cancelPrefetch()
+        }
+    }, [isOpen, onClose, cancelPrefetch])
 
     return (
         <>
-            {/* Overlay */}
+            {/* Overlay — sin backdrop-blur animado para mantener 60fps */}
             <button
                 type="button"
                 tabIndex={isOpen ? 0 : -1}
                 aria-hidden={!isOpen}
                 aria-label="Cerrar menú"
                 onClick={onClose}
-                className={`fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-40 transition-opacity duration-200 ${
-                    isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+                className={`fixed inset-0 bg-slate-950/75 z-40 transition-[opacity,visibility] duration-200 ease-out ${
+                    isOpen ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'
                 }`}
             />
 
@@ -112,15 +191,12 @@ const Sidebar = memo(({ isOpen, onClose }) => {
                 aria-label="Menú de navegación"
                 aria-hidden={!isOpen}
                 inert={!isOpen}
-                className={`fixed top-0 left-0 h-full w-72 z-50 flex flex-col transition-transform duration-300 ease-out ${
-                    isOpen ? 'translate-x-0' : '-translate-x-full pointer-events-none'
+                className={`fixed top-0 left-0 h-full w-72 z-50 flex flex-col bg-slate-950/98 border-r border-slate-800/80 shadow-2xl shadow-black/60 [contain:layout_paint_style] will-change-transform transition-[transform,visibility] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                    isOpen ? 'translate-x-0 visible' : '-translate-x-full invisible pointer-events-none'
                 }`}
             >
-                {/* Sidebar background with subtle blur */}
-                <div className="absolute inset-0 bg-slate-900/95 backdrop-blur-xl border-r border-white/5" />
-
                 {/* Header */}
-                <div className="relative z-10 p-6 border-b border-white/5 flex justify-between items-center">
+                <div className="p-6 border-b border-white/5 flex justify-between items-center shrink-0">
                     <div className="flex items-center gap-3">
                         <div className="p-2 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-lg shadow-blue-600/30">
                             <Zap className="h-5 w-5 text-white" />
@@ -130,7 +206,8 @@ const Sidebar = memo(({ isOpen, onClose }) => {
                             <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Panel de Control</p>
                         </div>
                     </div>
-                    <button type="button"
+                    <button
+                        type="button"
                         onClick={onClose}
                         aria-label="Cerrar navegación"
                         className="p-2 hover:bg-white/10 rounded-xl text-slate-400 hover:text-white transition-colors active:scale-95"
@@ -140,7 +217,7 @@ const Sidebar = memo(({ isOpen, onClose }) => {
                 </div>
 
                 {/* Navigation */}
-                <nav className="relative z-10 flex-1 py-4 overflow-y-auto custom-scrollbar">
+                <nav className="flex-1 py-4 overflow-y-auto overscroll-contain [contain:content] custom-scrollbar">
                     {navGroups.map((group) => (
                         <div key={group.label} className="mb-2">
                             <div className="px-6 pt-3 pb-1">
@@ -149,60 +226,35 @@ const Sidebar = memo(({ isOpen, onClose }) => {
                                 </span>
                             </div>
                             <div className="px-3 space-y-0.5">
-                                {group.items.map((link) => {
-                                    const Icon = link.icon
-                                    const isActive = location.pathname === link.to
-                                    return (
-                                        <Link
-                                            key={link.to}
-                                            to={link.to}
-                                            onClick={onClose}
-                                            onMouseEnter={() => prefetchRoute(link.to)}
-                                            onFocus={() => prefetchRoute(link.to)}
-                                            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors relative group ${
-                                                isActive
-                                                    ? 'bg-blue-600/15 text-blue-400'
-                                                    : 'hover:bg-white/5 text-slate-400 hover:text-slate-100'
-                                            }`}
-                                        >
-                                            {isActive && (
-                                                <div
-                                                    className="absolute left-0 w-1 h-5 bg-gradient-to-b from-blue-400 to-indigo-500 rounded-r-full shadow-[0_0_8px_rgba(59,130,246,0.6)]"
-                                                />
-                                            )}
-                                            <div className={`flex-shrink-0 transition-colors ${
-                                                isActive
-                                                    ? 'text-blue-400'
-                                                    : link.alert
-                                                    ? 'text-amber-500'
-                                                    : 'text-slate-500 group-hover:text-slate-300'
-                                            }`}>
-                                                <Icon className="h-4 w-4" />
-                                            </div>
-                                            <span className="font-semibold text-sm flex-1">{link.label}</span>
-                                            {link.isTriage && triagePendingCount > 0 && (
-                                                <span className="px-2 py-0.5 text-[10px] font-black rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 shadow-[0_0_8px_rgba(245,158,11,0.2)] animate-pulse">
-                                                    {triagePendingCount}
-                                                </span>
-                                            )}
-                                            {link.alert && (
-                                                <div className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
-                                            )}
-                                        </Link>
-                                    )
-                                })}
+                                {group.items.map((link) => (
+                                    <SidebarNavItem
+                                        key={link.to}
+                                        link={link}
+                                        isActive={location.pathname === link.to}
+                                        triageOpen={link.isTriage ? isOpen : false}
+                                        onClose={onClose}
+                                        onSchedulePrefetch={schedulePrefetch}
+                                        onCancelPrefetch={cancelPrefetch}
+                                    />
+                                ))}
                             </div>
                         </div>
                     ))}
                 </nav>
 
                 {/* Footer */}
-                <div className="relative z-10 p-4 border-t border-white/5 space-y-2">
+                <div className="p-4 border-t border-white/5 space-y-2 shrink-0">
                     <Link
                         to="/finanzas"
                         onClick={onClose}
-                        onMouseEnter={() => prefetchRoute('/finanzas')}
-                        onFocus={() => prefetchRoute('/finanzas')}
+                        onPointerEnter={(e) => {
+                            if (e.pointerType === 'mouse') {
+                                schedulePrefetch('/finanzas', HOVER_PREFETCH_DELAY_MS)
+                            }
+                        }}
+                        onPointerLeave={cancelPrefetch}
+                        onFocus={() => schedulePrefetch('/finanzas', FOCUS_PREFETCH_DELAY_MS)}
+                        onBlur={cancelPrefetch}
                         className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600/20 via-teal-600/15 to-blue-600/20 hover:from-emerald-600/30 hover:to-blue-600/30 border border-emerald-500/30 text-emerald-300 font-bold text-xs transition-colors group"
                     >
                         <span className="flex items-center gap-2">
@@ -215,7 +267,7 @@ const Sidebar = memo(({ isOpen, onClose }) => {
                     {session ? (
                         <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-white/3">
                             <div className="flex items-center gap-2">
-                                <div className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_6px_rgba(52,211,153,0.6)]" />
+                                <div className="h-2 w-2 rounded-full bg-emerald-400 ring-2 ring-emerald-400/25" />
                                 <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Operador Activo</span>
                             </div>
                             <button
