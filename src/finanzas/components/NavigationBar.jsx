@@ -53,7 +53,9 @@ const NAV_SECTIONS = [
   },
 ]
 
-const NavigationBar = ({ activeSection, onSelectSection, badges = {} }) => {
+const EMPTY_BADGES = {}
+
+const NavigationBar = ({ activeSection, onSelectSection, badges = EMPTY_BADGES }) => {
   return (
     <>
       {/* Mobile / Tablet horizontal scrollable bar */}
@@ -110,7 +112,7 @@ const NavigationBar = ({ activeSection, onSelectSection, badges = {} }) => {
               type="button"
               onClick={() => onSelectSection(item.id)}
               aria-current={isActive ? 'page' : undefined}
-              className={`w-full flex items-center justify-between gap-3 px-3.5 py-3 min-h-[52px] rounded-2xl text-left transition-all cursor-pointer border ${
+              className={`w-full flex items-center justify-between gap-3 px-3.5 py-3 min-h-[52px] rounded-2xl text-left transition-colors cursor-pointer border ${
                 isActive
                   ? 'bg-blue-600/15 border-blue-500/40 text-slate-50 shadow-sm'
                   : 'bg-transparent border-transparent text-slate-400 hover:text-slate-100 hover:bg-slate-900/80 hover:border-slate-800/80'
@@ -150,4 +152,4 @@ const NavigationBar = ({ activeSection, onSelectSection, badges = {} }) => {
   )
 }
 
-export default NavigationBar
+export default React.memo(NavigationBar)

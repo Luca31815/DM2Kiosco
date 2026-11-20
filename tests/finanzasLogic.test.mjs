@@ -13,6 +13,20 @@ import {
   filterGastosRecurrentes,
   filterDeudas,
 } from '../src/finanzas/utils/finanzasFilters.js'
+import {
+  clampDayToMonth,
+  distributeTotalAcrossTramos,
+  createDefaultSplitTramos,
+  validateSplitTramos,
+  buildPlantillaSplitPayloads,
+  buildPuntualSplitPayloads,
+} from '../src/finanzas/utils/ingresoSplit.js'
+import {
+  getDaysInPeriodoYM,
+  calculateDailyMonthlyTotal,
+  formatDailyPlantillaNombre,
+  parseDailyPlantillaNombre,
+} from '../src/finanzas/utils/gastoDiario.js'
 
 test('formatters: shiftPeriodoYM handles year boundaries', () => {
   assert.equal(shiftPeriodoYM('2026-01', -1), '2025-12')
@@ -157,4 +171,87 @@ test('normalizeResumenMensual: 1:1 alignment with Tanda 1 SQL fn_finanzas_resume
   assert.equal(normalized.deudas.total_pagado_mes, 150000)
   assert.equal(normalized.totales_balance.cobertura_pct, 198.54)
   assert.equal(normalized.proximos_vencimientos[0].tipo, 'especifico')
+})
+
+test('ingresoSplit: distributeTotalAcrossTramos splits even and odd totals cleanly', () => {
+  assert.deepEqual(distributeTotalAcrossTramos(600000, 2), [300000, 300000])
+  assert.deepEqual(distributeTotalAcrossTramos(100001, 2), [50001, 50000])
+  const tres = distributeTotalAcrossTramos(100000, 3)
+  assert.equal(tres.length, 3)
+  assert.equal(tres.reduce((a, b) => a + b, 0), 100000)
+})
+
+test('ingresoSplit: clampDayToMonth clamps February and 30-day months', () => {
+  assert.equal(clampDayToMonth('2026-02', 31), '2026-02-28')
+  assert.equal(clampDayToMonth('2024-02', 31), '2024-02-29')
+  assert.equal(clampDayToMonth('2026-11', 31), '2026-11-30')
+  assert.equal(clampDayToMonth('2026-11', 5), '2026-11-05')
+})
+
+test('ingresoSplit: buildPlantillaSplitPayloads and buildPuntualSplitPayloads generate valid RPC payloads', () => {
+  const tramosPl = createDefaultSplitTramos({
+    total: 800000,
+    count: 2,
+    mode: 'plantilla',
+    periodoYm: '2026-11',
+  })
+  const checkPl = validateSplitTramos(tramosPl, 'plantilla')
+  assert.equal(checkPl.valid, true)
+  assert.equal(checkPl.totalDistribuido, 800000)
+
+  const plPayloads = buildPlantillaSplitPayloads(
+    { nombre: 'Sueldo Comercio', tipo: 'sueldo_externo', fuente: 'Empresa SA', activo: true },
+    tramosPl
+  )
+  assert.equal(plPayloads.length, 2)
+  assert.equal(plPayloads[0].nombre, 'Sueldo Comercio (1ra mitad)')
+  assert.equal(plPayloads[0].monto_base, 400000)
+  assert.equal(plPayloads[0].dia_cobro, 5)
+  assert.equal(plPayloads[1].nombre, 'Sueldo Comercio (2da mitad)')
+  assert.equal(plPayloads[1].monto_base, 400000)
+  assert.equal(plPayloads[1].dia_cobro, 20)
+
+  const tramosPu = createDefaultSplitTramos({
+    total: 500000,
+    count: 2,
+    mode: 'puntual',
+    periodoYm: '2026-11',
+    todayISO: '2026-11-19',
+  })
+  const checkPu = validateSplitTramos(tramosPu, 'puntual')
+  assert.equal(checkPu.valid, true)
+  assert.equal(checkPu.totalDistribuido, 500000)
+
+  const puPayloads = buildPuntualSplitPayloads(
+    { nombre: 'Bono Nov', tipo: 'extra', fuente: 'Empresa SA', notas: 'En 2 cuotas' },
+    tramosPu,
+    '2026-11'
+  )
+  assert.equal(puPayloads.length, 2)
+  assert.equal(puPayloads[0].periodo_ym, '2026-11')
+  assert.equal(puPayloads[0].fecha_cobro, '2026-11-05')
+  assert.equal(puPayloads[0].cobrado, true)
+  assert.equal(puPayloads[1].fecha_cobro, '2026-11-20')
+  assert.equal(puPayloads[1].cobrado, false)
+})
+
+test('gastoDiario: calculates daily recurring monthly totals and parses reversible template names', () => {
+  assert.equal(getDaysInPeriodoYM('2026-11'), 30)
+  assert.equal(getDaysInPeriodoYM('2026-12'), 31)
+  assert.equal(getDaysInPeriodoYM('2026-02'), 28)
+  assert.equal(calculateDailyMonthlyTotal(12000, 30), 360000)
+
+  const formatted = formatDailyPlantillaNombre('Comida', 12000, 30)
+  assert.ok(formatted.includes('Comida'))
+  assert.ok(formatted.includes('30d'))
+
+  const parsed = parseDailyPlantillaNombre(formatted, 360000)
+  assert.equal(parsed.isDaily, true)
+  assert.equal(parsed.baseNombre, 'Comida')
+  assert.equal(parsed.montoDiario, 12000)
+  assert.equal(parsed.diasMes, 30)
+
+  const normal = parseDailyPlantillaNombre('Alquiler local', 450000)
+  assert.equal(normal.isDaily, false)
+  assert.equal(normal.baseNombre, 'Alquiler local')
 })

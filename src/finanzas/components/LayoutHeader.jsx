@@ -130,4 +130,4 @@ const LayoutHeader = ({
   )
 }
 
-export default LayoutHeader
+export default React.memo(LayoutHeader)

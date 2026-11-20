@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo, Suspense, lazy } from 'react'
 import {
   TrendingUp,
   TrendingDown,
@@ -15,17 +15,6 @@ import {
   Sparkles,
   Loader2,
 } from 'lucide-react'
-import {
-  ResponsiveContainer,
-  ComposedChart,
-  Bar,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-} from 'recharts'
 import toast from 'react-hot-toast'
 import {
   formatARS,
@@ -38,28 +27,7 @@ import {
 } from '../../utils/formatters'
 import { SectionHeader, StatusBadge, AmbitoBadge, ProgressBar, EmptyState } from '../ui/Primitives'
 
-const CustomChartTooltip = ({ active, payload, label }) => {
-  if (!active || !payload || !payload.length) return null
-  return (
-    <div className="rounded-2xl bg-slate-950/95 border border-slate-700/80 p-3 shadow-2xl text-xs space-y-1.5">
-      <p className="font-display font-semibold text-slate-100 mb-1">{label}</p>
-      {payload.map((entry) => (
-        <div key={entry.dataKey} className="flex items-center justify-between gap-4">
-          <span className="flex items-center gap-1.5 text-slate-300">
-            <span
-              className="h-2 w-2 rounded-full"
-              style={{ backgroundColor: entry.color }}
-            />
-            {entry.name}
-          </span>
-          <span className="font-semibold tabular-nums text-slate-50">
-            {formatARS(entry.value)}
-          </span>
-        </div>
-      ))}
-    </div>
-  )
-}
+const FinanzasHistoryChart = lazy(() => import('./FinanzasHistoryChart'))
 
 const ResumenEjecutivoSection = ({
   resumen,
@@ -112,18 +80,22 @@ const ResumenEjecutivoSection = ({
   const retirosMes = toNumber(kiosco_mes.retiros_mes, 0)
   const coberturaSueldo = toNumber(kiosco_mes.cobertura_sueldo_pct, 0)
 
-  const chartData = (historico_6m || []).map((row) => ({
-    label: formatPeriodoShort(row.periodo_ym || row.mes || ''),
-    ingresos: toNumber(row.ingresos_totales ?? row.ingresos, 0),
-    obligaciones: toNumber(row.obligaciones_totales ?? row.gastos_totales ?? row.obligaciones, 0),
-    balance: toNumber(
-      row.balance_proyectado ??
-        row.balance ??
-        toNumber(row.ingresos_totales ?? row.ingresos, 0) -
-          toNumber(row.obligaciones_totales ?? row.gastos_totales ?? row.obligaciones, 0),
-      0
-    ),
-  }))
+  const chartData = useMemo(
+    () =>
+      (historico_6m || []).map((row) => ({
+        label: formatPeriodoShort(row.periodo_ym || row.mes || ''),
+        ingresos: toNumber(row.ingresos_totales ?? row.ingresos, 0),
+        obligaciones: toNumber(row.obligaciones_totales ?? row.gastos_totales ?? row.obligaciones, 0),
+        balance: toNumber(
+          row.balance_proyectado ??
+            row.balance ??
+            toNumber(row.ingresos_totales ?? row.ingresos, 0) -
+              toNumber(row.obligaciones_totales ?? row.gastos_totales ?? row.obligaciones, 0),
+          0
+        ),
+      })),
+    [historico_6m]
+  )
 
   const hasEmptyMonth =
     ingresos.items.length === 0 &&
@@ -476,55 +448,9 @@ const ResumenEjecutivoSection = ({
           </div>
 
           {chartData.length > 0 ? (
-            <div className="h-[280px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <ComposedChart
-                  data={chartData}
-                  margin={{ top: 8, right: 8, left: 0, bottom: 0 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.12)" vertical={false} />
-                  <XAxis
-                    dataKey="label"
-                    tick={{ fill: '#94a3b8', fontSize: 12 }}
-                    axisLine={{ stroke: 'rgba(148,163,184,0.2)' }}
-                    tickLine={false}
-                  />
-                  <YAxis
-                    tickFormatter={formatCompactARS}
-                    tick={{ fill: '#94a3b8', fontSize: 11 }}
-                    axisLine={false}
-                    tickLine={false}
-                    width={62}
-                  />
-                  <Tooltip content={<CustomChartTooltip />} />
-                  <Legend
-                    wrapperStyle={{ fontSize: '12px', paddingTop: '10px', color: '#cbd5e1' }}
-                  />
-                  <Bar
-                    dataKey="ingresos"
-                    name="Ingresos"
-                    fill="#10b981"
-                    radius={[6, 6, 0, 0]}
-                    maxBarSize={28}
-                  />
-                  <Bar
-                    dataKey="obligaciones"
-                    name="Obligaciones"
-                    fill="#f43f5e"
-                    radius={[6, 6, 0, 0]}
-                    maxBarSize={28}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="balance"
-                    name="Balance"
-                    stroke="#38bdf8"
-                    strokeWidth={2.5}
-                    dot={{ r: 3.5, fill: '#38bdf8' }}
-                  />
-                </ComposedChart>
-              </ResponsiveContainer>
-            </div>
+            <Suspense fallback={<div className="skeleton h-[280px] w-full" />}>
+              <FinanzasHistoryChart chartData={chartData} />
+            </Suspense>
           ) : (
             <EmptyState
               icon={TrendingUp}
@@ -622,4 +548,4 @@ const ResumenEjecutivoSection = ({
   )
 }
 
-export default ResumenEjecutivoSection
+export default React.memo(ResumenEjecutivoSection)

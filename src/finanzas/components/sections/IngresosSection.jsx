@@ -11,10 +11,19 @@ import {
   Sparkles,
   Loader2,
   Briefcase,
+  Divide,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { formatARS, formatDateAR, getTodayISOAR, toNumber } from '../../utils/formatters'
+import {
+  createDefaultSplitTramos,
+  distributeTotalAcrossTramos,
+  validateSplitTramos,
+  buildPlantillaSplitPayloads,
+  buildPuntualSplitPayloads,
+} from '../../utils/ingresoSplit'
 import { SectionHeader, StatusBadge, ProgressBar, EmptyState } from '../ui/Primitives'
+import IngresoSplitFields from './IngresoSplitFields'
 
 const TIPO_LABELS = {
   sueldo_externo: 'Sueldo externo',
@@ -32,7 +41,7 @@ const EMPTY_PLANTILLA = {
   activo: true,
 }
 
-const EMPTY_PUNTUAL = {
+const createEmptyPuntual = () => ({
   nombre: '',
   tipo: 'extra',
   fuente: '',
@@ -40,24 +49,43 @@ const EMPTY_PUNTUAL = {
   cobrado: true,
   fecha_cobro: getTodayISOAR(),
   notas: '',
-}
+})
 
-const IngresosSection = ({ resumen, periodoYm, onGenerarMes, onCrudIngreso, busyAction }) => {
+const IngresosSection = ({
+  resumen,
+  periodoYm,
+  onGenerarMes,
+  onCrudIngreso,
+  onCrudIngresoBatch,
+  busyAction,
+}) => {
   const [subTab, setSubTab] = useState('mes') // 'mes' | 'plantillas'
 
   // Puntual add form
   const [showPuntualForm, setShowPuntualForm] = useState(false)
-  const [puntualForm, setPuntualForm] = useState(EMPTY_PUNTUAL)
+  const [puntualForm, setPuntualForm] = useState(createEmptyPuntual)
+  const [puntualDividido, setPuntualDividido] = useState(false)
+  const [puntualAutoDist, setPuntualAutoDist] = useState(true)
+  const [puntualTramos, setPuntualTramos] = useState(() =>
+    createDefaultSplitTramos({ count: 2, mode: 'puntual', periodoYm })
+  )
 
   // Inline edit mensual
   const [editingId, setEditingId] = useState(null)
   const [editMontoReal, setEditMontoReal] = useState('')
   const [editMontoEsperado, setEditMontoEsperado] = useState('')
+  const [editFechaCobro, setEditFechaCobro] = useState('')
   const [editNotas, setEditNotas] = useState('')
 
   // Plantilla form
   const [showPlantillaForm, setShowPlantillaForm] = useState(false)
   const [plantillaForm, setPlantillaForm] = useState(EMPTY_PLANTILLA)
+  const [plantillaDividida, setPlantillaDividida] = useState(false)
+  const [plantillaAutoDist, setPlantillaAutoDist] = useState(true)
+  const [plantillaSyncMes, setPlantillaSyncMes] = useState(true)
+  const [plantillaTramos, setPlantillaTramos] = useState(() =>
+    createDefaultSplitTramos({ count: 2, mode: 'plantilla', periodoYm })
+  )
 
   const [saving, setSaving] = useState(false)
 
@@ -83,6 +111,7 @@ const IngresosSection = ({ resumen, periodoYm, onGenerarMes, onCrudIngreso, busy
     setEditingId(item.id)
     setEditMontoEsperado(String(toNumber(item.monto_esperado, 0)))
     setEditMontoReal(String(toNumber(item.monto_real ?? item.monto_esperado, 0)))
+    setEditFechaCobro(item.fecha_cobro ? String(item.fecha_cobro).slice(0, 10) : '')
     setEditNotas(item.notas || '')
   }
 
@@ -105,12 +134,38 @@ const IngresosSection = ({ resumen, periodoYm, onGenerarMes, onCrudIngreso, busy
         monto_esperado: espNum,
         monto_real: realNum,
         cobrado: Boolean(item.cobrado),
-        fecha_cobro: item.fecha_cobro || null,
+        fecha_cobro: editFechaCobro || null,
         notas: editNotas.trim() || null,
       })
       setEditingId(null)
     } finally {
       setSaving(false)
+    }
+  }
+
+  const togglePuntualModo = (isDividido) => {
+    setPuntualDividido(isDividido)
+    if (isDividido) {
+      setPuntualAutoDist(true)
+      setPuntualTramos(
+        createDefaultSplitTramos({
+          total: toNumber(puntualForm.monto_esperado, 0),
+          count: 2,
+          mode: 'puntual',
+          periodoYm,
+        })
+      )
+    }
+  }
+
+  const handlePuntualMontoChange = (val) => {
+    setPuntualForm((p) => ({ ...p, monto_esperado: val }))
+    if (puntualDividido && puntualAutoDist) {
+      const total = Math.max(0, toNumber(val, 0))
+      const amounts = distributeTotalAcrossTramos(total, puntualTramos.length)
+      setPuntualTramos((prev) =>
+        prev.map((t, idx) => ({ ...t, monto: total > 0 ? String(amounts[idx]) : '' }))
+      )
     }
   }
 
@@ -120,6 +175,36 @@ const IngresosSection = ({ resumen, periodoYm, onGenerarMes, onCrudIngreso, busy
       toast.error('Escribí el nombre del ingreso.')
       return
     }
+
+    if (puntualDividido) {
+      const check = validateSplitTramos(puntualTramos, 'puntual')
+      if (!check.valid) {
+        toast.error(check.error)
+        return
+      }
+      const payloads = buildPuntualSplitPayloads(puntualForm, puntualTramos, periodoYm)
+      setSaving(true)
+      try {
+        if (typeof onCrudIngresoBatch === 'function') {
+          await onCrudIngresoBatch(payloads, {
+            accion: 'upsert_mensual',
+            syncMes: false,
+            successMsg: `${payloads.length} cobros registrados en ${periodoYm}`,
+          })
+        } else {
+          for (let i = 0; i < payloads.length; i += 1) {
+            await onCrudIngreso('upsert_mensual', payloads[i])
+          }
+        }
+        setPuntualForm(createEmptyPuntual)
+        setPuntualDividido(false)
+        setShowPuntualForm(false)
+      } finally {
+        setSaving(false)
+      }
+      return
+    }
+
     const montoNum = toNumber(puntualForm.monto_esperado, -1)
     if (montoNum <= 0) {
       toast.error('Ingresá un monto mayor a 0.')
@@ -139,7 +224,7 @@ const IngresosSection = ({ resumen, periodoYm, onGenerarMes, onCrudIngreso, busy
         fecha_cobro: puntualForm.cobrado ? puntualForm.fecha_cobro || getTodayISOAR() : null,
         notas: puntualForm.notas.trim() || null,
       })
-      setPuntualForm(EMPTY_PUNTUAL)
+      setPuntualForm(createEmptyPuntual)
       setShowPuntualForm(false)
     } finally {
       setSaving(false)
@@ -153,6 +238,19 @@ const IngresosSection = ({ resumen, periodoYm, onGenerarMes, onCrudIngreso, busy
 
   const openNewPlantilla = () => {
     setPlantillaForm(EMPTY_PLANTILLA)
+    setPlantillaDividida(false)
+    setPlantillaAutoDist(true)
+    setPlantillaSyncMes(true)
+    setShowPlantillaForm(true)
+    setSubTab('plantillas')
+  }
+
+  const openNewSplitPlantilla = () => {
+    setPlantillaForm({ ...EMPTY_PLANTILLA, tipo: 'sueldo_externo' })
+    setPlantillaDividida(true)
+    setPlantillaAutoDist(true)
+    setPlantillaSyncMes(true)
+    setPlantillaTramos(createDefaultSplitTramos({ count: 2, mode: 'plantilla', periodoYm }))
     setShowPlantillaForm(true)
     setSubTab('plantillas')
   }
@@ -167,8 +265,35 @@ const IngresosSection = ({ resumen, periodoYm, onGenerarMes, onCrudIngreso, busy
       dia_cobro: String(pl.dia_cobro ?? 5),
       activo: pl.activo !== false,
     })
+    setPlantillaDividida(false)
     setShowPlantillaForm(true)
     setSubTab('plantillas')
+  }
+
+  const togglePlantillaModo = (isDividido) => {
+    setPlantillaDividida(isDividido)
+    if (isDividido) {
+      setPlantillaAutoDist(true)
+      setPlantillaTramos(
+        createDefaultSplitTramos({
+          total: toNumber(plantillaForm.monto_base, 0),
+          count: 2,
+          mode: 'plantilla',
+          periodoYm,
+        })
+      )
+    }
+  }
+
+  const handlePlantillaMontoChange = (val) => {
+    setPlantillaForm((p) => ({ ...p, monto_base: val }))
+    if (plantillaDividida && plantillaAutoDist) {
+      const total = Math.max(0, toNumber(val, 0))
+      const amounts = distributeTotalAcrossTramos(total, plantillaTramos.length)
+      setPlantillaTramos((prev) =>
+        prev.map((t, idx) => ({ ...t, monto: total > 0 ? String(amounts[idx]) : '' }))
+      )
+    }
   }
 
   const handleSavePlantilla = async (e) => {
@@ -177,6 +302,41 @@ const IngresosSection = ({ resumen, periodoYm, onGenerarMes, onCrudIngreso, busy
       toast.error('Ingresá el nombre de la plantilla.')
       return
     }
+
+    if (!plantillaForm.id && plantillaDividida) {
+      const check = validateSplitTramos(plantillaTramos, 'plantilla')
+      if (!check.valid) {
+        toast.error(check.error)
+        return
+      }
+      const payloads = buildPlantillaSplitPayloads(plantillaForm, plantillaTramos)
+      setSaving(true)
+      try {
+        if (typeof onCrudIngresoBatch === 'function') {
+          await onCrudIngresoBatch(payloads, {
+            accion: 'upsert_plantilla',
+            syncMes: plantillaSyncMes,
+            successMsg: plantillaSyncMes
+              ? `${payloads.length} tramos creados y sincronizados en ${periodoYm}`
+              : `${payloads.length} tramos de plantilla creados`,
+          })
+        } else {
+          for (let i = 0; i < payloads.length; i += 1) {
+            await onCrudIngreso('upsert_plantilla', payloads[i])
+          }
+          if (plantillaSyncMes && typeof onGenerarMes === 'function') {
+            await onGenerarMes()
+          }
+        }
+        setShowPlantillaForm(false)
+        setPlantillaForm(EMPTY_PLANTILLA)
+        setPlantillaDividida(false)
+      } finally {
+        setSaving(false)
+      }
+      return
+    }
+
     const monto = toNumber(plantillaForm.monto_base, -1)
     if (monto < 0) {
       toast.error('Ingresá un monto base válido.')
@@ -225,6 +385,14 @@ const IngresosSection = ({ resumen, periodoYm, onGenerarMes, onCrudIngreso, busy
                 <Sparkles className="h-4 w-4 text-blue-400" />
               )}
               <span>Sincronizar mes</span>
+            </button>
+            <button
+              type="button"
+              onClick={openNewSplitPlantilla}
+              className="btn-secondary"
+            >
+              <Divide className="h-4 w-4 text-emerald-400" />
+              <span>Sueldo dividido</span>
             </button>
             <button
               type="button"
@@ -300,10 +468,16 @@ const IngresosSection = ({ resumen, periodoYm, onGenerarMes, onCrudIngreso, busy
         </div>
 
         {subTab === 'plantillas' && (
-          <button type="button" onClick={openNewPlantilla} className="btn-primary">
-            <Plus className="h-4 w-4" />
-            <span>Nueva plantilla</span>
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <button type="button" onClick={openNewSplitPlantilla} className="btn-secondary">
+              <Divide className="h-4 w-4 text-emerald-400" />
+              <span>Sueldo dividido</span>
+            </button>
+            <button type="button" onClick={openNewPlantilla} className="btn-primary">
+              <Plus className="h-4 w-4" />
+              <span>Nueva plantilla</span>
+            </button>
+          </div>
         )}
       </div>
 
@@ -374,36 +548,83 @@ const IngresosSection = ({ resumen, periodoYm, onGenerarMes, onCrudIngreso, busy
                 </div>
                 <div>
                   <label htmlFor="ing-monto" className="block text-xs font-semibold text-slate-300 mb-1">
-                    Monto (ARS)
+                    {puntualDividido ? 'Monto total (ARS)' : 'Monto (ARS)'}
                   </label>
                   <input
                     id="ing-monto"
                     type="number"
                     min="1"
                     step="100"
-                    required
+                    required={!puntualDividido}
                     value={puntualForm.monto_esperado}
-                    onChange={(e) => setPuntualForm((p) => ({ ...p, monto_esperado: e.target.value }))}
+                    onChange={(e) => handlePuntualMontoChange(e.target.value)}
                     placeholder="450000"
                     className="input-field tabular-nums"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
-                <div className="sm:col-span-3">
-                  <label htmlFor="ing-fecha" className="block text-xs font-semibold text-slate-300 mb-1">
-                    Fecha de cobro
-                  </label>
-                  <input
-                    id="ing-fecha"
-                    type="date"
-                    value={puntualForm.fecha_cobro}
-                    onChange={(e) => setPuntualForm((p) => ({ ...p, fecha_cobro: e.target.value }))}
-                    className="input-field"
-                  />
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+                <div className="inline-flex p-1 rounded-xl bg-slate-900 border border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => togglePuntualModo(false)}
+                    className={`min-h-[36px] px-3 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+                      !puntualDividido
+                        ? 'bg-blue-600/25 text-blue-200 border border-blue-500/35'
+                        : 'text-slate-400 hover:text-slate-100'
+                    }`}
+                  >
+                    1 cobro único
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => togglePuntualModo(true)}
+                    className={`min-h-[36px] px-3 rounded-lg text-xs font-semibold transition-colors cursor-pointer inline-flex items-center gap-1.5 ${
+                      puntualDividido
+                        ? 'bg-blue-600/25 text-blue-200 border border-blue-500/35'
+                        : 'text-slate-400 hover:text-slate-100'
+                    }`}
+                  >
+                    <Divide className="h-3.5 w-3.5" />
+                    <span>Dividir en varios cobros (ej. al medio)</span>
+                  </button>
                 </div>
-                <div className="sm:col-span-5">
+              </div>
+
+              {puntualDividido && (
+                <IngresoSplitFields
+                  mode="puntual"
+                  idPrefix="puntual-split"
+                  totalMonto={puntualForm.monto_esperado}
+                  tramos={puntualTramos}
+                  onChangeTramos={(next, nextAuto) => {
+                    setPuntualTramos(next)
+                    if (typeof nextAuto === 'boolean') setPuntualAutoDist(nextAuto)
+                  }}
+                  onSyncTotalFromTramos={(sumVal) => {
+                    setPuntualForm((p) => ({ ...p, monto_esperado: String(sumVal) }))
+                  }}
+                  periodoYm={periodoYm}
+                />
+              )}
+
+              <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
+                {!puntualDividido && (
+                  <div className="sm:col-span-3">
+                    <label htmlFor="ing-fecha" className="block text-xs font-semibold text-slate-300 mb-1">
+                      Fecha de cobro
+                    </label>
+                    <input
+                      id="ing-fecha"
+                      type="date"
+                      value={puntualForm.fecha_cobro}
+                      onChange={(e) => setPuntualForm((p) => ({ ...p, fecha_cobro: e.target.value }))}
+                      className="input-field"
+                    />
+                  </div>
+                )}
+                <div className={puntualDividido ? 'sm:col-span-8' : 'sm:col-span-5'}>
                   <label htmlFor="ing-notas" className="block text-xs font-semibold text-slate-300 mb-1">
                     Notas (opcional)
                   </label>
@@ -417,18 +638,24 @@ const IngresosSection = ({ resumen, periodoYm, onGenerarMes, onCrudIngreso, busy
                   />
                 </div>
                 <div className="sm:col-span-4 flex flex-wrap items-center justify-end gap-2">
-                  <label className="inline-flex items-center gap-2 min-h-[44px] text-xs text-slate-200 mr-auto cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={puntualForm.cobrado}
-                      onChange={(e) => setPuntualForm((p) => ({ ...p, cobrado: e.target.checked }))}
-                      className="h-4 w-4 accent-emerald-500 rounded"
-                    />
-                    <span>Ya cobrado</span>
-                  </label>
+                  {!puntualDividido && (
+                    <label
+                      htmlFor="ing-puntual-cobrado"
+                      className="inline-flex items-center gap-2 min-h-[44px] text-xs text-slate-200 mr-auto cursor-pointer"
+                    >
+                      <input
+                        id="ing-puntual-cobrado"
+                        type="checkbox"
+                        checked={puntualForm.cobrado}
+                        onChange={(e) => setPuntualForm((p) => ({ ...p, cobrado: e.target.checked }))}
+                        className="h-4 w-4 accent-emerald-500 rounded"
+                      />
+                      <span>Ya cobrado</span>
+                    </label>
+                  )}
                   <button type="submit" disabled={saving} className="btn-primary">
                     {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-                    <span>Guardar</span>
+                    <span>{puntualDividido ? `Guardar ${puntualTramos.length} cobros` : 'Guardar'}</span>
                   </button>
                 </div>
               </div>
@@ -441,10 +668,16 @@ const IngresosSection = ({ resumen, periodoYm, onGenerarMes, onCrudIngreso, busy
               title="Sin ingresos externos cargados este mes"
               description="Podés cargar un ingreso puntual arriba o configurar tus sueldos recurrentes en la pestaña de Plantillas."
               action={
-                <button type="button" onClick={openNewPlantilla} className="btn-secondary">
-                  <Plus className="h-4 w-4" />
-                  <span>Crear plantilla de sueldo</span>
-                </button>
+                <div className="flex flex-wrap items-center justify-center gap-2">
+                  <button type="button" onClick={openNewSplitPlantilla} className="btn-primary">
+                    <Divide className="h-4 w-4" />
+                    <span>Cargar sueldo dividido</span>
+                  </button>
+                  <button type="button" onClick={openNewPlantilla} className="btn-secondary">
+                    <Plus className="h-4 w-4" />
+                    <span>Crear plantilla de sueldo</span>
+                  </button>
+                </div>
               }
             />
           ) : (
@@ -542,7 +775,7 @@ const IngresosSection = ({ resumen, periodoYm, onGenerarMes, onCrudIngreso, busy
                             className="input-field tabular-nums"
                           />
                         </div>
-                        <div className="sm:col-span-3">
+                        <div className="sm:col-span-2">
                           <label htmlFor={`edit-ing-esp-${item.id}`} className="block text-xs text-slate-300 mb-1">
                             Monto esperado
                           </label>
@@ -555,7 +788,19 @@ const IngresosSection = ({ resumen, periodoYm, onGenerarMes, onCrudIngreso, busy
                             className="input-field tabular-nums"
                           />
                         </div>
-                        <div className="sm:col-span-4">
+                        <div className="sm:col-span-3">
+                          <label htmlFor={`edit-ing-fecha-${item.id}`} className="block text-xs text-slate-300 mb-1">
+                            Fecha de cobro
+                          </label>
+                          <input
+                            id={`edit-ing-fecha-${item.id}`}
+                            type="date"
+                            value={editFechaCobro}
+                            onChange={(e) => setEditFechaCobro(e.target.value)}
+                            className="input-field"
+                          />
+                        </div>
+                        <div className="sm:col-span-2">
                           <label htmlFor={`edit-ing-not-${item.id}`} className="block text-xs text-slate-300 mb-1">
                             Notas
                           </label>
@@ -572,6 +817,7 @@ const IngresosSection = ({ resumen, periodoYm, onGenerarMes, onCrudIngreso, busy
                             type="button"
                             disabled={saving}
                             onClick={() => saveInlineEdit(item)}
+                            aria-label="Guardar edición"
                             className="btn-primary flex-1 px-3"
                           >
                             <Check className="h-4 w-4" />
@@ -662,39 +908,93 @@ const IngresosSection = ({ resumen, periodoYm, onGenerarMes, onCrudIngreso, busy
                 </div>
                 <div>
                   <label htmlFor="pli-monto" className="block text-xs font-semibold text-slate-300 mb-1">
-                    Monto base (ARS)
+                    {!plantillaForm.id && plantillaDividida ? 'Monto total mensual (ARS)' : 'Monto base (ARS)'}
                   </label>
                   <input
                     id="pli-monto"
                     type="number"
                     min="0"
                     step="100"
-                    required
+                    required={Boolean(plantillaForm.id) || !plantillaDividida}
                     value={plantillaForm.monto_base}
-                    onChange={(e) => setPlantillaForm((p) => ({ ...p, monto_base: e.target.value }))}
+                    onChange={(e) => handlePlantillaMontoChange(e.target.value)}
+                    placeholder={!plantillaForm.id && plantillaDividida ? '800000' : '450000'}
                     className="input-field tabular-nums"
                   />
                 </div>
               </div>
 
+              {!plantillaForm.id && (
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="inline-flex p-1 rounded-xl bg-slate-900 border border-slate-800">
+                    <button
+                      type="button"
+                      onClick={() => togglePlantillaModo(false)}
+                      className={`min-h-[36px] px-3 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+                        !plantillaDividida
+                          ? 'bg-blue-600/25 text-blue-200 border border-blue-500/35'
+                          : 'text-slate-400 hover:text-slate-100'
+                      }`}
+                    >
+                      1 pago por mes
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => togglePlantillaModo(true)}
+                      className={`min-h-[36px] px-3 rounded-lg text-xs font-semibold transition-colors cursor-pointer inline-flex items-center gap-1.5 ${
+                        plantillaDividida
+                          ? 'bg-blue-600/25 text-blue-200 border border-blue-500/35'
+                          : 'text-slate-400 hover:text-slate-100'
+                      }`}
+                    >
+                      <Divide className="h-3.5 w-3.5" />
+                      <span>Dividido (al medio / varios días)</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {!plantillaForm.id && plantillaDividida && (
+                <IngresoSplitFields
+                  mode="plantilla"
+                  idPrefix="plantilla-split"
+                  totalMonto={plantillaForm.monto_base}
+                  tramos={plantillaTramos}
+                  onChangeTramos={(next, nextAuto) => {
+                    setPlantillaTramos(next)
+                    if (typeof nextAuto === 'boolean') setPlantillaAutoDist(nextAuto)
+                  }}
+                  onSyncTotalFromTramos={(sumVal) => {
+                    setPlantillaForm((p) => ({ ...p, monto_base: String(sumVal) }))
+                  }}
+                  periodoYm={periodoYm}
+                />
+              )}
+
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex flex-wrap items-center gap-4">
-                  <div className="flex items-center gap-2">
-                    <label htmlFor="pli-dia" className="text-xs font-semibold text-slate-300">
-                      Día de cobro (1–31):
-                    </label>
+                  {(Boolean(plantillaForm.id) || !plantillaDividida) && (
+                    <div className="flex items-center gap-2">
+                      <label htmlFor="pli-dia" className="text-xs font-semibold text-slate-300">
+                        Día de cobro (1–31):
+                      </label>
+                      <input
+                        id="pli-dia"
+                        type="number"
+                        min="1"
+                        max="31"
+                        value={plantillaForm.dia_cobro}
+                        onChange={(e) => setPlantillaForm((p) => ({ ...p, dia_cobro: e.target.value }))}
+                        className="input-field w-20 tabular-nums"
+                      />
+                    </div>
+                  )}
+                  <label
+                    htmlFor="pli-activa"
+                    className="inline-flex items-center gap-2 min-h-[44px] cursor-pointer text-sm text-slate-200"
+                  >
                     <input
-                      id="pli-dia"
-                      type="number"
-                      min="1"
-                      max="31"
-                      value={plantillaForm.dia_cobro}
-                      onChange={(e) => setPlantillaForm((p) => ({ ...p, dia_cobro: e.target.value }))}
-                      className="input-field w-20 tabular-nums"
-                    />
-                  </div>
-                  <label className="inline-flex items-center gap-2 min-h-[44px] cursor-pointer text-sm text-slate-200">
-                    <input
+                      id="pli-activa"
                       type="checkbox"
                       checked={plantillaForm.activo}
                       onChange={(e) => setPlantillaForm((p) => ({ ...p, activo: e.target.checked }))}
@@ -702,6 +1002,21 @@ const IngresosSection = ({ resumen, periodoYm, onGenerarMes, onCrudIngreso, busy
                     />
                     <span>Activa</span>
                   </label>
+                  {!plantillaForm.id && plantillaDividida && (
+                    <label
+                      htmlFor="pli-sync-mes"
+                      className="inline-flex items-center gap-2 min-h-[44px] cursor-pointer text-sm text-emerald-200"
+                    >
+                      <input
+                        id="pli-sync-mes"
+                        type="checkbox"
+                        checked={plantillaSyncMes}
+                        onChange={(e) => setPlantillaSyncMes(e.target.checked)}
+                        className="h-4 w-4 accent-emerald-500 rounded"
+                      />
+                      <span>Sincronizar también en {periodoYm} al guardar</span>
+                    </label>
+                  )}
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -714,7 +1029,13 @@ const IngresosSection = ({ resumen, periodoYm, onGenerarMes, onCrudIngreso, busy
                   </button>
                   <button type="submit" disabled={saving} className="btn-primary">
                     {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-                    <span>{plantillaForm.id ? 'Guardar cambios' : 'Crear plantilla'}</span>
+                    <span>
+                      {plantillaForm.id
+                        ? 'Guardar cambios'
+                        : plantillaDividida
+                          ? `Crear ${plantillaTramos.length} tramos`
+                          : 'Crear plantilla'}
+                    </span>
                   </button>
                 </div>
               </div>
@@ -783,4 +1104,4 @@ const IngresosSection = ({ resumen, periodoYm, onGenerarMes, onCrudIngreso, busy
   )
 }
 
-export default IngresosSection
+export default React.memo(IngresosSection)

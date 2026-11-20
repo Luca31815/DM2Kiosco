@@ -7,20 +7,22 @@ import { toNumber } from '../utils/formatters.js'
 export function normalizeResumenMensual(raw, periodoYm) {
   const src = raw && typeof raw === 'object' ? raw : {}
 
+  const configRaw = src.config && typeof src.config === 'object' ? src.config : {}
   const config = {
-    periodo_ym: src.config?.periodo_ym || periodoYm,
-    sueldo_kiosco_objetivo: toNumber(src.config?.sueldo_kiosco_objetivo, 0),
-    notas: src.config?.notas || '',
-    ...src.config,
+    ...configRaw,
+    periodo_ym: configRaw.periodo_ym || periodoYm,
+    sueldo_kiosco_objetivo: toNumber(configRaw.sueldo_kiosco_objetivo, 0),
+    notas: configRaw.notas || '',
   }
 
-  const kioscoRaw = src.kiosco_mes || {}
+  const kioscoRaw = src.kiosco_mes && typeof src.kiosco_mes === 'object' ? src.kiosco_mes : {}
   const sueldoObj = toNumber(
     kioscoRaw.sueldo_kiosco_objetivo ?? config.sueldo_kiosco_objetivo,
     0
   )
   const gananciaMes = toNumber(kioscoRaw.ganancia_estimada_mes, 0)
   const kiosco_mes = {
+    ...kioscoRaw,
     ventas_mes: toNumber(kioscoRaw.ventas_mes, 0),
     compras_mes: toNumber(kioscoRaw.compras_mes, 0),
     ganancia_estimada_mes: gananciaMes,
@@ -33,7 +35,6 @@ export function normalizeResumenMensual(raw, periodoYm) {
         : sueldoObj > 0
           ? (gananciaMes / sueldoObj) * 100
           : 0,
-    ...kioscoRaw,
   }
 
   const ingresosRaw = src.ingresos || {}
@@ -72,15 +73,15 @@ export function normalizeResumenMensual(raw, periodoYm) {
     saldo_total_pendiente: toNumber(deudasRaw.saldo_total_pendiente, 0),
   }
 
-  const balRaw = src.totales_balance || {}
+  const balRaw = src.totales_balance && typeof src.totales_balance === 'object' ? src.totales_balance : {}
   const totales_balance = {
+    ...balRaw,
     ingresos_totales: toNumber(balRaw.ingresos_totales, 0),
     obligaciones_totales: toNumber(balRaw.obligaciones_totales, 0),
     pagado_actual: toNumber(balRaw.pagado_actual, 0),
     faltante_por_pagar: toNumber(balRaw.faltante_por_pagar, 0),
     balance_proyectado: toNumber(balRaw.balance_proyectado, 0),
     cobertura_pct: toNumber(balRaw.cobertura_pct, 0),
-    ...balRaw,
   }
 
   const proximos_vencimientos = Array.isArray(src.proximos_vencimientos)

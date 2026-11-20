@@ -35,7 +35,7 @@ const GastosEspecificosSection = ({ resumen, periodoYm, onCrudGasto }) => {
   const [ambito, setAmbito] = useState('personal')
   const [categoria, setCategoria] = useState('Imprevisto')
   const [estadoPago, setEstadoPago] = useState('pagado')
-  const [fecha, setFecha] = useState(getTodayISOAR())
+  const [fecha, setFecha] = useState(getTodayISOAR)
   const [notas, setNotas] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
@@ -499,4 +499,4 @@ const GastosEspecificosSection = ({ resumen, periodoYm, onCrudGasto }) => {
   )
 }
 
-export default GastosEspecificosSection
+export default React.memo(GastosEspecificosSection)

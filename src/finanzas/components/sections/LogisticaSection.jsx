@@ -18,6 +18,8 @@ import toast from 'react-hot-toast'
 import { formatARS, formatDateAR, toNumber } from '../../utils/formatters'
 import { SectionHeader, StatusBadge, EmptyState } from '../ui/Primitives'
 
+const EMPTY_ARRAY = []
+
 const EMPTY_REGLA = {
   id: null,
   nombre_regla: '',
@@ -35,7 +37,7 @@ const EMPTY_REGLA = {
 
 const LogisticaSection = ({
   resumen,
-  proveedoresCatalogo = [],
+  proveedoresCatalogo = EMPTY_ARRAY,
   periodoYm,
   onCrudLogistica,
   onRecalcularLogistica,
@@ -56,19 +58,29 @@ const LogisticaSection = ({
   const totalMes = toNumber(resumen.logistica.total_mes, 0)
 
   const catalogoNormalizado = useMemo(() => {
-    return (proveedoresCatalogo || [])
-      .map((p) => {
-        if (typeof p === 'string') return { nombre: p, compras_60d: null, ultima_compra: null }
-        return {
-          nombre: p.proveedor_normalizado || p.proveedor || p.nombre || '',
-          compras_60d: p.compras_60d ?? p.conteo_60d ?? p.cantidad_compras_60d ?? null,
-          monto_60d: p.monto_60d ?? p.monto_total ?? null,
-          ultima_compra: p.ultima_compra || null,
-          tiene_regla_activa: Boolean(p.tiene_regla_activa),
+    const list = proveedoresCatalogo || EMPTY_ARRAY
+    const result = []
+    for (let i = 0; i < list.length; i += 1) {
+      const p = list[i]
+      if (typeof p === 'string') {
+        if (p) result.push({ nombre: p, compras_60d: null, ultima_compra: null })
+      } else if (p) {
+        const nombre = p.proveedor_normalizado || p.proveedor || p.nombre || ''
+        if (nombre) {
+          result.push({
+            nombre,
+            compras_60d: p.compras_60d ?? p.conteo_60d ?? p.cantidad_compras_60d ?? null,
+            monto_60d: p.monto_60d ?? p.monto_total ?? null,
+            ultima_compra: p.ultima_compra || null,
+            tiene_regla_activa: Boolean(p.tiene_regla_activa),
+          })
         }
-      })
-      .filter((p) => p.nombre)
+      }
+    }
+    return result
   }, [proveedoresCatalogo])
+
+  const aliasesSet = useMemo(() => new Set(form.aliases), [form.aliases])
 
   const openNewRegla = () => {
     setForm(EMPTY_REGLA)
@@ -440,7 +452,7 @@ const LogisticaSection = ({
                 <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto custom-scrollbar">
                   {catalogoNormalizado.slice(0, 14).map((p) => {
                     const alreadyUsed =
-                      p.nombre === form.proveedor_normalizado || form.aliases.includes(p.nombre)
+                      p.nombre === form.proveedor_normalizado || aliasesSet.has(p.nombre)
                     return (
                       <button
                         key={p.nombre}
@@ -839,4 +851,4 @@ const LogisticaSection = ({
   )
 }
 
-export default LogisticaSection
+export default React.memo(LogisticaSection)

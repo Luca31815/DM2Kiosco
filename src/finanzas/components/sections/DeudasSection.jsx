@@ -24,7 +24,9 @@ import {
   EmptyState,
 } from '../ui/Primitives'
 
-const EMPTY_DEUDA = {
+const EMPTY_ARRAY = []
+
+const createEmptyDeuda = () => ({
   id: null,
   acreedor: '',
   concepto: '',
@@ -39,43 +41,76 @@ const EMPTY_DEUDA = {
   prioridad: 'alta',
   estado: 'activa',
   notas: '',
-}
+})
 
 const DeudasSection = ({ resumen, periodoYm, onCrudDeuda }) => {
   const [filterEstado, setFilterEstado] = useState('activa')
   const [filterAmbito, setFilterAmbito] = useState('todos')
 
   const [showForm, setShowForm] = useState(false)
-  const [form, setForm] = useState(EMPTY_DEUDA)
+  const [form, setForm] = useState(createEmptyDeuda)
   const [saving, setSaving] = useState(false)
 
   // Inline payment registration drawer inside a debt card
   const [payingDeudaId, setPayingDeudaId] = useState(null)
   const [pagoMonto, setPagoMonto] = useState('')
   const [pagoCuotaNum, setPagoCuotaNum] = useState('')
-  const [pagoFecha, setPagoFecha] = useState(getTodayISOAR())
+  const [pagoFecha, setPagoFecha] = useState(getTodayISOAR)
   const [pagoNotas, setPagoNotas] = useState('')
 
   // Expanded payment history per debt
   const [expandedHistoryId, setExpandedHistoryId] = useState(null)
 
-  const deudas = useMemo(() => resumen.deudas.items || [], [resumen.deudas.items])
-  const pagosMes = useMemo(() => resumen.deudas.pagos_mes || [], [resumen.deudas.pagos_mes])
+  const deudas = useMemo(() => resumen.deudas.items || EMPTY_ARRAY, [resumen.deudas.items])
+  const pagosMes = useMemo(() => resumen.deudas.pagos_mes || EMPTY_ARRAY, [resumen.deudas.pagos_mes])
 
   const filteredDeudas = useMemo(
     () => filterDeudas(deudas, { estado: filterEstado, ambito: filterAmbito }),
     [deudas, filterEstado, filterAmbito]
   )
 
+  const activeDeudasCount = useMemo(() => {
+    let count = 0
+    for (let i = 0; i < deudas.length; i += 1) {
+      if (deudas[i].estado === 'activa') count += 1
+    }
+    return count
+  }, [deudas])
+
   const pagosPorDeuda = useMemo(() => {
     const map = new Map()
-    pagosMes.forEach((p) => {
-      const list = map.get(p.deuda_id) || []
-      list.push(p)
-      map.set(p.deuda_id, list)
-    })
+    const seenByDeuda = new Map()
+
+    const addPago = (deudaId, p) => {
+      if (!deudaId || !p) return
+      let seen = seenByDeuda.get(deudaId)
+      let list = map.get(deudaId)
+      if (!seen) {
+        seen = new Set()
+        list = []
+        seenByDeuda.set(deudaId, seen)
+        map.set(deudaId, list)
+      }
+      if (!seen.has(p.id)) {
+        seen.add(p.id)
+        list.push(p)
+      }
+    }
+
+    for (let i = 0; i < deudas.length; i += 1) {
+      const d = deudas[i]
+      if (Array.isArray(d.pagos)) {
+        for (let j = 0; j < d.pagos.length; j += 1) {
+          addPago(d.id, d.pagos[j])
+        }
+      }
+    }
+    for (let i = 0; i < pagosMes.length; i += 1) {
+      const p = pagosMes[i]
+      addPago(p.deuda_id, p)
+    }
     return map
-  }, [pagosMes])
+  }, [deudas, pagosMes])
 
   const totalPagadoMes = useMemo(() => {
     if (resumen.deudas.total_pagado_mes !== undefined && resumen.deudas.total_pagado_mes !== null) {
@@ -85,7 +120,7 @@ const DeudasSection = ({ resumen, periodoYm, onCrudDeuda }) => {
   }, [resumen.deudas.total_pagado_mes, pagosMes])
 
   const openNewDeuda = () => {
-    setForm(EMPTY_DEUDA)
+    setForm(createEmptyDeuda)
     setShowForm(true)
   }
 
@@ -167,7 +202,7 @@ const DeudasSection = ({ resumen, periodoYm, onCrudDeuda }) => {
         notas: form.notas.trim() || null,
       })
       setShowForm(false)
-      setForm(EMPTY_DEUDA)
+      setForm(createEmptyDeuda)
     } finally {
       setSaving(false)
     }
@@ -247,7 +282,7 @@ const DeudasSection = ({ resumen, periodoYm, onCrudDeuda }) => {
             {formatARS(resumen.deudas.saldo_total_pendiente)}
           </p>
           <span className="text-xs text-slate-400 mt-1 block">
-            {deudas.filter((d) => d.estado === 'activa').length} deudas activas
+            {activeDeudasCount} deudas activas
           </span>
         </div>
 
@@ -556,12 +591,7 @@ const DeudasSection = ({ resumen, periodoYm, onCrudDeuda }) => {
             const pct = Math.min(100, (pagadas / totales) * 100)
             const isPaying = payingDeudaId === d.id
             const isHistoryOpen = expandedHistoryId === d.id
-            const pagosEstaDeuda = [
-              ...(Array.isArray(d.pagos) ? d.pagos : []),
-              ...(pagosPorDeuda.get(d.id) || []),
-            ].filter(
-              (p, index, arr) => arr.findIndex((x) => x.id === p.id) === index
-            )
+            const pagosEstaDeuda = pagosPorDeuda.get(d.id) || EMPTY_ARRAY
 
             return (
               <div key={d.id} className="glass-card rounded-3xl p-5 space-y-4">
@@ -801,4 +831,4 @@ const DeudasSection = ({ resumen, periodoYm, onCrudDeuda }) => {
   )
 }
 
-export default DeudasSection
+export default React.memo(DeudasSection)

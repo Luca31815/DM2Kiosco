@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react'
-import { LazyMotion, domAnimation, AnimatePresence, m } from 'framer-motion'
+import React, { useState, useEffect, useCallback, useMemo, useRef, Suspense, lazy } from 'react'
+import { LazyMotion } from 'framer-motion'
 import { Toaster } from 'react-hot-toast'
 import toast from 'react-hot-toast'
 import { AlertCircle, RefreshCw } from 'lucide-react'
@@ -9,16 +9,30 @@ import LayoutHeader from './components/LayoutHeader'
 import NavigationBar from './components/NavigationBar'
 import { DashboardSkeleton } from './components/ui/Primitives'
 import ResumenEjecutivoSection from './components/sections/ResumenEjecutivoSection'
-import GastosRecurrentesSection from './components/sections/GastosRecurrentesSection'
-import GastosEspecificosSection from './components/sections/GastosEspecificosSection'
-import IngresosSection from './components/sections/IngresosSection'
-import LogisticaSection from './components/sections/LogisticaSection'
-import DeudasSection from './components/sections/DeudasSection'
 import { finanzasApi, normalizeResumenMensual } from './services/finanzasApi'
 import { getCurrentPeriodoYM } from './utils/formatters'
 import './finanzas.css'
 
+const GastosRecurrentesSection = lazy(() => import('./components/sections/GastosRecurrentesSection'))
+const GastosEspecificosSection = lazy(() => import('./components/sections/GastosEspecificosSection'))
+const IngresosSection = lazy(() => import('./components/sections/IngresosSection'))
+const LogisticaSection = lazy(() => import('./components/sections/LogisticaSection'))
+const DeudasSection = lazy(() => import('./components/sections/DeudasSection'))
+
+const loadDomAnimation = () => import('framer-motion').then((mod) => mod.domAnimation)
+
 const STORAGE_PERIODO_KEY = 'dm2_finanzas_periodo_ym'
+
+const TOAST_OPTIONS = {
+  duration: 3200,
+  style: {
+    background: '#0f172a',
+    color: '#f1f5f9',
+    border: '1px solid rgba(148, 163, 184, 0.2)',
+    borderRadius: '14px',
+    fontSize: '13px',
+  },
+}
 
 function getInitialPeriodoYM() {
   try {
@@ -38,12 +52,26 @@ const FinanzasDashboardShell = () => {
   const [periodoYm, setPeriodoYm] = useState(getInitialPeriodoYM)
   const [activeSection, setActiveSection] = useState('resumen')
 
-  const [resumen, setResumen] = useState(() => normalizeResumenMensual(null, getInitialPeriodoYM()))
+  const [resumen, setResumen] = useState(() => normalizeResumenMensual(null, periodoYm))
   const [proveedoresCatalogo, setProveedoresCatalogo] = useState([])
   const [initialLoading, setInitialLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [busyAction, setBusyAction] = useState(null)
   const [errorMsg, setErrorMsg] = useState(null)
+
+  const resumenCacheRef = useRef(new Map())
+  const cacheSeqRef = useRef(new Map())
+  const inFlightRef = useRef(new Map())
+  const requestSeqRef = useRef(0)
+  const mountedRef = useRef(true)
+  const proveedoresLoadedRef = useRef(false)
+
+  useEffect(() => {
+    mountedRef.current = true
+    return () => {
+      mountedRef.current = false
+    }
+  }, [])
 
   const handleChangePeriodo = useCallback((nextYm) => {
     setPeriodoYm(nextYm)
@@ -54,62 +82,79 @@ const FinanzasDashboardShell = () => {
     }
   }, [])
 
-  const loadResumen = useCallback(async (ym, { silent = false } = {}) => {
+  const loadResumen = useCallback(async (ym, { silent = false, force = false } = {}) => {
+    const seq = ++requestSeqRef.current
+    cacheSeqRef.current.set(ym, seq)
+
+    const cached = !force ? resumenCacheRef.current.get(ym) : undefined
+    if (cached) {
+      setResumen(cached)
+      setInitialLoading(false)
+    }
+
     if (!silent) setRefreshing(true)
     setErrorMsg(null)
+
+    let promise = !force ? inFlightRef.current.get(ym) : null
+    if (!promise) {
+      promise = finanzasApi.fetchResumenMensual(ym)
+      inFlightRef.current.set(ym, promise)
+    }
+
     try {
-      const data = await finanzasApi.fetchResumenMensual(ym)
+      const data = await promise
+      if (seq >= (cacheSeqRef.current.get(ym) || 0)) {
+        resumenCacheRef.current.set(ym, data)
+      }
+      if (!mountedRef.current || seq !== requestSeqRef.current) return
       setResumen(data)
     } catch (err) {
+      if (!mountedRef.current || seq !== requestSeqRef.current) return
       console.error('[DM2 Finanzas] Error cargando resumen mensual:', err)
       setErrorMsg(err?.message || 'No se pudo cargar el resumen financiero del mes.')
       toast.error(err?.message || 'Error al cargar datos financieros')
     } finally {
-      setInitialLoading(false)
-      setRefreshing(false)
+      if (inFlightRef.current.get(ym) === promise) {
+        inFlightRef.current.delete(ym)
+      }
+      if (mountedRef.current && seq === requestSeqRef.current) {
+        setInitialLoading(false)
+        setRefreshing(false)
+      }
     }
   }, [])
 
   useEffect(() => {
-    let cancelled = false
-    const run = async () => {
-      setRefreshing(true)
-      setErrorMsg(null)
-      try {
-        const data = await finanzasApi.fetchResumenMensual(periodoYm)
-        if (!cancelled) setResumen(data)
-      } catch (err) {
-        if (!cancelled) {
-          console.error('[DM2 Finanzas] Error cargando resumen:', err)
-          setErrorMsg(err?.message || 'No se pudo cargar el resumen financiero del mes.')
-        }
-      } finally {
-        if (!cancelled) {
-          setInitialLoading(false)
-          setRefreshing(false)
-        }
-      }
-    }
-    run()
-    return () => {
-      cancelled = true
-    }
-  }, [periodoYm])
+    loadResumen(periodoYm)
+  }, [periodoYm, loadResumen])
 
   useEffect(() => {
+    if (activeSection !== 'logistica' || proveedoresLoadedRef.current || proveedoresCatalogo.length > 0) {
+      return
+    }
     let cancelled = false
     finanzasApi
       .fetchProveedoresCatalogo()
       .then((list) => {
-        if (!cancelled) setProveedoresCatalogo(list)
+        if (!cancelled) {
+          proveedoresLoadedRef.current = true
+          setProveedoresCatalogo(list)
+        }
       })
       .catch((err) => {
-        console.warn('[DM2 Finanzas] No se pudo cargar el catálogo de proveedores:', err)
+        if (!cancelled) {
+          console.warn('[DM2 Finanzas] No se pudo cargar el catálogo de proveedores:', err)
+        }
       })
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [activeSection, proveedoresCatalogo.length])
+
+  const handleRefresh = useCallback(
+    () => loadResumen(periodoYm, { force: true }),
+    [periodoYm, loadResumen]
+  )
 
   const handleGenerarMes = useCallback(async () => {
     setBusyAction('generar')
@@ -122,7 +167,7 @@ const FinanzasDashboardShell = () => {
       } else {
         toast.success(`Mes ${periodoYm} ya estaba al día (sin duplicados)`)
       }
-      await loadResumen(periodoYm, { silent: true })
+      await loadResumen(periodoYm, { silent: true, force: true })
     } catch (err) {
       toast.error(err?.message || 'Error al sincronizar el mes')
     } finally {
@@ -135,7 +180,7 @@ const FinanzasDashboardShell = () => {
       try {
         await finanzasApi.upsertMesConfig(periodoYm, sueldoObj, notas)
         toast.success('Meta de sueldo kiosco actualizada')
-        await loadResumen(periodoYm, { silent: true })
+        await loadResumen(periodoYm, { silent: true, force: true })
       } catch (err) {
         toast.error(err?.message || 'Error guardando la configuración del mes')
         throw err
@@ -149,7 +194,7 @@ const FinanzasDashboardShell = () => {
       try {
         await finanzasApi.crudGasto(accion, payload)
         toast.success('Gasto actualizado')
-        await loadResumen(periodoYm, { silent: true })
+        await loadResumen(periodoYm, { silent: true, force: true })
       } catch (err) {
         toast.error(err?.message || 'Error guardando el gasto')
         throw err
@@ -163,9 +208,29 @@ const FinanzasDashboardShell = () => {
       try {
         await finanzasApi.crudIngreso(accion, payload)
         toast.success('Ingreso actualizado')
-        await loadResumen(periodoYm, { silent: true })
+        await loadResumen(periodoYm, { silent: true, force: true })
       } catch (err) {
         toast.error(err?.message || 'Error guardando el ingreso')
+        throw err
+      }
+    },
+    [periodoYm, loadResumen]
+  )
+
+  const handleCrudIngresoBatch = useCallback(
+    async (payloads, { accion, syncMes = false, successMsg } = {}) => {
+      if (!Array.isArray(payloads) || payloads.length === 0) return
+      try {
+        for (let i = 0; i < payloads.length; i += 1) {
+          await finanzasApi.crudIngreso(accion, payloads[i])
+        }
+        if (syncMes) {
+          await finanzasApi.generarMes(periodoYm)
+        }
+        toast.success(successMsg || `${payloads.length} tramos guardados`)
+        await loadResumen(periodoYm, { silent: true, force: true })
+      } catch (err) {
+        toast.error(err?.message || 'Error guardando los tramos de ingreso')
         throw err
       }
     },
@@ -179,7 +244,7 @@ const FinanzasDashboardShell = () => {
         toast.success(
           accion === 'set_override' ? 'Override diario actualizado' : 'Regla de logística actualizada'
         )
-        await loadResumen(periodoYm, { silent: true })
+        await loadResumen(periodoYm, { silent: true, force: true })
       } catch (err) {
         toast.error(err?.message || 'Error guardando logística')
         throw err
@@ -193,26 +258,32 @@ const FinanzasDashboardShell = () => {
     try {
       const logRes = await finanzasApi.fetchGastosLogisticosMes(periodoYm)
       if (logRes && typeof logRes === 'object') {
-        setResumen((prev) => ({
-          ...prev,
-          logistica: {
-            ...prev.logistica,
-            reglas: Array.isArray(logRes.reglas) ? logRes.reglas : prev.logistica.reglas,
-            dias_mes: Array.isArray(logRes.dias_mes)
-              ? logRes.dias_mes
-              : Array.isArray(logRes.dias)
-                ? logRes.dias
-                : Array.isArray(logRes)
-                  ? logRes
-                  : prev.logistica.dias_mes,
-            total_mes:
-              logRes.total_mes !== undefined ? Number(logRes.total_mes) || 0 : prev.logistica.total_mes,
-            total_dias_computados:
-              logRes.total_dias_computados !== undefined
-                ? Number(logRes.total_dias_computados) || 0
-                : prev.logistica.total_dias_computados,
-          },
-        }))
+        setResumen((prev) => {
+          const next = {
+            ...prev,
+            logistica: {
+              ...prev.logistica,
+              reglas: Array.isArray(logRes.reglas) ? logRes.reglas : prev.logistica.reglas,
+              dias_mes: Array.isArray(logRes.dias_mes)
+                ? logRes.dias_mes
+                : Array.isArray(logRes.dias)
+                  ? logRes.dias
+                  : Array.isArray(logRes)
+                    ? logRes
+                    : prev.logistica.dias_mes,
+              total_mes:
+                logRes.total_mes !== undefined ? Number(logRes.total_mes) || 0 : prev.logistica.total_mes,
+              total_dias_computados:
+                logRes.total_dias_computados !== undefined
+                  ? Number(logRes.total_dias_computados) || 0
+                  : prev.logistica.total_dias_computados,
+            },
+          }
+          if (!prev.periodo_ym || prev.periodo_ym === periodoYm) {
+            resumenCacheRef.current.set(periodoYm, next)
+          }
+          return next
+        })
       }
       toast.success(`Logística de ${periodoYm} recalculada`)
     } catch (err) {
@@ -233,7 +304,7 @@ const FinanzasDashboardShell = () => {
           upsert: 'Deuda guardada',
         }
         toast.success(msgMap[accion] || 'Deuda actualizada')
-        await loadResumen(periodoYm, { silent: true })
+        await loadResumen(periodoYm, { silent: true, force: true })
       } catch (err) {
         toast.error(err?.message || 'Error procesando la deuda')
         throw err
@@ -253,16 +324,34 @@ const FinanzasDashboardShell = () => {
 
   const navBadges = useMemo(() => {
     const gastosItems = resumen.gastos.items || []
-    const recPend = gastosItems.filter((g) => g.es_recurrente && g.estado_pago !== 'pagado').length
-    const espCount = gastosItems.filter((g) => !g.es_recurrente).length
-    const ingPend = (resumen.ingresos.items || []).filter((i) => !i.cobrado).length
-    const logDias = (resumen.logistica.dias_mes || []).length
-    const deudasAct = (resumen.deudas.items || []).filter((d) => d.estado === 'activa').length
+    let recPend = 0
+    let espCount = 0
+    for (let i = 0; i < gastosItems.length; i += 1) {
+      const g = gastosItems[i]
+      if (g.es_recurrente) {
+        if (g.estado_pago !== 'pagado') recPend += 1
+      } else {
+        espCount += 1
+      }
+    }
+
+    const ingresosItems = resumen.ingresos.items || []
+    let ingPend = 0
+    for (let i = 0; i < ingresosItems.length; i += 1) {
+      if (!ingresosItems[i].cobrado) ingPend += 1
+    }
+
+    const deudasItems = resumen.deudas.items || []
+    let deudasAct = 0
+    for (let i = 0; i < deudasItems.length; i += 1) {
+      if (deudasItems[i].estado === 'activa') deudasAct += 1
+    }
+
     return {
       recurrentes: recPend,
       especificos: espCount,
       ingresos: ingPend,
-      logistica: logDias,
+      logistica: (resumen.logistica.dias_mes || []).length,
       deudas: deudasAct,
     }
   }, [resumen])
@@ -272,7 +361,7 @@ const FinanzasDashboardShell = () => {
       <LayoutHeader
         periodoYm={periodoYm}
         onChangePeriodo={handleChangePeriodo}
-        onRefresh={() => loadResumen(periodoYm)}
+        onRefresh={handleRefresh}
         refreshing={refreshing}
         userEmail={user?.email}
         onSignOut={handleSignOut}
@@ -300,7 +389,7 @@ const FinanzasDashboardShell = () => {
               </div>
               <button
                 type="button"
-                onClick={() => loadResumen(periodoYm)}
+                onClick={handleRefresh}
                 className="btn-secondary shrink-0 text-xs"
               >
                 <RefreshCw className="h-3.5 w-3.5" />
@@ -312,14 +401,8 @@ const FinanzasDashboardShell = () => {
           {initialLoading ? (
             <DashboardSkeleton />
           ) : (
-            <AnimatePresence mode="wait">
-              <m.div
-                key={`${activeSection}-${periodoYm}`}
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -4 }}
-                transition={{ duration: 0.16, ease: 'easeOut' }}
-              >
+            <div className="finanzas-section-container">
+              <Suspense fallback={<DashboardSkeleton />}>
                 {activeSection === 'resumen' && (
                   <ResumenEjecutivoSection
                     resumen={resumen}
@@ -355,6 +438,7 @@ const FinanzasDashboardShell = () => {
                     periodoYm={periodoYm}
                     onGenerarMes={handleGenerarMes}
                     onCrudIngreso={handleCrudIngreso}
+                    onCrudIngresoBatch={handleCrudIngresoBatch}
                     busyAction={busyAction}
                   />
                 )}
@@ -377,8 +461,8 @@ const FinanzasDashboardShell = () => {
                     onCrudDeuda={handleCrudDeuda}
                   />
                 )}
-              </m.div>
-            </AnimatePresence>
+              </Suspense>
+            </div>
           )}
         </main>
       </div>
@@ -389,20 +473,8 @@ const FinanzasDashboardShell = () => {
 function FinanzasApp() {
   return (
     <div className="finanzas-root min-h-screen bg-slate-950 text-slate-100">
-      <LazyMotion features={domAnimation}>
-        <Toaster
-          position="bottom-right"
-          toastOptions={{
-            duration: 3200,
-            style: {
-              background: '#0f172a',
-              color: '#f1f5f9',
-              border: '1px solid rgba(148, 163, 184, 0.2)',
-              borderRadius: '14px',
-              fontSize: '13px',
-            },
-          }}
-        />
+      <LazyMotion features={loadDomAnimation}>
+        <Toaster position="bottom-right" toastOptions={TOAST_OPTIONS} />
         <AuthGate>
           <FinanzasDashboardShell />
         </AuthGate>

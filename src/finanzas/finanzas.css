@@ -45,7 +45,6 @@
       hsl(222 40% 10% / 0.86) 100%
     );
     border: 1px solid hsl(217 30% 24% / 0.55);
-    backdrop-filter: blur(10px);
     transition: border-color 180ms ease-out, background-color 180ms ease-out;
   }
 
@@ -93,7 +92,7 @@
     line-height: 1.25rem;
     font-weight: 600;
     color: #ffffff;
-    transition: all 150ms ease;
+    transition: background-color 150ms ease, transform 150ms ease, box-shadow 150ms ease;
     cursor: pointer;
     background-color: hsl(217 85% 54%);
     box-shadow: 0 10px 24px -10px hsl(217 91% 52% / 0.55);

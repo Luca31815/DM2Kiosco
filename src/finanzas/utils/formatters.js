@@ -17,6 +17,30 @@ const pctFormatter = new Intl.NumberFormat('es-AR', {
   maximumFractionDigits: 1,
 })
 
+let arPeriodoFormatter = null
+let arDateFormatter = null
+
+try {
+  arPeriodoFormatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Argentina/Buenos_Aires',
+    year: 'numeric',
+    month: '2-digit',
+  })
+} catch {
+  arPeriodoFormatter = null
+}
+
+try {
+  arDateFormatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Argentina/Buenos_Aires',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  })
+} catch {
+  arDateFormatter = null
+}
+
 const MESES_ES = [
   'Enero',
   'Febrero',
@@ -59,36 +83,42 @@ export function formatPercent(value) {
 }
 
 export function getCurrentPeriodoYM() {
-  try {
-    const parts = new Intl.DateTimeFormat('en-CA', {
-      timeZone: 'America/Argentina/Buenos_Aires',
-      year: 'numeric',
-      month: '2-digit',
-    }).formatToParts(new Date())
-    const year = parts.find((p) => p.type === 'year')?.value
-    const month = parts.find((p) => p.type === 'month')?.value
-    if (year && month) return `${year}-${month}`
-  } catch {
-    // Fallback local
+  if (arPeriodoFormatter) {
+    try {
+      const parts = arPeriodoFormatter.formatToParts(new Date())
+      let year
+      let month
+      for (let i = 0; i < parts.length; i += 1) {
+        const p = parts[i]
+        if (p.type === 'year') year = p.value
+        else if (p.type === 'month') month = p.value
+      }
+      if (year && month) return `${year}-${month}`
+    } catch {
+      // Fallback local
+    }
   }
   const now = new Date()
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
 }
 
 export function getTodayISOAR() {
-  try {
-    const parts = new Intl.DateTimeFormat('en-CA', {
-      timeZone: 'America/Argentina/Buenos_Aires',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-    }).formatToParts(new Date())
-    const year = parts.find((p) => p.type === 'year')?.value
-    const month = parts.find((p) => p.type === 'month')?.value
-    const day = parts.find((p) => p.type === 'day')?.value
-    if (year && month && day) return `${year}-${month}-${day}`
-  } catch {
-    // Fallback local
+  if (arDateFormatter) {
+    try {
+      const parts = arDateFormatter.formatToParts(new Date())
+      let year
+      let month
+      let day
+      for (let i = 0; i < parts.length; i += 1) {
+        const p = parts[i]
+        if (p.type === 'year') year = p.value
+        else if (p.type === 'month') month = p.value
+        else if (p.type === 'day') day = p.value
+      }
+      if (year && month && day) return `${year}-${month}-${day}`
+    } catch {
+      // Fallback local
+    }
   }
   const now = new Date()
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
