@@ -5,7 +5,6 @@ import {
   CheckCircle2,
   Circle,
   Pencil,
-  Trash2,
   Check,
   X,
   Sparkles,
@@ -22,7 +21,7 @@ import {
   buildPlantillaSplitPayloads,
   buildPuntualSplitPayloads,
 } from '../../utils/ingresoSplit'
-import { SectionHeader, StatusBadge, ProgressBar, EmptyState } from '../ui/Primitives'
+import { SectionHeader, StatusBadge, ProgressBar, EmptyState, ConfirmDeleteButton } from '../ui/Primitives'
 import IngresoSplitFields from './IngresoSplitFields'
 
 const TIPO_LABELS = {
@@ -232,7 +231,6 @@ const IngresosSection = ({
   }
 
   const handleDeleteMensual = async (item) => {
-    if (!window.confirm(`¿Eliminar el ingreso "${item.nombre}" de ${periodoYm}?`)) return
     await onCrudIngreso('delete_mensual', { id: item.id })
   }
 
@@ -362,8 +360,7 @@ const IngresosSection = ({
   }
 
   const handleDeletePlantilla = async (pl) => {
-    if (!window.confirm(`¿Eliminar la plantilla de ingreso "${pl.nombre}"?`)) return
-    await onCrudIngreso('delete_plantilla', { id: pl.id })
+    await onCrudIngreso('delete_plantilla', { id: pl.id, eliminar_pendientes: true })
   }
 
   return (
@@ -431,9 +428,23 @@ const IngresosSection = ({
             </p>
           </div>
           <div>
-            <span className="text-xs text-slate-400">Aporte Kiosco (ganancia)</span>
-            <p className="font-display text-lg font-bold text-blue-300 tabular-nums mt-0.5">
-              {formatARS(resumen.kiosco_mes.ganancia_estimada_mes)}
+            <span className="text-xs text-slate-400">Neto Kiosco (Ventas − Compras)</span>
+            <p
+              className={`font-display text-lg font-bold tabular-nums mt-0.5 ${
+                toNumber(
+                  resumen.kiosco_mes.neto_caja_mes,
+                  toNumber(resumen.kiosco_mes.ventas_mes, 0) - toNumber(resumen.kiosco_mes.compras_mes, 0)
+                ) >= 0
+                  ? 'text-blue-300'
+                  : 'text-rose-300'
+              }`}
+            >
+              {formatARS(
+                toNumber(
+                  resumen.kiosco_mes.neto_caja_mes,
+                  toNumber(resumen.kiosco_mes.ventas_mes, 0) - toNumber(resumen.kiosco_mes.compras_mes, 0)
+                )
+              )}
             </p>
           </div>
         </div>
@@ -554,7 +565,7 @@ const IngresosSection = ({
                     id="ing-monto"
                     type="number"
                     min="1"
-                    step="100"
+                    step="any"
                     required={!puntualDividido}
                     value={puntualForm.monto_esperado}
                     onChange={(e) => handlePuntualMontoChange(e.target.value)}
@@ -728,7 +739,7 @@ const IngresosSection = ({
                         </div>
                       </div>
 
-                      <div className="flex items-center justify-between sm:justify-end gap-2 pl-[56px] sm:pl-0">
+                      <div className="flex flex-wrap items-center justify-between sm:justify-end gap-2 pl-[56px] sm:pl-0">
                         <div className="text-left sm:text-right mr-1">
                           <p className="font-display text-base sm:text-lg font-bold text-emerald-300 tabular-nums">
                             {formatARS(montoMostrar)}
@@ -743,20 +754,29 @@ const IngresosSection = ({
                         </div>
                         <button
                           type="button"
+                          onClick={() => handleToggleCobrado(item)}
+                          className={`inline-flex items-center gap-1.5 min-h-[44px] px-3 rounded-xl text-xs font-semibold border transition-colors cursor-pointer whitespace-nowrap ${
+                            isCobrado
+                              ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/25'
+                              : 'bg-emerald-600/20 border-emerald-500/45 text-emerald-200 hover:bg-emerald-600/35'
+                          }`}
+                        >
+                          <CheckCircle2 className="h-3.5 w-3.5" />
+                          <span>{isCobrado ? 'Cobrado' : 'Marcar cobrado'}</span>
+                        </button>
+                        <button
+                          type="button"
                           onClick={() => (isEditing ? setEditingId(null) : startInlineEdit(item))}
                           aria-label={`Editar ${item.nombre}`}
                           className="btn-ghost border border-slate-800"
                         >
                           <Pencil className="h-4 w-4" />
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteMensual(item)}
-                          aria-label={`Eliminar ${item.nombre}`}
-                          className="btn-ghost text-slate-400 hover:text-rose-300 hover:bg-rose-500/10 border border-slate-800"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
+                        <ConfirmDeleteButton
+                          onConfirm={() => handleDeleteMensual(item)}
+                          ariaLabel={`Eliminar ${item.nombre}`}
+                          confirmLabel="Borrar"
+                        />
                       </div>
                     </div>
 
@@ -770,6 +790,7 @@ const IngresosSection = ({
                             id={`edit-ing-real-${item.id}`}
                             type="number"
                             min="0"
+                            step="any"
                             value={editMontoReal}
                             onChange={(e) => setEditMontoReal(e.target.value)}
                             className="input-field tabular-nums"
@@ -783,6 +804,7 @@ const IngresosSection = ({
                             id={`edit-ing-esp-${item.id}`}
                             type="number"
                             min="0"
+                            step="any"
                             value={editMontoEsperado}
                             onChange={(e) => setEditMontoEsperado(e.target.value)}
                             className="input-field tabular-nums"
@@ -914,7 +936,7 @@ const IngresosSection = ({
                     id="pli-monto"
                     type="number"
                     min="0"
-                    step="100"
+                    step="any"
                     required={Boolean(plantillaForm.id) || !plantillaDividida}
                     value={plantillaForm.monto_base}
                     onChange={(e) => handlePlantillaMontoChange(e.target.value)}
@@ -1085,14 +1107,11 @@ const IngresosSection = ({
                     >
                       <Pencil className="h-4 w-4" />
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => handleDeletePlantilla(pl)}
-                      aria-label={`Eliminar plantilla ${pl.nombre}`}
-                      className="btn-ghost text-slate-400 hover:text-rose-300 hover:bg-rose-500/10 border border-slate-800"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
+                    <ConfirmDeleteButton
+                      onConfirm={() => handleDeletePlantilla(pl)}
+                      ariaLabel={`Eliminar plantilla ${pl.nombre}`}
+                      confirmLabel="Borrar"
+                    />
                   </div>
                 </div>
               ))}

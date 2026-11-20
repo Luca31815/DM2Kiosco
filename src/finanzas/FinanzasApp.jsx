@@ -11,6 +11,7 @@ import { DashboardSkeleton } from './components/ui/Primitives'
 import ResumenEjecutivoSection from './components/sections/ResumenEjecutivoSection'
 import { finanzasApi, normalizeResumenMensual } from './services/finanzasApi'
 import { getCurrentPeriodoYM } from './utils/formatters'
+import { computeSueldoKioscoFromObjetivos } from './utils/objetivosMeta'
 import './finanzas.css'
 
 const GastosRecurrentesSection = lazy(() => import('./components/sections/GastosRecurrentesSection'))
@@ -65,6 +66,11 @@ const FinanzasDashboardShell = () => {
   const requestSeqRef = useRef(0)
   const mountedRef = useRef(true)
   const proveedoresLoadedRef = useRef(false)
+  const resumenRef = useRef(resumen)
+
+  useEffect(() => {
+    resumenRef.current = resumen
+  }, [resumen])
 
   useEffect(() => {
     mountedRef.current = true
@@ -175,14 +181,15 @@ const FinanzasDashboardShell = () => {
     }
   }, [periodoYm, loadResumen])
 
-  const handleSaveConfig = useCallback(
-    async (sueldoObj, notas) => {
+  const handleSaveObjetivos = useCallback(
+    async (nextObjetivos, notas = null) => {
       try {
-        await finanzasApi.upsertMesConfig(periodoYm, sueldoObj, notas)
-        toast.success('Meta de sueldo kiosco actualizada')
+        const sueldoCalc = computeSueldoKioscoFromObjetivos(nextObjetivos)
+        await finanzasApi.upsertObjetivos(periodoYm, nextObjetivos, sueldoCalc, notas)
+        toast.success('Objetivos del mes actualizados')
         await loadResumen(periodoYm, { silent: true, force: true })
       } catch (err) {
-        toast.error(err?.message || 'Error guardando la configuración del mes')
+        toast.error(err?.message || 'Error guardando los objetivos del mes')
         throw err
       }
     },
@@ -192,8 +199,28 @@ const FinanzasDashboardShell = () => {
   const handleCrudGasto = useCallback(
     async (accion, payload) => {
       try {
-        await finanzasApi.crudGasto(accion, payload)
-        toast.success('Gasto actualizado')
+        if (accion === 'delete_plantilla' && payload?.eliminar_pendientes && payload?.id != null) {
+          const pendientes = (resumenRef.current?.gastos?.items || []).filter(
+            (g) => Number(g.plantilla_id) === Number(payload.id) && g.estado_pago === 'pendiente'
+          )
+          for (let i = 0; i < pendientes.length; i += 1) {
+            await finanzasApi.crudGasto('delete_mensual', { id: pendientes[i].id })
+          }
+          await finanzasApi.crudGasto('delete_plantilla', { id: payload.id })
+          toast.success(
+            pendientes.length > 0
+              ? 'Plantilla y pendientes del mes eliminados'
+              : 'Plantilla eliminada'
+          )
+        } else {
+          await finanzasApi.crudGasto(accion, payload)
+          const msgMap = {
+            delete_mensual: 'Gasto eliminado del mes',
+            delete_plantilla: 'Plantilla eliminada',
+            toggle_estado: 'Estado de pago actualizado',
+          }
+          toast.success(msgMap[accion] || 'Gasto actualizado')
+        }
         await loadResumen(periodoYm, { silent: true, force: true })
       } catch (err) {
         toast.error(err?.message || 'Error guardando el gasto')
@@ -206,8 +233,30 @@ const FinanzasDashboardShell = () => {
   const handleCrudIngreso = useCallback(
     async (accion, payload) => {
       try {
-        await finanzasApi.crudIngreso(accion, payload)
-        toast.success('Ingreso actualizado')
+        if (accion === 'delete_plantilla' && payload?.eliminar_pendientes && payload?.id != null) {
+          const pendientes = (resumenRef.current?.ingresos?.items || []).filter(
+            (it) => Number(it.plantilla_id) === Number(payload.id) && !it.cobrado
+          )
+          for (let i = 0; i < pendientes.length; i += 1) {
+            await finanzasApi.crudIngreso('delete_mensual', { id: pendientes[i].id })
+          }
+          await finanzasApi.crudIngreso('delete_plantilla', { id: payload.id })
+          toast.success(
+            pendientes.length > 0
+              ? 'Plantilla y pendientes del mes eliminados'
+              : 'Plantilla de ingreso eliminada'
+          )
+        } else {
+          await finanzasApi.crudIngreso(accion, payload)
+          const msgMap = {
+            delete_mensual: 'Ingreso eliminado del mes',
+            delete_plantilla: 'Plantilla de ingreso eliminada',
+            toggle_cobrado: payload?.cobrado
+              ? 'Ingreso marcado como cobrado'
+              : 'Ingreso marcado como pendiente',
+          }
+          toast.success(msgMap[accion] || 'Ingreso actualizado')
+        }
         await loadResumen(periodoYm, { silent: true, force: true })
       } catch (err) {
         toast.error(err?.message || 'Error guardando el ingreso')
@@ -407,7 +456,7 @@ const FinanzasDashboardShell = () => {
                   <ResumenEjecutivoSection
                     resumen={resumen}
                     periodoYm={periodoYm}
-                    onSaveConfig={handleSaveConfig}
+                    onSaveObjetivos={handleSaveObjetivos}
                     onGenerarMes={handleGenerarMes}
                     onNavigate={setActiveSection}
                     busyAction={busyAction}

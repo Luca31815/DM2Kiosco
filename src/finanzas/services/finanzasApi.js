@@ -37,6 +37,18 @@ export const finanzasApi = {
     })
   },
 
+  async upsertObjetivos(periodoYm, objetivos, sueldoKioscoObjetivo = null, notas = null) {
+    return callRpc('fn_finanzas_upsert_objetivos', {
+      p_periodo_ym: periodoYm,
+      p_objetivos: Array.isArray(objetivos) ? objetivos : [],
+      p_sueldo_kiosco_objetivo:
+        sueldoKioscoObjetivo === null || sueldoKioscoObjetivo === undefined
+          ? null
+          : toNumber(sueldoKioscoObjetivo, 0),
+      p_notas: notas === '' ? null : notas,
+    })
+  },
+
   async fetchProveedoresCatalogo() {
     const raw = await callRpc('fn_finanzas_proveedores_catalogo')
     if (Array.isArray(raw)) return raw

@@ -27,6 +27,11 @@ import {
   formatDailyPlantillaNombre,
   parseDailyPlantillaNombre,
 } from '../src/finanzas/utils/gastoDiario.js'
+import {
+  resolveObjetivosList,
+  evaluateObjetivoProgress,
+  computeSueldoKioscoFromObjetivos,
+} from '../src/finanzas/utils/objetivosMeta.js'
 
 test('formatters: shiftPeriodoYM handles year boundaries', () => {
   assert.equal(shiftPeriodoYM('2026-01', -1), '2025-12')
@@ -254,4 +259,128 @@ test('gastoDiario: calculates daily recurring monthly totals and parses reversib
   const normal = parseDailyPlantillaNombre('Alquiler local', 450000)
   assert.equal(normal.isDaily, false)
   assert.equal(normal.baseNombre, 'Alquiler local')
+})
+
+test('normalizeResumenMensual: computes neto_caja_mes (Ventas - Compras) and cobertura_sueldo_caja_pct', () => {
+  const pos = normalizeResumenMensual(
+    {
+      config: { periodo_ym: '2026-11', sueldo_kiosco_objetivo: 250000 },
+      kiosco_mes: {
+        ventas_mes: 2527572.99,
+        compras_mes: 2416842.92,
+        ganancia_estimada_mes: 665291.69,
+      },
+    },
+    '2026-11'
+  )
+  assert.equal(pos.kiosco_mes.neto_caja_mes, 110730.07)
+  assert.equal(pos.kiosco_mes.cobertura_sueldo_caja_pct, 44.29)
+
+  const neg = normalizeResumenMensual(
+    {
+      config: { periodo_ym: '2026-11', sueldo_kiosco_objetivo: 250000 },
+      kiosco_mes: {
+        ventas_mes: 1000000,
+        compras_mes: 1250000,
+        ganancia_estimada_mes: 200000,
+      },
+    },
+    '2026-11'
+  )
+  assert.equal(neg.kiosco_mes.neto_caja_mes, -250000)
+  assert.equal(neg.kiosco_mes.cobertura_sueldo_caja_pct, 0)
+})
+
+test('objetivosMeta: resolveObjetivosList inherits legacy sueldo_kiosco_objetivo and preserves array', () => {
+  const legacy = resolveObjetivosList({
+    sueldo_kiosco_objetivo: 250000,
+    notas: 'sueldo de luca',
+    objetivos: [],
+  })
+  assert.equal(legacy.length, 1)
+  assert.equal(legacy[0].id, 'obj-sueldo-kiosco-inicial')
+  assert.equal(legacy[0].tipo, 'sueldo_kiosco')
+  assert.equal(legacy[0].nombre, 'sueldo de luca')
+  assert.equal(legacy[0].monto_objetivo, 250000)
+
+  const custom = resolveObjetivosList({
+    sueldo_kiosco_objetivo: 250000,
+    objetivos: [
+      { id: 'a', nombre: 'Meta 1', tipo: 'ventas_kiosco', monto_objetivo: 3000000 },
+      { id: 'b', nombre: 'Sueldo', tipo: 'sueldo_kiosco', monto_objetivo: 300000 },
+    ],
+  })
+  assert.equal(custom.length, 2)
+  assert.equal(computeSueldoKioscoFromObjetivos(custom), 300000)
+})
+
+test('objetivosMeta: evaluateObjetivoProgress handles all 6 goal types and inverse tope_gastos', () => {
+  const resumenSample = {
+    kiosco_mes: {
+      ventas_mes: 2527572.99,
+      compras_mes: 2416842.92,
+      neto_caja_mes: 110730.07,
+      ganancia_estimada_mes: 665291.69,
+    },
+    totales_balance: {
+      obligaciones_totales: 1088906,
+      balance_proyectado: 301094,
+    },
+  }
+
+  const rSueldo = evaluateObjetivoProgress(
+    { tipo: 'sueldo_kiosco', monto_objetivo: 250000 },
+    resumenSample
+  )
+  assert.equal(rSueldo.actual, 110730.07)
+  assert.equal(rSueldo.pct, 44.29)
+  assert.equal(rSueldo.cumplido, false)
+
+  const rSueldoNeg = evaluateObjetivoProgress(
+    { tipo: 'sueldo_kiosco', monto_objetivo: 250000 },
+    { kiosco_mes: { neto_caja_mes: -50000 } }
+  )
+  assert.equal(rSueldoNeg.pct, 0)
+  assert.equal(rSueldoNeg.statusLabel, 'En negativo')
+
+  const rVentas = evaluateObjetivoProgress(
+    { tipo: 'ventas_kiosco', monto_objetivo: 2500000 },
+    resumenSample
+  )
+  assert.equal(rVentas.cumplido, true)
+
+  const rMargen = evaluateObjetivoProgress(
+    { tipo: 'margen_kiosco', monto_objetivo: 700000 },
+    resumenSample
+  )
+  assert.equal(rMargen.actual, 665291.69)
+
+  const rSuperavit = evaluateObjetivoProgress(
+    { tipo: 'superavit_mes', monto_objetivo: 300000 },
+    resumenSample
+  )
+  assert.equal(rSuperavit.cumplido, true)
+
+  const rTopeOk = evaluateObjetivoProgress(
+    { tipo: 'tope_gastos', monto_objetivo: 1500000 },
+    resumenSample
+  )
+  assert.equal(rTopeOk.excedido, false)
+  assert.equal(rTopeOk.tone, 'positive')
+
+  const rTopeBad = evaluateObjetivoProgress(
+    { tipo: 'tope_gastos', monto_objetivo: 900000 },
+    resumenSample
+  )
+  assert.equal(rTopeBad.excedido, true)
+  assert.equal(rTopeBad.tone, 'danger')
+  assert.equal(rTopeBad.faltante, 188906)
+
+  const rManual = evaluateObjetivoProgress(
+    { tipo: 'ahorro_manual', monto_objetivo: 500000, monto_actual_manual: 150000 },
+    resumenSample
+  )
+  assert.equal(rManual.actual, 150000)
+  assert.equal(rManual.pct, 30)
+  assert.equal(rManual.faltante, 350000)
 })

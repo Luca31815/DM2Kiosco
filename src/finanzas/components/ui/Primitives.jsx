@@ -1,4 +1,5 @@
-import React from 'react'
+import React, { useState, useEffect, useRef } from 'react'
+import { Trash2, Check, X, Loader2 } from 'lucide-react'
 
 export const SectionHeader = ({ title, subtitle, actions }) => (
   <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6">
@@ -121,3 +122,84 @@ export const DashboardSkeleton = () => (
     </div>
   </div>
 )
+
+export const ConfirmDeleteButton = ({
+  onConfirm,
+  ariaLabel = 'Eliminar',
+  confirmLabel = 'Borrar',
+  icon: Icon = Trash2,
+  iconClassName = 'h-4 w-4',
+  triggerLabel = '',
+  className = '',
+}) => {
+  const [confirming, setConfirming] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const mountedRef = useRef(true)
+
+  useEffect(() => {
+    mountedRef.current = true
+    return () => {
+      mountedRef.current = false
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!confirming || busy) return undefined
+    const timer = window.setTimeout(() => {
+      if (mountedRef.current) setConfirming(false)
+    }, 6000)
+    return () => window.clearTimeout(timer)
+  }, [confirming, busy])
+
+  const handleConfirm = async () => {
+    if (busy) return
+    setBusy(true)
+    try {
+      await onConfirm()
+      if (mountedRef.current) setConfirming(false)
+    } finally {
+      if (mountedRef.current) setBusy(false)
+    }
+  }
+
+  if (confirming) {
+    return (
+      <div className="inline-flex items-center gap-1">
+        <button
+          type="button"
+          onClick={handleConfirm}
+          disabled={busy}
+          aria-label={`Confirmar: ${confirmLabel}`}
+          className="inline-flex items-center gap-1.5 min-h-[44px] px-3 rounded-xl text-xs font-semibold bg-rose-600/20 hover:bg-rose-600/35 text-rose-200 border border-rose-500/45 disabled:opacity-50 transition-colors cursor-pointer whitespace-nowrap"
+        >
+          {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+          <span>{confirmLabel}</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setConfirming(false)}
+          disabled={busy}
+          aria-label="Cancelar eliminación"
+          className="btn-ghost border border-slate-700 text-slate-300"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={() => setConfirming(true)}
+      aria-label={ariaLabel}
+      className={
+        className ||
+        'btn-ghost text-slate-400 hover:text-rose-300 hover:bg-rose-500/10 border border-slate-800'
+      }
+    >
+      <Icon className={iconClassName} />
+      {triggerLabel ? <span>{triggerLabel}</span> : null}
+    </button>
+  )
+}

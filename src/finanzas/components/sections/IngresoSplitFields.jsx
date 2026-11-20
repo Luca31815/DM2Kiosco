@@ -165,7 +165,7 @@ const IngresoSplitFields = ({
                   id={montoId}
                   type="number"
                   min="1"
-                  step="100"
+                  step="any"
                   required
                   value={tramo.monto}
                   onChange={(e) => updateField(tramo.key, 'monto', e.target.value)}

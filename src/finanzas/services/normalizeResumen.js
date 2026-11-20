@@ -12,6 +12,7 @@ export function normalizeResumenMensual(raw, periodoYm) {
     ...configRaw,
     periodo_ym: configRaw.periodo_ym || periodoYm,
     sueldo_kiosco_objetivo: toNumber(configRaw.sueldo_kiosco_objetivo, 0),
+    objetivos: Array.isArray(configRaw.objetivos) ? configRaw.objetivos : [],
     notas: configRaw.notas || '',
   }
 
@@ -21,14 +22,27 @@ export function normalizeResumenMensual(raw, periodoYm) {
     0
   )
   const gananciaMes = toNumber(kioscoRaw.ganancia_estimada_mes, 0)
+  const ventasMes = toNumber(kioscoRaw.ventas_mes, 0)
+  const comprasMes = toNumber(kioscoRaw.compras_mes, 0)
+  const netoCajaMes =
+    kioscoRaw.neto_caja_mes !== undefined && kioscoRaw.neto_caja_mes !== null
+      ? toNumber(kioscoRaw.neto_caja_mes, 0)
+      : Math.round((ventasMes - comprasMes) * 100) / 100
+  const coberturaSueldoCajaPct =
+    sueldoObj > 0
+      ? Math.round((Math.max(0, netoCajaMes) / sueldoObj) * 10000) / 100
+      : 0
+
   const kiosco_mes = {
     ...kioscoRaw,
-    ventas_mes: toNumber(kioscoRaw.ventas_mes, 0),
-    compras_mes: toNumber(kioscoRaw.compras_mes, 0),
+    ventas_mes: ventasMes,
+    compras_mes: comprasMes,
+    neto_caja_mes: netoCajaMes,
     ganancia_estimada_mes: gananciaMes,
     retiros_mes: toNumber(kioscoRaw.retiros_mes, 0),
     proyeccion_cierre: toNumber(kioscoRaw.proyeccion_cierre, 0),
     sueldo_kiosco_objetivo: sueldoObj,
+    cobertura_sueldo_caja_pct: coberturaSueldoCajaPct,
     cobertura_sueldo_pct:
       kioscoRaw.cobertura_sueldo_pct !== undefined && kioscoRaw.cobertura_sueldo_pct !== null
         ? toNumber(kioscoRaw.cobertura_sueldo_pct, 0)

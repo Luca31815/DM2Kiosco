@@ -1,4 +1,4 @@
-import React, { useState, useMemo, Suspense, lazy } from 'react'
+import React, { useMemo, Suspense, lazy } from 'react'
 import {
   TrendingUp,
   TrendingDown,
@@ -6,19 +6,13 @@ import {
   CheckCircle2,
   AlertTriangle,
   CalendarClock,
-  Pencil,
-  Check,
-  X,
-  Store,
   Wallet,
   ArrowRight,
   Sparkles,
   Loader2,
 } from 'lucide-react'
-import toast from 'react-hot-toast'
 import {
   formatARS,
-  formatCompactARS,
   formatPercent,
   formatDateAR,
   formatPeriodoShort,
@@ -26,59 +20,24 @@ import {
   toNumber,
 } from '../../utils/formatters'
 import { SectionHeader, StatusBadge, AmbitoBadge, ProgressBar, EmptyState } from '../ui/Primitives'
+import ObjetivosSectionCard from './ObjetivosSectionCard'
 
 const FinanzasHistoryChart = lazy(() => import('./FinanzasHistoryChart'))
 
 const ResumenEjecutivoSection = ({
   resumen,
   periodoYm,
-  onSaveConfig,
+  onSaveObjetivos,
   onGenerarMes,
   onNavigate,
   busyAction,
 }) => {
-  const { config, kiosco_mes, totales_balance, proximos_vencimientos, historico_6m, logistica, deudas, gastos, ingresos } =
+  const { totales_balance, proximos_vencimientos, historico_6m, logistica, deudas, gastos, ingresos } =
     resumen
-
-  const [editingMeta, setEditingMeta] = useState(false)
-  const [metaInput, setMetaInput] = useState('')
-  const [notasInput, setNotasInput] = useState('')
-  const [savingMeta, setSavingMeta] = useState(false)
-
-  const startEditMeta = () => {
-    setMetaInput(String(toNumber(config.sueldo_kiosco_objetivo, 0)))
-    setNotasInput(config.notas || '')
-    setEditingMeta(true)
-  }
-
-  const cancelEditMeta = () => {
-    setEditingMeta(false)
-  }
-
-  const handleSubmitMeta = async (e) => {
-    e.preventDefault()
-    const num = toNumber(metaInput, -1)
-    if (num < 0) {
-      toast.error('Ingresá un sueldo objetivo válido (mayor o igual a 0).')
-      return
-    }
-    setSavingMeta(true)
-    try {
-      await onSaveConfig(num, notasInput.trim())
-      setEditingMeta(false)
-    } finally {
-      setSavingMeta(false)
-    }
-  }
 
   const coberturaPct = toNumber(totales_balance.cobertura_pct, 0)
   const balanceProy = toNumber(totales_balance.balance_proyectado, 0)
   const isSuperavit = balanceProy >= 0
-  const sueldoObj = toNumber(kiosco_mes.sueldo_kiosco_objetivo, 0)
-  const gananciaMes = toNumber(kiosco_mes.ganancia_estimada_mes, 0)
-  const proyCierre = toNumber(kiosco_mes.proyeccion_cierre, 0)
-  const retirosMes = toNumber(kiosco_mes.retiros_mes, 0)
-  const coberturaSueldo = toNumber(kiosco_mes.cobertura_sueldo_pct, 0)
 
   const chartData = useMemo(
     () =>
@@ -235,6 +194,16 @@ const ResumenEjecutivoSection = ({
           <p className="text-xs text-slate-400 mt-1.5 tabular-nums">
             Externos cobrados: {formatARS(ingresos.total_cobrado)} / {formatARS(ingresos.total_esperado)}
           </p>
+          {ingresos.total_esperado > ingresos.total_cobrado && (
+            <button
+              type="button"
+              onClick={() => onNavigate('ingresos')}
+              className="mt-2 inline-flex items-center gap-1 min-h-[36px] text-xs font-semibold text-emerald-300 hover:text-emerald-200 cursor-pointer transition-colors"
+            >
+              <span>Tildar sueldos cobrados</span>
+              <ArrowRight className="h-3.5 w-3.5" />
+            </button>
+          )}
         </div>
 
         <div className="glass-card rounded-2xl p-5">
@@ -286,154 +255,12 @@ const ResumenEjecutivoSection = ({
         </div>
       </div>
 
-      {/* Meta de Sueldo Kiosco Card (1-click editable) */}
-      <div className="glass-card rounded-3xl p-5 sm:p-6">
-        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-5">
-          <div className="flex items-start gap-3">
-            <div className="h-11 w-11 rounded-2xl bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center text-indigo-300 shrink-0">
-              <Store className="h-5 w-5" />
-            </div>
-            <div>
-              <h3 className="font-display text-lg font-bold text-slate-50">
-                Meta de Sueldo Kiosco
-              </h3>
-              <p className="text-xs sm:text-sm text-slate-400 mt-0.5">
-                Compara la ganancia neta real del kiosco este mes contra tu sueldo objetivo mensual.
-              </p>
-            </div>
-          </div>
-
-          {!editingMeta && (
-            <button
-              type="button"
-              onClick={startEditMeta}
-              className="btn-secondary shrink-0"
-            >
-              <Pencil className="h-4 w-4 text-blue-400" />
-              <span>Editar meta ({formatARS(sueldoObj)})</span>
-            </button>
-          )}
-        </div>
-
-        {editingMeta && (
-          <form
-            onSubmit={handleSubmitMeta}
-            className="mb-5 p-4 rounded-2xl bg-slate-950/75 border border-blue-500/35 grid grid-cols-1 sm:grid-cols-12 gap-3 items-end"
-          >
-            <div className="sm:col-span-4">
-              <label
-                htmlFor="meta-sueldo-input"
-                className="block text-xs font-semibold text-slate-300 mb-1.5"
-              >
-                Sueldo objetivo del kiosco (ARS)
-              </label>
-              <input
-                id="meta-sueldo-input"
-                type="number"
-                min="0"
-                step="1000"
-                required
-                value={metaInput}
-                onChange={(e) => setMetaInput(e.target.value)}
-                className="input-field tabular-nums"
-                placeholder="Ej: 1200000"
-              />
-            </div>
-            <div className="sm:col-span-5">
-              <label
-                htmlFor="meta-notas-input"
-                className="block text-xs font-semibold text-slate-300 mb-1.5"
-              >
-                Notas del mes (opcional)
-              </label>
-              <input
-                id="meta-notas-input"
-                type="text"
-                value={notasInput}
-                onChange={(e) => setNotasInput(e.target.value)}
-                className="input-field"
-                placeholder="Ej: Mes con aguinaldo o vacaciones"
-              />
-            </div>
-            <div className="sm:col-span-3 flex items-center gap-2">
-              <button type="submit" disabled={savingMeta} className="btn-primary flex-1">
-                {savingMeta ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-                <span>Guardar</span>
-              </button>
-              <button
-                type="button"
-                onClick={cancelEditMeta}
-                aria-label="Cancelar edición"
-                className="btn-ghost border border-slate-700"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-          </form>
-        )}
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-          <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800/80">
-            <span className="text-xs text-slate-400">Ganancia neta real mes</span>
-            <p className="font-display text-xl font-bold text-emerald-300 mt-1 tabular-nums">
-              {formatARS(gananciaMes)}
-            </p>
-            <span className="text-[11px] text-slate-400 block mt-1 tabular-nums">
-              Ventas {formatCompactARS(kiosco_mes.ventas_mes)} · Compras{' '}
-              {formatCompactARS(kiosco_mes.compras_mes)}
-            </span>
-          </div>
-
-          <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800/80">
-            <span className="text-xs text-slate-400">Sueldo objetivo fijado</span>
-            <p className="font-display text-xl font-bold text-slate-50 mt-1 tabular-nums">
-              {formatARS(sueldoObj)}
-            </p>
-            <span className="text-[11px] text-slate-400 block mt-1">
-              {sueldoObj > 0
-                ? `${formatPercent(coberturaSueldo)} alcanzado`
-                : 'Definí una meta con 1 clic'}
-            </span>
-          </div>
-
-          <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800/80">
-            <span className="text-xs text-slate-400">Proyección de cierre</span>
-            <p
-              className={`font-display text-xl font-bold mt-1 tabular-nums ${
-                proyCierre >= sueldoObj ? 'text-blue-300' : 'text-amber-300'
-              }`}
-            >
-              {formatARS(proyCierre)}
-            </p>
-            <span className="text-[11px] text-slate-400 block mt-1">
-              Ritmo diario proyectado a fin de mes
-            </span>
-          </div>
-
-          <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800/80">
-            <span className="text-xs text-slate-400">Retiros registrados (info)</span>
-            <p className="font-display text-xl font-bold text-slate-200 mt-1 tabular-nums">
-              {formatARS(retirosMes)}
-            </p>
-            <span className="text-[11px] text-slate-400 block mt-1">
-              Informativo · No duplica gastos
-            </span>
-          </div>
-        </div>
-
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-slate-400">Avance hacia la meta de sueldo kiosco</span>
-            <span className="font-semibold text-slate-100 tabular-nums">
-              {formatPercent(coberturaSueldo)}
-            </span>
-          </div>
-          <ProgressBar value={coberturaSueldo} tone="auto" heightClass="h-2.5" />
-          {config.notas && (
-            <p className="text-xs text-slate-400 pt-1">Nota del mes: {config.notas}</p>
-          )}
-        </div>
-      </div>
+      {/* Objetivos y Metas Múltiples por Tipo */}
+      <ObjetivosSectionCard
+        resumen={resumen}
+        periodoYm={periodoYm}
+        onSaveObjetivos={onSaveObjetivos}
+      />
 
       {/* Chart 6 months + Upcoming Due Dates */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">

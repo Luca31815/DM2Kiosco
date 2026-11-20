@@ -3,7 +3,6 @@ import {
   Truck,
   Plus,
   Pencil,
-  Trash2,
   Check,
   X,
   Info,
@@ -16,7 +15,7 @@ import {
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { formatARS, formatDateAR, toNumber } from '../../utils/formatters'
-import { SectionHeader, StatusBadge, EmptyState } from '../ui/Primitives'
+import { SectionHeader, StatusBadge, EmptyState, ConfirmDeleteButton } from '../ui/Primitives'
 
 const EMPTY_ARRAY = []
 
@@ -164,9 +163,6 @@ const LogisticaSection = ({
   }
 
   const handleDeleteRegla = async (regla) => {
-    if (!window.confirm(`¿Eliminar la regla logística "${regla.nombre_regla || regla.proveedor_normalizado}"?`)) {
-      return
-    }
     await onCrudLogistica('delete', { id: regla.id })
   }
 
@@ -341,7 +337,7 @@ const LogisticaSection = ({
                 id="log-monto"
                 type="number"
                 min="0"
-                step="100"
+                step="any"
                 required
                 value={form.monto_fijo}
                 onChange={(e) => setForm((p) => ({ ...p, monto_fijo: e.target.value }))}
@@ -626,14 +622,11 @@ const LogisticaSection = ({
                     >
                       <Pencil className="h-4 w-4" />
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteRegla(regla)}
-                      aria-label={`Eliminar regla ${regla.nombre_regla}`}
-                      className="btn-ghost text-slate-400 hover:text-rose-300 hover:bg-rose-500/10 border border-slate-800"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
+                    <ConfirmDeleteButton
+                      onConfirm={() => handleDeleteRegla(regla)}
+                      ariaLabel={`Eliminar regla ${regla.nombre_regla}`}
+                      confirmLabel="Borrar"
+                    />
                   </div>
                 </div>
               </div>
@@ -781,7 +774,7 @@ const LogisticaSection = ({
                                     id={`ovr-monto-${rowKey}`}
                                     type="number"
                                     min="0"
-                                    step="100"
+                                    step="any"
                                     value={overrideMonto}
                                     onChange={(e) => setOverrideMonto(e.target.value)}
                                     className="input-field tabular-nums"

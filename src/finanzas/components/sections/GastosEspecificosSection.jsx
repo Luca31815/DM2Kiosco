@@ -5,7 +5,6 @@ import {
   Search,
   CheckCircle2,
   Circle,
-  Trash2,
   Pencil,
   Check,
   X,
@@ -15,7 +14,7 @@ import {
 import toast from 'react-hot-toast'
 import { formatARS, formatDateAR, getTodayISOAR, toNumber } from '../../utils/formatters'
 import { filterGastosEspecificos } from '../../utils/finanzasFilters'
-import { SectionHeader, StatusBadge, AmbitoBadge, EmptyState } from '../ui/Primitives'
+import { SectionHeader, StatusBadge, AmbitoBadge, EmptyState, ConfirmDeleteButton } from '../ui/Primitives'
 
 const CATEGORIAS_EVENTUALES = [
   'Imprevisto',
@@ -159,7 +158,6 @@ const GastosEspecificosSection = ({ resumen, periodoYm, onCrudGasto }) => {
   }
 
   const handleDelete = async (item) => {
-    if (!window.confirm(`¿Eliminar el gasto "${item.nombre}"?`)) return
     await onCrudGasto('delete_mensual', { id: item.id })
   }
 
@@ -204,7 +202,7 @@ const GastosEspecificosSection = ({ resumen, periodoYm, onCrudGasto }) => {
               id="esp-monto"
               type="number"
               min="1"
-              step="100"
+              step="any"
               required
               value={monto}
               onChange={(e) => setMonto(e.target.value)}
@@ -406,14 +404,11 @@ const GastosEspecificosSection = ({ resumen, periodoYm, onCrudGasto }) => {
                     >
                       <Pencil className="h-4 w-4" />
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => handleDelete(item)}
-                      aria-label={`Eliminar ${item.nombre}`}
-                      className="btn-ghost text-slate-400 hover:text-rose-300 hover:bg-rose-500/10 border border-slate-800"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
+                    <ConfirmDeleteButton
+                      onConfirm={() => handleDelete(item)}
+                      ariaLabel={`Eliminar ${item.nombre}`}
+                      confirmLabel="Borrar"
+                    />
                   </div>
                 </div>
 
@@ -439,6 +434,7 @@ const GastosEspecificosSection = ({ resumen, periodoYm, onCrudGasto }) => {
                         id={`edit-esp-mon-${item.id}`}
                         type="number"
                         min="0"
+                        step="any"
                         value={editForm.monto_real}
                         onChange={(e) => setEditForm((f) => ({ ...f, monto_real: e.target.value }))}
                         className="input-field tabular-nums"

@@ -3,7 +3,6 @@ import {
   CreditCard,
   Plus,
   Pencil,
-  Trash2,
   Check,
   X,
   RotateCcw,
@@ -22,6 +21,7 @@ import {
   PrioridadBadge,
   ProgressBar,
   EmptyState,
+  ConfirmDeleteButton,
 } from '../ui/Primitives'
 
 const EMPTY_ARRAY = []
@@ -209,9 +209,6 @@ const DeudasSection = ({ resumen, periodoYm, onCrudDeuda }) => {
   }
 
   const handleDeleteDeuda = async (d) => {
-    if (!window.confirm(`¿Eliminar la deuda "${d.acreedor} — ${d.concepto}" y su historial de pagos?`)) {
-      return
-    }
     await onCrudDeuda('delete', { id: d.id })
   }
 
@@ -248,13 +245,6 @@ const DeudasSection = ({ resumen, periodoYm, onCrudDeuda }) => {
   }
 
   const handleEliminarPago = async (pago) => {
-    if (
-      !window.confirm(
-        `¿Deshacer este pago de ${formatARS(pago.monto_pagado)}? El saldo pendiente y el contador de cuotas volverán atrás automáticamente.`
-      )
-    ) {
-      return
-    }
     await onCrudDeuda('eliminar_pago', {
       pago_id: pago.id,
       id: pago.id,
@@ -397,7 +387,7 @@ const DeudasSection = ({ resumen, periodoYm, onCrudDeuda }) => {
                 id="deu-total"
                 type="number"
                 min="1"
-                step="100"
+                step="any"
                 required
                 value={form.monto_total}
                 onChange={(e) => handleMontoOrCuotasChange('monto_total', e.target.value)}
@@ -442,7 +432,7 @@ const DeudasSection = ({ resumen, periodoYm, onCrudDeuda }) => {
                 id="deu-cuota-mon"
                 type="number"
                 min="0"
-                step="100"
+                step="any"
                 required
                 value={form.monto_cuota}
                 onChange={(e) => setForm((p) => ({ ...p, monto_cuota: e.target.value }))}
@@ -458,7 +448,7 @@ const DeudasSection = ({ resumen, periodoYm, onCrudDeuda }) => {
                 id="deu-saldo"
                 type="number"
                 min="0"
-                step="100"
+                step="any"
                 value={form.saldo_pendiente}
                 onChange={(e) => setForm((p) => ({ ...p, saldo_pendiente: e.target.value }))}
                 className="input-field tabular-nums"
@@ -695,14 +685,11 @@ const DeudasSection = ({ resumen, periodoYm, onCrudDeuda }) => {
                     >
                       <Pencil className="h-4 w-4" />
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteDeuda(d)}
-                      aria-label={`Eliminar deuda ${d.acreedor}`}
-                      className="btn-ghost text-slate-400 hover:text-rose-300 hover:bg-rose-500/10 border border-slate-800"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
+                    <ConfirmDeleteButton
+                      onConfirm={() => handleDeleteDeuda(d)}
+                      ariaLabel={`Eliminar deuda ${d.acreedor}`}
+                      confirmLabel="Borrar deuda"
+                    />
                   </div>
                 </div>
 
@@ -720,7 +707,7 @@ const DeudasSection = ({ resumen, periodoYm, onCrudDeuda }) => {
                         id={`pag-mon-${d.id}`}
                         type="number"
                         min="1"
-                        step="100"
+                        step="any"
                         required
                         value={pagoMonto}
                         onChange={(e) => setPagoMonto(e.target.value)}
@@ -808,14 +795,15 @@ const DeudasSection = ({ resumen, periodoYm, onCrudDeuda }) => {
                                 {pago.notas ? ` · ${pago.notas}` : ''}
                               </span>
                             </div>
-                            <button
-                              type="button"
-                              onClick={() => handleEliminarPago(pago)}
-                              className="inline-flex items-center gap-1.5 min-h-[36px] px-3 rounded-xl text-rose-300 hover:bg-rose-500/15 border border-rose-500/30 transition-colors cursor-pointer"
-                            >
-                              <RotateCcw className="h-3.5 w-3.5" />
-                              <span>Deshacer</span>
-                            </button>
+                            <ConfirmDeleteButton
+                              icon={RotateCcw}
+                              iconClassName="h-3.5 w-3.5"
+                              triggerLabel="Deshacer"
+                              confirmLabel="Deshacer pago"
+                              ariaLabel={`Deshacer pago de ${formatARS(pago.monto_pagado)}`}
+                              className="inline-flex items-center gap-1.5 min-h-[44px] px-3 rounded-xl text-rose-300 hover:bg-rose-500/15 border border-rose-500/30 transition-colors cursor-pointer"
+                              onConfirm={() => handleEliminarPago(pago)}
+                            />
                           </li>
                         ))}
                       </ul>

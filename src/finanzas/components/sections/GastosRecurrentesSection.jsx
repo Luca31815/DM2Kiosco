@@ -6,7 +6,6 @@ import {
   CheckCircle2,
   Circle,
   Pencil,
-  Trash2,
   Check,
   X,
   Loader2,
@@ -30,6 +29,7 @@ import {
   PrioridadBadge,
   ProgressBar,
   EmptyState,
+  ConfirmDeleteButton,
 } from '../ui/Primitives'
 
 const EMPTY_PLANTILLA = {
@@ -171,7 +171,6 @@ const GastosRecurrentesSection = ({
   }
 
   const handleDeleteMensual = async (item) => {
-    if (!window.confirm(`¿Eliminar "${item.nombre}" solo del mes ${periodoYm}?`)) return
     await onCrudGasto('delete_mensual', { id: item.id })
   }
 
@@ -303,10 +302,7 @@ const GastosRecurrentesSection = ({
   }
 
   const handleDeletePlantilla = async (pl) => {
-    if (!window.confirm(`¿Eliminar la plantilla "${pl.nombre}"? No borrará meses ya registrados.`)) {
-      return
-    }
-    await onCrudGasto('delete_plantilla', { id: pl.id })
+    await onCrudGasto('delete_plantilla', { id: pl.id, eliminar_pendientes: true })
   }
 
   return (
@@ -536,14 +532,11 @@ const GastosRecurrentesSection = ({
                           <Pencil className="h-4 w-4" />
                         </button>
 
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteMensual(item)}
-                          aria-label={`Eliminar ${item.nombre} de este mes`}
-                          className="btn-ghost text-slate-400 hover:text-rose-300 hover:bg-rose-500/10 border border-slate-800"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
+                        <ConfirmDeleteButton
+                          onConfirm={() => handleDeleteMensual(item)}
+                          ariaLabel={`Eliminar ${item.nombre} de este mes`}
+                          confirmLabel="Borrar del mes"
+                        />
                       </div>
                     </div>
 
@@ -587,7 +580,7 @@ const GastosRecurrentesSection = ({
                             id={`edit-real-${item.id}`}
                             type="number"
                             min="0"
-                            step="100"
+                            step="any"
                             value={editMontoReal}
                             onChange={(e) => setEditMontoReal(e.target.value)}
                             className="input-field tabular-nums"
@@ -604,7 +597,7 @@ const GastosRecurrentesSection = ({
                             id={`edit-esp-${item.id}`}
                             type="number"
                             min="0"
-                            step="100"
+                            step="any"
                             value={editMontoEsperado}
                             onChange={(e) => setEditMontoEsperado(e.target.value)}
                             className="input-field tabular-nums"
@@ -783,7 +776,7 @@ const GastosRecurrentesSection = ({
                       id="pl-monto"
                       type="number"
                       min="0"
-                      step="100"
+                      step="any"
                       required={!plantillaEsDiaria}
                       value={plantillaForm.monto_base}
                       onChange={(e) => setPlantillaForm((p) => ({ ...p, monto_base: e.target.value }))}
@@ -899,7 +892,7 @@ const GastosRecurrentesSection = ({
                         id="pl-monto-diario"
                         type="number"
                         min="1"
-                        step="100"
+                        step="any"
                         required={plantillaEsDiaria}
                         value={plantillaMontoDiario}
                         onChange={(e) => setPlantillaMontoDiario(e.target.value)}
@@ -1034,14 +1027,11 @@ const GastosRecurrentesSection = ({
                     >
                       <Pencil className="h-4 w-4" />
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => handleDeletePlantilla(pl)}
-                      aria-label={`Eliminar plantilla ${pl.nombre}`}
-                      className="btn-ghost text-slate-400 hover:text-rose-300 hover:bg-rose-500/10 border border-slate-800"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
+                    <ConfirmDeleteButton
+                      onConfirm={() => handleDeletePlantilla(pl)}
+                      ariaLabel={`Eliminar plantilla ${pl.nombre}`}
+                      confirmLabel="Borrar"
+                    />
                   </div>
                 </div>
               ))}
